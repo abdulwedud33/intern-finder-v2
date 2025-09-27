@@ -1,0 +1,958 @@
+"use client"
+import type React from "react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Users, Building, Plus, FileText } from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
+import { registerIntern, registerCompany } from "@/lib/api"
+import type { InternPayload, CompanyPayload } from "@/types/auth"
+
+// Helper component for file upload placeholders
+const FileUploadPlaceholder = ({
+  label,
+  icon: Icon,
+  onFileChange,
+}: { label: string; icon: React.ElementType; onFileChange: (file: File | null) => void }) => (
+  <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
+    <Icon className="w-10 h-10 text-gray-400 mb-2" />
+    <span className="text-sm text-gray-600">{label}</span>
+    <span className="text-xs text-gray-500">or drag/drop here</span>
+    <input type="file" className="hidden" onChange={(e) => onFileChange(e.target.files ? e.target.files[0] : null)} />
+  </label>
+)
+
+export default function SignUpPage() {
+  const [activeTab, setActiveTab] = useState("jobseeker")
+  const [jobSeekerCurrentStep, setJobSeekerCurrentStep] = useState(1)
+  const [companyCurrentStep, setCompanyCurrentStep] = useState(1)
+  const [isJobSeekerSubmitting, setIsJobSeekerSubmitting] = useState(false)
+  const [isCompanySubmitting, setIsCompanySubmitting] = useState(false)
+  const router = useRouter()
+  const { toast } = useToast()
+
+  const [jobSeekerData, setJobSeekerData] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    location: "",
+    phone: "",
+    profilePicture: null as File | null,
+    industry: "",
+    education: "",
+    program: "",
+    internshipType: "",
+    desiredRoles: "",
+    linkedin: "",
+    personalWebsite: "",
+    bio: "",
+    cv: null as File | null,
+    agreeToTerms: false,
+  })
+
+  const [companyData, setCompanyData] = useState({
+    companyName: "",
+    companyEmail: "",
+    password: "",
+    confirmPassword: "",
+    location: "",
+    logo: null as File | null,
+    organizationType: "",
+    industryField: "",
+    fieldOfStudy: "",
+    officialWebsite: "",
+    contactFullName: "",
+    jobTitle: "",
+    contactEmail: "",
+    contactPhone: "",
+    headquartersLocation: "",
+    otherBranches: "",
+    workEnvironmentOptions: "",
+    companyDescription: "",
+    teamSize: "",
+    socialMediaLinks: "",
+    linkedin: "",
+    rolesToFill: "",
+    internshipDuration: "",
+    compensationRange: "",
+    agreeToTerms: false,
+  })
+
+  const handleJobSeekerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Handle form validation for the current step
+    if (jobSeekerCurrentStep === 1) {
+      if (!jobSeekerData.fullName || !jobSeekerData.email || !jobSeekerData.password || !jobSeekerData.confirmPassword) {
+        toast({ title: "Missing required fields", description: "Please fill in all required fields.", variant: "destructive" });
+        return;
+      }
+      if (jobSeekerData.password !== jobSeekerData.confirmPassword) {
+        toast({ title: "Passwords do not match", description: "Please make sure your passwords match.", variant: "destructive" });
+        return;
+      }
+      if (!jobSeekerData.agreeToTerms) {
+        toast({ title: "Terms not accepted", description: "You must accept the terms and conditions to continue.", variant: "destructive" });
+        return;
+      }
+      setJobSeekerCurrentStep(2);
+      return;
+    } else if (jobSeekerCurrentStep === 2) {
+      // Add any step 2 specific validations here if needed
+      setJobSeekerCurrentStep(3);
+      return;
+    }
+    
+    console.log('Final step - submitting form');
+
+    // Form validation
+    if (jobSeekerData.password !== jobSeekerData.confirmPassword) {
+      toast({ title: "Passwords do not match", description: "Please confirm your password.", variant: "destructive" })
+      return
+    }
+    if (!jobSeekerData.phone) {
+      toast({ title: "Phone is required", description: "Please enter your phone number.", variant: "destructive" })
+      return
+    }
+    if (!jobSeekerData.internshipType) {
+      toast({ title: "Internship type required", description: "Select free or paid.", variant: "destructive" })
+      return
+    }
+    if (!jobSeekerData.agreeToTerms) {
+      toast({ title: "Please accept the terms", description: "You must agree to continue.", variant: "destructive" })
+      return
+    }
+
+    try {
+      console.log('Starting form submission');
+      setIsJobSeekerSubmitting(true);
+      
+      // Create form data for file uploads
+      const formData = new FormData();
+      console.log('FormData created');
+      
+      // Prepare the data object
+      const registrationData = {
+        name: jobSeekerData.fullName,
+        email: jobSeekerData.email,
+        password: jobSeekerData.password,
+        location: jobSeekerData.location,
+        phone: jobSeekerData.phone,
+        institution: jobSeekerData.education,
+        fieldOfStudy: jobSeekerData.program,
+        program: jobSeekerData.program,
+        internshipType: jobSeekerData.internshipType,
+        preferredRoles: jobSeekerData.desiredRoles
+          ? jobSeekerData.desiredRoles.split(",").map((s) => s.trim()).filter(Boolean)
+          : undefined,
+        linkedinUrl: jobSeekerData.linkedin || undefined,
+        personalWebsiteUrl: jobSeekerData.personalWebsite || undefined,
+        bio: jobSeekerData.bio || undefined,
+      };
+
+      // Add all fields to formData
+      Object.entries(registrationData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+      
+      // Append files if they exist
+      if (jobSeekerData.profilePicture) {
+        formData.append('profilePicture', jobSeekerData.profilePicture);
+      }
+      
+      if (jobSeekerData.cv) {
+        formData.append('cv', jobSeekerData.cv);
+      }
+
+      // Debug: Log form data before sending
+      console.log('FormData entries:');
+      const formDataObj: Record<string, any> = {};
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+        formDataObj[key] = value;
+      }
+      console.log('FormData object:', JSON.stringify(formDataObj, null, 2));
+
+      // Send the form data directly to the API endpoint
+      const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000';
+      const apiUrl = `${baseUrl}/api/auth/register/intern`;
+      console.log('Sending request to:', apiUrl);
+      
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+
+        const responseText = await response.text();
+        console.log('Response status:', response.status);
+        console.log('Response:', responseText);
+        
+        let data;
+        try {
+          data = responseText ? JSON.parse(responseText) : {};
+          
+          if (!response.ok) {
+            throw new Error(data.message || data.error || `Registration failed with status ${response.status}`);
+          }
+          
+          // Show success message
+          toast({ 
+            title: "Account created", 
+            description: "You can now log in.",
+            variant: "default"
+          });
+          
+          // Redirect to login page after a short delay
+          setTimeout(() => {
+            router.push("/auth/login");
+          }, 1500);
+          
+          return data;
+          
+        } catch (e) {
+          console.error('Error processing response:', e);
+          throw new Error('Invalid response from server');
+        }
+      } catch (error) {
+        console.error('Network error:', error);
+        throw new Error('Failed to connect to the server. Please check your internet connection.');
+      }
+         
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      toast({ 
+        title: "Registration failed", 
+        description: errorMessage, 
+        variant: "destructive" 
+      });
+      throw error; // Re-throw to be caught by the outer catch block
+    } finally {
+      setIsJobSeekerSubmitting(false);
+    }
+  }
+
+  const handleCompanySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Handle form validation for the current step
+    if (companyCurrentStep === 1) {
+      if (!companyData.companyName || !companyData.companyEmail || !companyData.password || !companyData.confirmPassword) {
+        toast({ title: "Missing required fields", description: "Please fill in all required fields.", variant: "destructive" });
+        return;
+      }
+      if (companyData.password !== companyData.confirmPassword) {
+        toast({ title: "Passwords do not match", description: "Please make sure your passwords match.", variant: "destructive" });
+        return;
+      }
+      if (!companyData.agreeToTerms) {
+        toast({ title: "Terms not accepted", description: "You must accept the terms and conditions to continue.", variant: "destructive" });
+        return;
+      }
+      setCompanyCurrentStep(2);
+      return;
+    } else if (companyCurrentStep < 6) {
+      // For steps 2-5, just move to the next step
+      setCompanyCurrentStep(prev => prev + 1);
+      return;
+    }
+
+    try {
+      setIsCompanySubmitting(true);
+      
+      const payload: CompanyPayload = {
+        name: companyData.companyName,
+        email: companyData.companyEmail,
+        password: companyData.password,
+        location: companyData.location,
+        phone: companyData.contactPhone || undefined,
+        headquartersLocation: companyData.headquartersLocation || undefined,
+        otherBranches: companyData.otherBranches
+          ? companyData.otherBranches.split(",").map((s) => s.trim()).filter(Boolean)
+          : undefined,
+        workEnvironment: companyData.workEnvironmentOptions || undefined,
+        organizationType: companyData.organizationType || undefined,
+        industry: companyData.industryField || undefined,
+        fieldOfStudy: companyData.fieldOfStudy || undefined,
+        websiteUrl: companyData.officialWebsite || undefined,
+        contactPersonName: companyData.contactFullName || undefined,
+        contactPersonJobTitle: companyData.jobTitle || undefined,
+        contactPersonEmail: companyData.contactEmail || undefined,
+        contactPersonPhoneNumber: companyData.contactPhone || undefined,
+        description: companyData.companyDescription || undefined,
+        teamSize: companyData.teamSize || undefined,
+        socialMediaLinks: companyData.socialMediaLinks
+          ? companyData.socialMediaLinks.split(",").map((s) => s.trim()).filter(Boolean)
+          : undefined,
+        linkedinUrl: companyData.linkedin || undefined,
+        hiringRoles: companyData.rolesToFill
+          ? companyData.rolesToFill.split(",").map((s) => s.trim()).filter(Boolean)
+          : undefined,
+        internshipDuration: companyData.internshipDuration || undefined,
+        compensationRange: companyData.compensationRange || undefined,
+      };
+
+      console.log('Submitting company registration:', payload);
+      const result = await registerCompany(payload);
+      
+      if (result.ok) {
+        console.log('Registration successful:', result);
+        toast({ 
+          title: "Registration successful!", 
+          description: "Your company account has been created. Redirecting to login..." 
+        });
+        router.push("/auth/login");
+      } else {
+        console.error('Registration failed:', result);
+        toast({ 
+          title: "Registration failed", 
+          description: result.error || "An error occurred during registration. Please try again.", 
+          variant: "destructive" 
+        });
+      }
+    } catch (error) {
+      console.error('Error during registration:', error);
+      toast({ 
+        title: "Error", 
+        description: "An unexpected error occurred. Please try again.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsCompanySubmitting(false);
+    }
+  }
+
+  const handleBack = () => {
+    if (activeTab === "jobseeker" && jobSeekerCurrentStep > 1) {
+      setJobSeekerCurrentStep(jobSeekerCurrentStep - 1)
+    } else if (activeTab === "company" && companyCurrentStep > 1) {
+      setCompanyCurrentStep(companyCurrentStep - 1)
+    }
+  }
+  
+  const getRightPanelContent = () => {
+    if (activeTab === "jobseeker") {
+      switch (jobSeekerCurrentStep) {
+        case 1:
+          return {
+            title: "“Creativity is intelligence having fun.”",
+            author: "— Albert Einstein",
+          }
+        case 2:
+          return {
+            title: "Let\'s fill some details to make you stand out from the rest",
+            author: "",
+          }
+        case 3:
+          return {
+            title: "One more step for the Masterpiece profile",
+            author: "",
+          }
+        default:
+          return { title: "", author: "" }
+      }
+    } else {
+      // company
+      switch (companyCurrentStep) {
+        case 1:
+          return {
+            title: "“Creativity is intelligence having fun.”",
+            author: "— Albert Einstein",
+          }
+        case 2:
+          return {
+            title: "Let\'s build your company profile and connect you with the next generation of talent.",
+            author: "",
+          }
+        case 3:
+          return {
+            title: "Help us reach the right person when the perfect intern comes along.",
+            author: "",
+          }
+        case 4:
+          return {
+            title: "Show interns where the magic happens — on-site, remote, or anywhere in between.",
+            author: "",
+          }
+        case 5:
+          return {
+            title: "Share your story — what drives your mission and makes your company unique.",
+            author: "",
+          }
+        case 6:
+          return {
+            title: "Tell us who you're looking for — we'll help you find the perfect match.",
+            author: "",
+          }
+        default:
+          return { title: "", author: "" }
+      }
+    }
+  }
+
+  const { title, author } = getRightPanelContent()
+  const currentStep = activeTab === "jobseeker" ? jobSeekerCurrentStep : companyCurrentStep
+  const isRightPanelOnRight = currentStep % 2 !== 0 // True for steps 1, 3, 5...
+
+  return (
+    <div className={`min-h-screen flex flex-col md:flex-row ${isRightPanelOnRight ? "" : "md:flex-row-reverse"}`}>
+      {/* Left/Right - Signup Form */}
+      <div className="flex-1 flex items-center justify-center bg-white py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl w-full">
+          <div className="text-center mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign Up</h1>
+            <p className="text-gray-600">Let&apos;s get you started</p>
+          </div>
+          <Card>
+            <CardContent className="p-6">
+              <Tabs
+                defaultValue="jobseeker"
+                className="w-full"
+                onValueChange={(value) => {
+                  setActiveTab(value)
+                  // Reset steps when switching tabs
+                  setJobSeekerCurrentStep(1)
+                  setCompanyCurrentStep(1)
+                }}
+              >
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+  <TabsTrigger
+    value="jobseeker"
+    className={`flex items-center space-x-2 ${activeTab === "jobseeker" ? "bg-teal-700" : ""}`}
+  >
+    <Users className="h-4 w-4" />
+    <span>Talent</span>
+  </TabsTrigger>
+
+  <TabsTrigger
+    value="company"
+    className={`flex items-center space-x-2 ${activeTab === "company" ? "bg-teal-700" : ""}`}
+  >
+    <Building className="h-4 w-4" />
+    <span>Company</span>
+  </TabsTrigger>
+</TabsList>
+
+
+                {/* Job Seeker Form */}
+                <TabsContent value="jobseeker">
+                  <form id="jobseeker-form" onSubmit={handleJobSeekerSubmit} className="space-y-4">
+                    {jobSeekerCurrentStep === 1 && (
+                      <>
+                        <Input
+                          required
+                          placeholder="Full Name"
+                          value={jobSeekerData.fullName}
+                          onChange={(e) => setJobSeekerData({ ...jobSeekerData, fullName: e.target.value })}
+                        />
+                        <Input
+                          required
+                          type="email"
+                          placeholder="Email Address"
+                          value={jobSeekerData.email}
+                          onChange={(e) => setJobSeekerData({ ...jobSeekerData, email: e.target.value })}
+                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <Input
+                            required
+                            type="password"
+                            placeholder="Create password"
+                            value={jobSeekerData.password}
+                            onChange={(e) => setJobSeekerData({ ...jobSeekerData, password: e.target.value })}
+                          />
+                          <Input
+                            required
+                            type="password"
+                            placeholder="Confirm password"
+                            value={jobSeekerData.confirmPassword}
+                            onChange={(e) => setJobSeekerData({ ...jobSeekerData, confirmPassword: e.target.value })}
+                          />
+                        </div>
+                        <Select
+                          value={jobSeekerData.location}
+                          onValueChange={(value) => setJobSeekerData({ ...jobSeekerData, location: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Location" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="new-york">New York</SelectItem>
+                            <SelectItem value="san-francisco">San Francisco</SelectItem>
+                            <SelectItem value="london">London</SelectItem>
+                            <SelectItem value="remote">Remote</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          placeholder="Phone Number"
+                          value={jobSeekerData.phone}
+                          onChange={(e) => setJobSeekerData({ ...jobSeekerData, phone: e.target.value })}
+                        />
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            checked={jobSeekerData.agreeToTerms}
+                            onCheckedChange={(checked) =>
+                              setJobSeekerData({ ...jobSeekerData, agreeToTerms: !!checked })
+                            }
+                          />
+                          <label className="text-sm text-gray-600">
+                            I agree to the{" "}
+                            <Link href="/terms" className="text-teal-600 underline">
+                              Terms
+                            </Link>{" "}
+                            and{" "}
+                            <Link href="/privacy" className="text-teal-600 underline">
+                              Privacy
+                            </Link>
+                          </label>
+                        </div>
+                        {jobSeekerCurrentStep < 3 ? (
+                          <Button 
+                            type="button"
+                            className="w-full bg-teal-600 hover:bg-teal-700" 
+                            onClick={() => setJobSeekerCurrentStep(prev => prev + 1)}
+                            disabled={isJobSeekerSubmitting}
+                          >
+                            Continue
+                          </Button>
+                        ) : (
+                          <Button 
+                            type="submit"
+                            className="w-full bg-teal-600 hover:bg-teal-700"
+                            disabled={isJobSeekerSubmitting}
+                          >
+                            {isJobSeekerSubmitting ? 'Submitting...' : 'Submit'}
+                          </Button>
+                        )}
+                        <div className="text-center mt-2 pt-2 border-t">
+                          <p className="text-gray-600">
+                            Already a Signup?
+                            <Link href="/auth/login" className="text-teal-600 font-medium underline">
+                              Login Here
+                            </Link>
+                          </p>
+                        </div>
+                      </>
+                    )}
+
+                    {jobSeekerCurrentStep === 2 && (
+                      <>
+                        <div className="text-center mb-6">
+                          <h4 className="font-semibold text-gray-900">
+                            Share your skills and interests to find your perfect internship match.
+                          </h4>
+                        </div>
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="relative w-24 h-24 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                            {jobSeekerData.profilePicture ? (
+                              <Image
+                                src={URL.createObjectURL(jobSeekerData.profilePicture) || "/placeholder.svg"}
+                                alt="Profile"
+                                layout="fill"
+                                objectFit="cover"
+                              />
+                            ) : (
+                              <Users className="w-12 h-12 text-gray-400" />
+                            )}
+                            <label
+                              htmlFor="profile-picture-upload"
+                              className="absolute bottom-0 right-0 bg-teal-600 text-white rounded-full p-1 cursor-pointer"
+                            >
+                              <Plus className="z-10 w-4 h-4" />
+                              <input
+                                id="profile-picture-upload"
+                                type="file"
+                                className="hidden"
+                                onChange={(e) =>
+                                  setJobSeekerData({
+                                    ...jobSeekerData,
+                                    profilePicture: e.target.files ? e.target.files[0] : null,
+                                  })
+                                }
+                              />
+                            </label>
+                          </div>
+                          <span className="text-sm text-gray-600">Profile Picture</span>
+                        </div>
+                        <Input
+                          placeholder="Industry (e.g., Tech, Finance)"
+                          value={jobSeekerData.industry}
+                          onChange={(e) => setJobSeekerData({ ...jobSeekerData, industry: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Education (e.g., University of XYZ)"
+                          value={jobSeekerData.education}
+                          onChange={(e) => setJobSeekerData({ ...jobSeekerData, education: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Program (e.g., Computer Science, Business)"
+                          value={jobSeekerData.program}
+                          onChange={(e) => setJobSeekerData({ ...jobSeekerData, program: e.target.value })}
+                        />
+                        <Select
+                          value={jobSeekerData.internshipType}
+                          onValueChange={(value) => setJobSeekerData({ ...jobSeekerData, internshipType: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Internship Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="free">Free</SelectItem>
+                            <SelectItem value="paid">Paid</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          placeholder="Desired Roles (e.g., Software Engineer, Data Analyst)"
+                          value={jobSeekerData.desiredRoles}
+                          onChange={(e) => setJobSeekerData({ ...jobSeekerData, desiredRoles: e.target.value })}
+                        />
+                        <div className="flex justify-between gap-4">
+                          <div className="flex flex-col w-full gap-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleBack}
+                              className="w-full bg-transparent"
+                            >
+                              Back
+                            </Button>
+                            <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={isJobSeekerSubmitting}>
+                              {isJobSeekerSubmitting ? "Please wait..." : "Continue"}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {jobSeekerCurrentStep === 3 && (
+                      <>
+                        <div className="text-center mb-6">
+                          <h2 className="text-xl font-semibold text-gray-900">Let&apos;s go to the finishing steps</h2>
+                        </div>
+                        <Input
+                          placeholder="LinkedIn Profile URL"
+                          value={jobSeekerData.linkedin}
+                          onChange={(e) => setJobSeekerData({ ...jobSeekerData, linkedin: e.target.value })}
+                        />
+                        <Input
+
+export default function SignUpPage() {
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState<"jobseeker" | "company">("jobseeker")
+  const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState<FormData>({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    agreeToTerms: false,
+  })
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }))
+  }
+                        <div className="text-center mb-6">
+                          <h4 className="text-xl font-semibold text-gray-900">
+                            Tell us about your company or institution
+                          </h4>
+                        </div>
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="relative w-24 h-24 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                            {companyData.logo ? (
+                              <Image
+                                src={URL.createObjectURL(companyData.logo) || "/placeholder.svg"}
+                                alt="Company Logo"
+                                layout="fill"
+                                objectFit="cover"
+                              />
+                            ) : (
+                              <Building className="w-12 h-12 text-gray-400" />
+                            )}
+                            <label
+                              htmlFor="company-logo-upload"
+                              className="absolute bottom-0 right-0 bg-teal-600 text-white rounded-full p-1 cursor-pointer"
+                            >
+                              <Plus className="z-10 w-4 h-4" />
+                              <input
+                                id="company-logo-upload"
+                                type="file"
+                                className="hidden"
+                                onChange={(e) =>
+                                  setCompanyData({ ...companyData, logo: e.target.files ? e.target.files[0] : null })
+                                }
+                              />
+                            </label>
+                          </div>
+                          <span className="text-sm text-gray-600">Logo</span>
+                        </div>
+                        <Select
+                          value={companyData.organizationType}
+                          onValueChange={(value) => setCompanyData({ ...companyData, organizationType: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Organization Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="startup">Startup</SelectItem>
+                            <SelectItem value="sme">SME</SelectItem>
+                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                            <SelectItem value="non-profit">Non-profit</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          placeholder="Industry / Field (e.g., Tech, Healthcare)"
+                          value={companyData.industryField}
+                          onChange={(e) => setCompanyData({ ...companyData, industryField: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Field of Study (e.g., Engineering, Design)"
+                          value={companyData.fieldOfStudy}
+                          onChange={(e) => setCompanyData({ ...companyData, fieldOfStudy: e.target.value })}
+                        />
+                        <Input
+                          type="url"
+                          placeholder="Official Website URL"
+                          value={companyData.officialWebsite}
+                          onChange={(e) => setCompanyData({ ...companyData, officialWebsite: e.target.value })}
+                        />
+                        <div className="flex justify-between gap-4">
+                          <div className="flex flex-col w-full gap-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleBack}
+                              className="w-full bg-transparent"
+                            >
+                              Back
+                            </Button>
+                            <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={isCompanySubmitting}>
+                              {isCompanySubmitting ? "Please wait..." : "Continue"}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {companyCurrentStep === 3 && (
+                      <>
+                        <div className="text-center mb-6">
+                          <h2 className="text-xl font-semibold text-gray-900">Contact Person Info</h2>
+                        </div>
+                        <Input
+                          required
+                          placeholder="Full Name"
+                          value={companyData.contactFullName}
+                          onChange={(e) => setCompanyData({ ...companyData, contactFullName: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Job Title"
+                          value={companyData.jobTitle}
+                          onChange={(e) => setCompanyData({ ...companyData, jobTitle: e.target.value })}
+                        />
+                        <Input
+                          required
+                          type="email"
+                          placeholder="Email Address"
+                          value={companyData.contactEmail}
+                          onChange={(e) => setCompanyData({ ...companyData, contactEmail: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Phone Number"
+                          value={companyData.contactPhone}
+                          onChange={(e) => setCompanyData({ ...companyData, contactPhone: e.target.value })}
+                        />
+                        <div className="flex justify-between gap-4">
+                          <div className="flex flex-col w-full gap-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleBack}
+                              className="w-full bg-transparent"
+                            >
+                              Back
+                            </Button>
+                            <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={isCompanySubmitting}>
+                              {isCompanySubmitting ? "Please wait..." : "Continue"}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {companyCurrentStep === 4 && (
+                      <>
+                        <div className="text-center mb-6">
+                          <h2 className="text-xl font-semibold text-gray-900">Where can we find you</h2>
+                        </div>
+                        <Input
+                          placeholder="Headquarters Location"
+                          value={companyData.headquartersLocation}
+                          onChange={(e) => setCompanyData({ ...companyData, headquartersLocation: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Other Branches Offices [optional]"
+                          value={companyData.otherBranches}
+                          onChange={(e) => setCompanyData({ ...companyData, otherBranches: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Work Environment Options (e.g., On-site, Remote, Hybrid)"
+                          value={companyData.workEnvironmentOptions}
+                          onChange={(e) => setCompanyData({ ...companyData, workEnvironmentOptions: e.target.value })}
+                        />
+                        <div className="flex justify-between gap-4">
+                          <div className="flex flex-col w-full gap-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleBack}
+                              className="w-full bg-transparent"
+                            >
+                              Back
+                            </Button>
+                            <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={isCompanySubmitting}>
+                              {isCompanySubmitting ? "Please wait..." : "Continue"}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {companyCurrentStep === 5 && (
+                      <>
+                        <div className="text-center mb-6">
+                          <h2 className="text-xl font-semibold text-gray-900">Tell us About your Organization</h2>
+                        </div>
+                        <textarea
+                          placeholder="Company Description"
+                          value={companyData.companyDescription}
+                          onChange={(e) => setCompanyData({ ...companyData, companyDescription: e.target.value })}
+                          className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        />
+                        <Select
+                          value={companyData.teamSize}
+                          onValueChange={(value) => setCompanyData({ ...companyData, teamSize: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Team Size" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1-10">1-10</SelectItem>
+                            <SelectItem value="11-50">11-50</SelectItem>
+                            <SelectItem value="51-200">51-200</SelectItem>
+                            <SelectItem value="201-500">201-500</SelectItem>
+                            <SelectItem value="500+">500+</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          placeholder="Social Media Links (e.g., Twitter, Instagram)"
+                          value={companyData.socialMediaLinks}
+                          onChange={(e) => setCompanyData({ ...companyData, socialMediaLinks: e.target.value })}
+                        />
+                        <Input
+                          placeholder="LinkedIn Profile URL"
+                          value={companyData.linkedin}
+                          onChange={(e) => setCompanyData({ ...companyData, linkedin: e.target.value })}
+                        />
+                        <div className="flex justify-between gap-4">
+                          <div className="flex flex-col w-full gap-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleBack}
+                              className="w-full bg-transparent"
+                            >
+                              Back
+                            </Button>
+                            <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700">
+                              Continue
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {companyCurrentStep === 6 && (
+                      <>
+                        <div className="text-center mb-6">
+                          <h2 className="text-xl font-semibold text-gray-900">What is your Internship Goals</h2>
+                        </div>
+                        <Input
+                          placeholder="Roles You're Looking To Fill (e.g., Software Engineer Intern)"
+                          value={companyData.rolesToFill}
+                          onChange={(e) => setCompanyData({ ...companyData, rolesToFill: e.target.value })}
+                        />
+                        <Select
+                          value={companyData.internshipDuration}
+                          onValueChange={(value) => setCompanyData({ ...companyData, internshipDuration: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Duration of Internships Offered" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1-3-months">1-3 Months</SelectItem>
+                            <SelectItem value="3-6-months">3-6 Months</SelectItem>
+                            <SelectItem value="6-12-months">6-12 Months</SelectItem>
+                            <SelectItem value="flexible">Flexible</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          placeholder="Compensation Range (e.g., $20/hr - $30/hr or Unpaid)"
+                          value={companyData.compensationRange}
+                          onChange={(e) => setCompanyData({ ...companyData, compensationRange: e.target.value })}
+                        />
+                        <div className="flex justify-between gap-4">
+                          <div className="flex flex-col w-full gap-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleBack}
+                              className="w-full bg-transparent"
+                            >
+                              Back
+                            </Button>
+                            <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={isCompanySubmitting}>
+                              {isCompanySubmitting ? "Submitting..." : "Done"}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Right/Left Panel */}
+      <div className="hidden md:flex flex-1 items-center justify-center bg-gradient-to-br from-teal-600 to-blue-700 text-white px-10">
+        <div className="text-center space-y-4 max-w-md">
+          <h2 className="text-2xl font-semibold leading-snug">{title}</h2>
+          {author && <p className="text-white/80">{author}</p>}
+        </div>
+      </div>
+    </div>
+  )
+}
