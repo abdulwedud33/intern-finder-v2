@@ -389,12 +389,6 @@ exports.checkApplicationAccess = asyncHandler(async (req, res, next) => {
   next();
 });
 
-  res.status(200).json({
-    success: true,
-    count: applications.length,
-    data: applications
-  });
-  
 // @desc      Get all applications for the logged-in intern
 // @route     GET /api/applications/interns
 // @access    Private (Interns only)

@@ -5,10 +5,12 @@ import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
+import { useAuth } from "@/contexts/AuthContext"
 
 
 export function ClientSidebar() {
 const pathname = usePathname();
+const { logout } = useAuth();
 
 const links = [
     { href: "/dashboard/client", label: "Dashboard", icon: LayoutDashboard },
@@ -79,7 +81,7 @@ const link2= [
        {/* if user is in the dashboard/intern/profile show logout*/}
        <div className="mt-18">
            {pathname === "/dashboard/client/profile" && (
-        <Link href="/logout" className="my-4 p-2 flex items-center space-x-2 bg-white hover:bg-red-800 rounded-lg transition-colors">
+        <button onClick={async () => { try { await logout(); } catch(_) {} }} className="my-4 p-2 flex items-center space-x-2 bg-white hover:bg-red-800 rounded-lg transition-colors">
           {/*logout icon*/}
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -87,7 +89,7 @@ const link2= [
           <div>
             <p className="text-sm font-medium text-red-700">Logout</p>
           </div>
-        </Link>
+        </button>
         )}
         <Link href="/dashboard/intern/profile" className="flex items-center space-x-2 hover:bg-gray-50 p-1 rounded-lg transition-colors">
           <Avatar className="w-12 h-12">

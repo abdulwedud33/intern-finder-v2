@@ -9,9 +9,19 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
   // Get token from header or cookie
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    // Get token from header
     token = req.headers.authorization.split(' ')[1];
-  } else if (req.cookies.token) {
+  } else if (req.cookies && req.cookies.token) {
+    // Get token from httpOnly cookie
     token = req.cookies.token;
+  } else if (req.headers.cookie) {
+    // Fallback: parse cookie from headers if cookie-parser fails
+    const cookies = req.headers.cookie.split(';').reduce((cookies, cookie) => {
+      const [name, value] = cookie.trim().split('=');
+      cookies[name] = value;
+      return cookies;
+    }, {});
+    token = cookies.token;
   }
 
   if (!token) {

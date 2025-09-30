@@ -4,8 +4,7 @@ const morgan = require('morgan');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
-const swaggerJsdoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
+const cookieParser = require('cookie-parser');
 const { securityHeaders, limiter, requestSizeLimit, sanitizeInput } = require('./middleware/security');
 
 // Load environment variables
@@ -45,142 +44,115 @@ securityHeaders(app);
 // Rate limiting (apply to all routes)
 app.use(limiter);
 
+// Cookie parser - must be before CORS
+app.use(cookieParser(process.env.COOKIE_SECRET || 'your-secret-key'));
+
+// Body parser middleware
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Trust first proxy (if behind a proxy like nginx)
+app.set('trust proxy', 1);
+
 // Request size limiting
 app.use(requestSizeLimit);
-
-// Body parser with size limit
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Input sanitization
 app.use(sanitizeInput);
 
-// Enable CORS with frontend URL
-const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:3000',
-  'http://localhost:3001'
-];
-
-app.use(cors({
+// CORS configuration
+const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = `The CORS policy for this site does not allow access from the specified origin: ${origin}`;
-      return callback(new Error(msg), false);
+    // Allow all origins in development
+    if (process.env.NODE_ENV === 'development') {
+      return callback(null, true);
     }
-    return callback(null, true);
+    
+    // In production, restrict to specific origins
+    const allowedOrigins = [
+      'http://localhost:3000',
+      process.env.CLIENT_URL
+    ].filter(Boolean);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Auth-Token'],
-  exposedHeaders: ['Content-Range', 'X-Total-Count']
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With', 
+    'X-Auth-Token',
+    'Accept',
+    'Content-Length',
+    'Origin',
+    'X-Forwarded-For',
+    'Set-Cookie',
+    'Cookie'
+  ],
+  exposedHeaders: [
+    'Content-Range', 
+    'X-Total-Count',
+    'Set-Cookie',
+    'Authorization',
+    'X-Auth-Token'
+  ],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  maxAge: 86400 // 24 hours
+};
 
-// Handle preflight requests
-app.options('*', cors());
-
-// File uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Enable CORS with options
+app.use((req, res, next) => {
+  // Set CORS headers
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Auth-Token, Accept, Content-Length, Origin, X-Forwarded-For, Set-Cookie, Cookie');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Expose-Headers', 'Content-Range, X-Total-Count, Set-Cookie, Authorization, X-Auth-Token');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
 // Dev logging middleware
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Swagger setup
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Intern Finder API',
-      version: '1.0.0',
-      description: 'API for Intern Finder application',
-      contact: {
-        name: 'API Support',
-        url: 'https://github.com/yourusername/intern-finder-backend',
-      },
-      license: {
-        name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT',
-      },
-    },
-    servers: [
-      {
-        url: process.env.SERVER_URL || 'http://localhost:5000/api/v1',
-        description: 'Development server',
-      },
-      {
-        url: 'https://api.internfinder.app/api/v1',
-        description: 'Production server',
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'Enter JWT token in the format: Bearer <token>'
-        },
-      },
-    },
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
-  },
-  apis: [
-    './routes/*.js',
-    './models/*.js',
-    './docs/*.js',
-    './controllers/*.js'
-  ],
-};
 
-// Initialize swagger-jsdoc
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-
-// Serve Swagger documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  explorer: true,
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Intern Finder API',
-  customfavIcon: '/favicon.ico'
-}));
-
-// Serve Swagger JSON
-app.get('/api-docs.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
-
-// --- API Routes ---
-const apiV1 = express.Router();
-
-// Mount routes with API versioning
-const API_PREFIX = '/api';
-app.use(`${API_PREFIX}/auth`, authRoutes);
-app.use(`${API_PREFIX}/applications`, applicationRoutes);
-app.use(`${API_PREFIX}/jobs`, jobRoutes);
-app.use(`${API_PREFIX}/companies`, companyRoutes);
-app.use(`${API_PREFIX}/interns`, internRoutes);
-app.use(`${API_PREFIX}/reviews`, reviewRoutes);
-app.use(`${API_PREFIX}/interviews`, interviewRoutes);
-app.use(`${API_PREFIX}/company-interns`, companyInternRoutes);
-app.use(`${API_PREFIX}/intern-companies`, internCompanyRoutes);
-app.use(`${API_PREFIX}/users`, userRoutes);
+// Mount API routes with /api prefix
+app.use('/api/auth', authRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/api/companies', companyRoutes);
+app.use('/api/interns', internRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/interviews', interviewRoutes);
+app.use('/api/company-interns', companyInternRoutes);
+app.use('/api/intern-companies', internCompanyRoutes);
+app.use('/api/users', userRoutes);
 // Mount other routes as needed
-// app.use('/api/v1/stats', statsRoutes);
+// app.use('/api/stats', statsRoutes);
 
-// Mount API version 1
-app.use('/api', api);
-
-// Redirect root to API documentation
+// Root route
 app.get('/', (req, res) => {
-  res.redirect('/api-docs');
+  res.status(200).json({
+    success: true,
+    message: 'Welcome to the Intern Finder API',
+    version: '2.0.0'
+  });
 });
 
 // --- Error Handling Middleware ---
@@ -190,9 +162,6 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-  console.log(
-    `API Documentation available at http://localhost:${PORT}/api-docs`
-  );
 });
 
 // Handle unhandled promise rejections

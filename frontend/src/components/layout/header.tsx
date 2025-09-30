@@ -2,8 +2,9 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState , useEffect } from "react"
+import { useState, useEffect } from "react"
 import { User, Menu, ChevronRight } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -19,35 +20,18 @@ export default function Header() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [user, setUser] = useState<user | null>(null)
+  const { user: authUser, logout } = useAuth()
 
+  // Sync the local user state with the auth context
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        if (typeof window === "undefined") return
-        const token = localStorage.getItem("token")
-        if (!token) return
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (res.ok) {
-          const data = await res.json()
-          setUser(data.data)
-        } else {
-          setUser(null)
-        }
-      } catch {
-        // Silently ignore network errors to avoid breaking header
-        setUser(null)
-      }
-    }
-    fetchUser()
-  }, []) 
+    setUser(authUser)
+  }, [authUser])
 
   const dashboardPath =
     user?.role === "company" ? "/dashboard/client" : "/dashboard/intern"
 
 
-  const hideRoutes = ["/auth/login", "/auth/signup"]
+  const hideRoutes = ["/login", "/register"]
 
   const isJobsPage = pathname === "/jobs" || pathname.startsWith("/jobs/")
 
@@ -110,14 +94,6 @@ if (hideRoutes.includes(pathname) || isDashboardPage) {
                   About
                 </li>
               </Link>
-              <Link href={"/contact"} className={cn(
-                "text-sm font-medium transition-colors hover:text-teal-400",
-                pathname === "/contact" ? "text-teal-400" : "text-gray-300"
-              )}>
-                <li>
-                  Contact
-                </li>
-              </Link>
             </ul>
           </nav>
 
@@ -136,12 +112,11 @@ if (hideRoutes.includes(pathname) || isDashboardPage) {
                   </Link>
                 </Button>
                 <Button
-                  className="bg-teal-500 hover:bg-teal-600 text-white"
-                   onClick={() => {
-                  localStorage.removeItem("token")
-                  setUser(null)
-                  window.location.href = "/"
-                }}
+                  variant="ghost"
+                  className="text-white hover:text-teal-400 hover:bg-gray-800"
+                  onClick={async () => {
+                    try { await logout(); } catch (_) {}
+                  }}
                 >
                   Logout
                 </Button>
@@ -153,10 +128,10 @@ if (hideRoutes.includes(pathname) || isDashboardPage) {
               className="text-white hover:text-teal-400 hover:bg-gray-800"
               asChild
             >
-              <Link href="/auth/login">Login</Link>
+              <Link href="/login">Login</Link>
             </Button>
             <Button className="bg-teal-500 hover:bg-teal-600 text-white" asChild>
-              <Link href="/auth/signup">Sign Up</Link>
+              <Link href="/register">Register</Link>
             </Button>
           </div>
           )}
@@ -207,16 +182,18 @@ if (hideRoutes.includes(pathname) || isDashboardPage) {
             >
               Home
             </Link>
+            {user && (
             <Link
-              href="/dashboard"
+              href={dashboardPath}
               className={cn(
                 "text-sm font-medium hover:text-teal-400",
-                pathname === "/dashboard/intern" || pathname === "/dashboard/client" ? "text-teal-400" : "text-gray-300"
+                pathname === dashboardPath ? "text-teal-400" : "text-gray-300"
               )}
               onClick={() => setIsOpen(false)}
             >
               Dashboard
             </Link>
+            )}
             <Link
               href="/jobs"
               className={cn(
@@ -237,34 +214,36 @@ if (hideRoutes.includes(pathname) || isDashboardPage) {
             >
               About
             </Link>
-            <Link
-              href="/contact"
-              className={cn(
-                "text-sm font-medium hover:text-teal-400",
-                pathname === "/contact" ? "text-teal-400" : "text-gray-300"
-              )}
-              onClick={() => setIsOpen(false)}
-            >
-              Contact
-            </Link>
            </nav>
            
-
+           {user ? (
+            <Button
+              variant="ghost"
+              className="text-white hover:text-teal-400 hover:bg-gray-800"
+              asChild
+            >
+              <Link href={`${dashboardPath}/profile`}>
+                <User className="w-5 h-5 mr-2 inline" />
+                Profile
+              </Link>
+            </Button>
+           ) : (
           <div className="pt-6 space-y-2">
             <Button
               variant="ghost"
               className="text-white hover:text-teal-400 hover:bg-gray-700 w-full"
               asChild
             >
-              <Link href="/auth/login" onClick={() => setIsOpen(false)}>Login</Link>
+              <Link href="/login" onClick={() => setIsOpen(false)}>Login</Link>
             </Button>
             <Button
               className="bg-teal-500 hover:bg-teal-600 text-white w-full"
               asChild
             >
-              <Link href="/auth/signup" onClick={() => setIsOpen(false)}>Sign Up</Link>
+              <Link href="/register" onClick={() => setIsOpen(false)}>Register</Link>
             </Button>
           </div>
+          )}
         </div>
       </div>
     </header>

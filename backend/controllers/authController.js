@@ -146,13 +146,27 @@ exports.logout = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.getMe = asyncHandler(async (req, res, next) => {
-  // The user is already available in req.user thanks to the 'protect' middleware
-  const user = await User.findById(req.user.id);
-  
-  res.status(200).json({
-    success: true,
-    data: user
-  });
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    console.error('Error in getMe:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving user data'
+    });
+  }
 });
 
 /**
@@ -292,10 +306,10 @@ const sendTokenResponse = (user, statusCode, res) => {
   // Create token
   const token = user.getSignedJwtToken();
 
+  const cookieDaysRaw = process.env.JWT_COOKIE_EXPIRE;
+  const cookieDays = cookieDaysRaw && !isNaN(Number(cookieDaysRaw)) ? Number(cookieDaysRaw) : 30;
   const options = {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
-    ),
+    expires: new Date(Date.now() + cookieDays * 24 * 60 * 60 * 1000),
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production'
   };

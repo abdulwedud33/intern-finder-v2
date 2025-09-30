@@ -18,21 +18,9 @@ import goodLife from "../../public/images/good life.avif";
 import work1 from "../../public/images/work1.jpg";
 import work2 from "../../public/images/work2.jpg";
 import betterFuture from "../../public/images/better future.jpg";
-import { useListings } from "@/hooks/useListings"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 
 const FEATURED_JOBS_COUNT = 4
-
-const categories = [
-  { name: "Design", count: "235 Jobs", icon: "🎨" },
-  { name: "Sales", count: "756 Jobs", icon: "💼" },
-  { name: "Marketing", count: "140 Jobs", icon: "📈" },
-  { name: "Finance", count: "325 Jobs", icon: "💰" },
-  { name: "Technology", count: "436 Jobs", icon: "💻" },
-  { name: "Engineering", count: "542 Jobs", icon: "⚙️" },
-  { name: "Business", count: "211 Jobs", icon: "🏢" },
-  { name: "Human Resource", count: "346 Jobs", icon: "👥" },
-]
 
 const testimonials = [
   {
@@ -70,9 +58,53 @@ const blogPosts = [
   },
 ]
 
+import { useEffect, useState } from "react"
+
 export default function Homepage() {
-  const { data: listingsData, isLoading, error } = useListings({ limit: FEATURED_JOBS_COUNT })
-  const featuredJobs = listingsData?.data?.slice(0, FEATURED_JOBS_COUNT) || []
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [featuredJobs, setFeaturedJobs] = useState<any[]>([])
+
+  useEffect(() => {
+    // Simulate fetching jobs (replace with real API call)
+    setIsLoading(true)
+    setError(null)
+    setTimeout(() => {
+      // Example: Replace with actual fetch logic
+      // setFeaturedJobs(data)
+      setFeaturedJobs([
+        {
+          id: "1",
+          _id: "1",
+          title: "Frontend Developer",
+          company: {
+            name: "Tech Corp",
+            profile: { logoUrl: "/placeholder.svg" }
+          },
+          typesOfEmployment: ["Full-time"],
+          location: "Remote",
+          createdAt: new Date().toISOString(),
+          salaryRange: { min: 50000, max: 80000 },
+          salary: "Competitive"
+        },
+        {
+          id: "2",
+          _id: "2",
+          title: "Backend Developer",
+          company: {
+            name: "Innovate LLC",
+            profile: { logoUrl: "/placeholder.svg" }
+          },
+          typesOfEmployment: ["Part-time"],
+          location: "New York",
+          createdAt: new Date().toISOString(),
+          salaryRange: { min: 60000, max: 90000 },
+          salary: "Competitive"
+        }
+      ])
+      setIsLoading(false)
+    }, 1200)
+  }, [])
 
   return (
     <div className="min-h-screen">
@@ -223,27 +255,6 @@ export default function Homepage() {
         </div>
       </section>
       
-      {/* Browse by Category */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Browse by Category</h2>
-            <p className="text-gray-600">Find the job that's perfect for you. about 800+ new jobs everyday</p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {categories.map((category) => (
-              <Card key={category.name} className="text-center hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6">
-                  <div className="text-3xl mb-3">{category.icon}</div>
-                  <h3 className="font-semibold text-gray-900 mb-1">{category.name}</h3>
-                  <p className="text-sm text-gray-600">{category.count}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Good Life Section */}
       <section className="py-16 text-black">
@@ -355,38 +366,6 @@ export default function Homepage() {
                       </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Blog Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">News and Blog</h2>
-            <p className="text-gray-600">Get the latest news, updates and tips</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {blogPosts.map((post, index) => (
-              <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="aspect-video relative">
-                  <Image src={post.image} alt={post.title} fill className="object-cover" />
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center text-sm text-gray-500 mb-3">
-                    <span>{post.date}</span>
-                    <span className="mx-2">•</span>
-                    <span>By {post.author}</span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{post.title}</h3>
-                  <p className="text-gray-600 mb-4">{post.excerpt}</p>
-                  <Button variant="ghost" className="p-0 h-auto text-teal-600 hover:text-teal-700">
-                    Read More <ArrowRight className="h-4 w-4 ml-1" />
-                  </Button>
                 </CardContent>
               </Card>
             ))}

@@ -5,11 +5,23 @@ dotenv.config();
 
 const connectDB = async () => {
   try {
-    // Mongoose.connect now returns a promise of the connection object
+    // Add connection event listeners
+    mongoose.connection.on('connecting', () => {
+      console.log('MongoDB: Connecting...');
+    });
+
+    mongoose.connection.on('connected', () => {
+      console.log('MongoDB: Connected successfully');
+    });
+
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+    });
+
+    // Mongoose.connect with additional options for better reliability
     const conn = await mongoose.connect(process.env.MONGODB_URI);
 
-    // REFINED: Log the host of the connected database for better debugging.
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`MongoDB Connected to: ${conn.connection.host}`);
   } catch (error) {
     console.error(`MongoDB Connection Error: ${error.message}`);
     // REFINED: Exit process with failure code. Your original code did this correctly.

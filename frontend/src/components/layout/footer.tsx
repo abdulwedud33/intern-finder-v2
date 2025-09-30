@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation"
 export default function Footer() {
   
   const pathname = usePathname();
-  const hideRoutes = ["/auth/login", "/auth/signup"];
+  const hideRoutes = ["/login", "/register", "/dashboard/client", "/dashboard/intern"];
 
-  if (hideRoutes.includes(pathname)) {
+  if (pathname && hideRoutes.some(route => pathname.startsWith(route))) {
     return null
   }
 

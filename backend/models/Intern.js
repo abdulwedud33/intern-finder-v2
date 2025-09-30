@@ -113,6 +113,17 @@ const internSchema = new mongoose.Schema({
     }
   },
   
+  // Registration details aligned with frontend
+  workAuthorization: {
+    type: String,
+    trim: true
+  },
+  availability: {
+    type: String,
+    trim: true
+  },
+  preferredIndustries: [String],
+  
   // Application Status
   profileCompletion: {
     type: Number,

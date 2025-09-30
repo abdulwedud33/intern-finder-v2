@@ -353,25 +353,67 @@ exports.getInternStats = asyncHandler(async (req, res, next) => {
     }
   });
 });
-     
+
+// @desc    Update intern profile
+// @route   PUT /api/v1/interns/me
+// @access  Private (Intern)
+exports.updateInternProfile = asyncHandler(async (req, res, next) => {
+  if (req.user.role !== 'intern') {
+    return next(new ErrorResponse('Not authorized to update intern profile', 403));
+  }
+
+  const {
+    firstName,
+    lastName,
+    headline,
+    bio,
+    location,
+    website,
+    github,
+    linkedin,
+    twitter,
+    education,
+    skills,
+    experience,
+    resume,
+    profilePicture
+  } = req.body;
+
+  // Find the intern (which is a User with role=intern)
+  let intern = await Intern.findById(req.user.id);
+
+  if (!intern) {
+    return next(new ErrorResponse('Intern not found', 404));
+  }
 
   // Update fields
-  if (firstName) intern.firstName = firstName;
-  if (lastName) intern.lastName = lastName;
-  if (headline) intern.headline = headline;
-  if (bio) intern.bio = bio;
-  if (location) intern.location = location;
-  if (website) intern.website = website;
-  if (github) intern.social.github = github;
-  if (linkedin) intern.social.linkedin = linkedin;
-  if (twitter) intern.social.twitter = twitter;
-  if (education) intern.education = education;
-  if (skills) intern.skills = skills;
-  if (experience) intern.experience = experience;
-  if (resume) intern.resume = resume;
-  if (profilePicture) intern.profilePicture = profilePicture;
+  const updateFields = {
+    ...(firstName && { firstName }),
+    ...(lastName && { lastName }),
+    ...(headline && { headline }),
+    ...(bio && { bio }),
+    ...(location && { location }),
+    ...(website && { website }),
+    ...(education && { education }),
+    ...(skills && { skills }),
+    ...(experience && { experience }),
+    ...(resume && { resume }),
+    ...(profilePicture && { profilePicture }),
+    social: {
+      ...intern.social,
+      ...(github && { github }),
+      ...(linkedin && { linkedin }),
+      ...(twitter && { twitter })
+    },
+    updatedAt: Date.now()
+  };
 
-  await intern.save();
+  // Update intern
+  intern = await Intern.findByIdAndUpdate(
+    req.user.id,
+    { $set: updateFields },
+    { new: true, runValidators: true }
+  );
 
   // Update user's name if changed
   if (firstName || lastName) {
@@ -383,6 +425,7 @@ exports.getInternStats = asyncHandler(async (req, res, next) => {
     success: true,
     data: intern
   });
+});
 
 // @desc    Get intern by ID
 // @route   GET /api/interns/:id
