@@ -13,43 +13,42 @@ import { ArrowLeft, Upload, MapPin, Clock, DollarSign, Users } from "lucide-reac
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getListingById } from "@/services/listingsService"
-import { applyToListing } from "@/services/applicationsService"
+import { useJobById } from "@/hooks/useJobs"
+import { useCreateApplication } from "@/hooks/useApplications"
 import { useToast } from "@/components/ui/use-toast"
-import { useAuthUser } from "@/hooks/useAuth"
+import { useAuth } from "@/contexts/AuthContext"
 
 function JobApplicationContent({ listingId }: { listingId: string }) {
-  const { data: user } = useAuthUser()
+  const { user } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
   const queryClient = useQueryClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [formData, setFormData] = useState({
     coverLetter: "",
-    previousJobTitle: "",
   })
+
+  const { job, loading: jobLoading, error: jobError } = useJobById(listingId)
+  const createApplicationMutation = useCreateApplication()
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!resumeFile) {
-        throw new Error("Resume file is required")
+      if (!job) {
+        throw new Error("Job not found")
       }
 
-      const formDataToSend = new FormData()
-      formDataToSend.append("coverLetter", formData.coverLetter)
-      formDataToSend.append("previousJobTitle", formData.previousJobTitle)
-      formDataToSend.append("resume", resumeFile)
-
-      return await applyToListing(listingId, formDataToSend)
+      return await createApplicationMutation.mutateAsync({
+        jobId: listingId,
+        coverLetter: formData.coverLetter,
+      })
     },
     onSuccess: () => {
       toast({
         title: "Application submitted successfully!",
-        description: `Your application for ${jobData.title} at ${jobData.company} has been submitted. You'll hear back from the company soon.`,
+        description: `Your application for ${job?.title} at ${job?.company?.name} has been submitted. You'll hear back from the company soon.`,
         duration: 5000,
       })
-      queryClient.invalidateQueries({ queryKey: ["my-applications"] })
+      queryClient.invalidateQueries({ queryKey: ["myApplications"] })
       // Delay redirect to allow user to see the success message
       setTimeout(() => {
         router.push(`/jobs/${listingId}`)
@@ -61,11 +60,6 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
         typeof err?.response?.data?.message === "string" ? err.response.data.message : "Failed to submit application"
       toast({ title: "Could not apply", description: String(message), variant: "destructive" })
     },
-  })
-
-  const { data } = useQuery({
-    queryKey: ["listing", listingId],
-    queryFn: () => getListingById(listingId),
   })
 
   // Handle redirection for non-intern users
@@ -80,29 +74,41 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
     return null
   }
 
-  const listing = (data as { data?: unknown } | undefined)?.data as
-    | {
-        title?: string
-        user?: { name?: string }
-        location?: string
-        typesOfEmployment?: string[]
-        type?: string
-        salaryRange?: { min: number; max: number }
-        applicantsCount?: number
-        description?: string
-        qualifications?: string[]
-      }
-    | undefined
+  // Show loading state
+  if (jobLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading job details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (jobError || !job) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Failed to load job details</p>
+          <Button asChild>
+            <Link href={`/jobs/${listingId}`}>Back to Job</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   const jobData = {
-    title: listing?.title || "",
-    company: listing?.user?.name || "",
-    location: listing?.location || "",
-    type: Array.isArray(listing?.typesOfEmployment) ? listing?.typesOfEmployment.join(", ") : listing?.type || "",
-    salary: listing?.salaryRange ? `$${listing.salaryRange.min} - $${listing.salaryRange.max}` : "",
-    applicants: listing?.applicantsCount ?? 0,
-    description: listing?.description || "",
-    requirements: Array.isArray(listing?.qualifications) ? listing?.qualifications : [],
+    title: job.title || "",
+    company: job.company?.name || "",
+    location: job.location || "",
+    type: job.type || "",
+    salary: job.salary ? `$${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()} ${job.salary.currency}/${job.salary.period}` : "",
+    applicants: 0, // This would need to be fetched separately
+    description: job.description || "",
+    requirements: job.requirements || [],
   }
 
   const handleInputChange = (field: string, value: string) => {
@@ -235,21 +241,8 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
                   <form onSubmit={handleSubmit} className="space-y-8">
                     <div className="space-y-6">
                       <div className="border-b pb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
-                        <p className="text-sm text-gray-600">Basic details about yourself</p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="previousJobTitle" className="text-sm font-medium">
-                          Previous Job Title
-                        </Label>
-                        <Input
-                          id="previousJobTitle"
-                          value={formData.previousJobTitle}
-                          onChange={(e) => handleInputChange("previousJobTitle", e.target.value)}
-                          placeholder="Enter your most recent job title or 'Student' if no previous experience"
-                          className="h-11"
-                        />
+                        <h3 className="text-lg font-semibold text-gray-900">Application Information</h3>
+                        <p className="text-sm text-gray-600">Tell us why you're interested in this position</p>
                       </div>
                     </div>
 
@@ -274,45 +267,12 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
                       </div>
                     </div>
 
-                    <div className="space-y-6">
-                      <div className="border-b pb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Resume & Documents</h3>
-                        <p className="text-sm text-gray-600">Upload your latest resume and any supporting documents</p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Attach your resume *</Label>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-teal-400 hover:bg-teal-50 transition-all duration-200 cursor-pointer group">
-                          <input
-                            type="file"
-                            accept=".pdf,.doc,.docx"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) {
-                                setResumeFile(file)
-                              }
-                            }}
-                            className="hidden"
-                            id="resume-upload"
-                          />
-                          <label htmlFor="resume-upload" className="cursor-pointer">
-                            <Upload className="h-12 w-12 text-gray-400 group-hover:text-teal-500 mx-auto mb-4 transition-colors" />
-                            <p className="text-base text-gray-600 mb-2">
-                              <span className="text-teal-600 font-medium">Click to upload</span> or drag and drop your
-                              resume
-                            </p>
-                            <p className="text-sm text-gray-500">PDF, DOC, DOCX (max. 10MB)</p>
-                            {resumeFile && <p className="text-sm text-green-600 mt-2">Selected: {resumeFile.name}</p>}
-                          </label>
-                        </div>
-                      </div>
-                    </div>
 
                     <div className="space-y-6 pt-6 border-t">
                       <Button
                         type="submit"
                         className="w-full bg-teal-600 hover:bg-teal-700 text-white py-4 text-base font-medium rounded-lg transition-colors"
-                        disabled={isSubmitting || !resumeFile}
+                        disabled={isSubmitting || !formData.coverLetter.trim()}
                       >
                         {isSubmitting ? "Submitting Application..." : "Submit Application"}
                       </Button>

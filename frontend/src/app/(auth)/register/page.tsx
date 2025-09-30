@@ -517,13 +517,13 @@ export default function RegisterPage() {
         body: JSON.stringify(payload),
         credentials: 'include',
       });
-
+      
       const resData = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(resData?.message || 'Registration failed');
       }
-
-      toast({
+        
+        toast({
         title: 'Registration Successful!',
         description: `Your ${data.role} account has been created successfully. Redirecting to login...`,
       });

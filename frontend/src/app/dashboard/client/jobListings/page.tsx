@@ -1,24 +1,60 @@
 "use client"
+
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Filter, Calendar } from "lucide-react"
+import { MoreHorizontal, Filter, Calendar, Edit, Trash2, Eye } from "lucide-react"
 import Link from "next/link"
-import { useCompanyListings, useDeleteListing } from "@/hooks/useListings"
+import { useCompanyJobs, useDeleteJob, useCloseJob } from "@/hooks/useJobManagement"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function JobListingsPage() {
-  const { data, isLoading, error } = useCompanyListings()
-  const deleteListingMutation = useDeleteListing()
+  const { data, isLoading, error } = useCompanyJobs()
+  const deleteJobMutation = useDeleteJob()
+  const closeJobMutation = useCloseJob()
+  const { toast } = useToast()
   
   // Backend now handles filtering, so we just use the data directly
-  const listings = data?.data || []
+  const jobs = data?.data || []
   
-  const handleDeleteListing = (listingId: string) => {
-    deleteListingMutation.mutate(listingId)
+  const handleDeleteJob = (jobId: string) => {
+    deleteJobMutation.mutate(jobId, {
+      onSuccess: () => {
+        toast({
+          title: "Job deleted successfully",
+          description: "The job listing has been removed.",
+        });
+      },
+      onError: () => {
+        toast({
+          title: "Failed to delete job",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+      },
+    });
+  }
+
+  const handleCloseJob = (jobId: string) => {
+    closeJobMutation.mutate(jobId, {
+      onSuccess: () => {
+        toast({
+          title: "Job closed successfully",
+          description: "The job listing is now closed to new applications.",
+        });
+      },
+      onError: () => {
+        toast({
+          title: "Failed to close job",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+      },
+    });
   }
   return (
     <div className="p-6 space-y-6">
@@ -57,44 +93,50 @@ export default function JobListingsPage() {
           <LoadingCard />
         ) : error ? (
           <ErrorDisplay error={error} title="Failed to load job listings" />
-        ) : listings.length === 0 ? (
+        ) : jobs.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No job listings found. Create your first job posting!
-            <div className="mt-4 text-xs text-gray-400">
-              Debug: isLoading={String(isLoading)}, error={String(error)}, 
-              dataExists={String(!!data)}, listingsCount={listings.length}
-            </div>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Roles</TableHead>
+                <TableHead>Job Title</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date Posted</TableHead>
-                <TableHead>Due Date</TableHead>
+                <TableHead>Application Deadline</TableHead>
                 <TableHead>Job Type</TableHead>
-                <TableHead>Applicants</TableHead>
-                <TableHead>Needs</TableHead>
-                <TableHead></TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {listings.map((job: any) => (
+              {jobs.map((job: any) => (
               <TableRow key={job._id}>
                 <TableCell className="font-medium">{job.title}</TableCell>
                 <TableCell>
-                  <Badge className={job.status === "Live" || job.status === "open" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-                    {job.status || "open"}
+                  <Badge className={
+                    job.status === "active" 
+                      ? "bg-green-100 text-green-800" 
+                      : job.status === "closed"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }>
+                    {job.status || "draft"}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-gray-600">{job.createdAt ? new Date(job.createdAt).toLocaleDateString() : ""}</TableCell>
-                <TableCell className="text-gray-600">{job.dueDate ? new Date(job.dueDate).toLocaleDateString() : "—"}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{Array.isArray(job.typesOfEmployment) ? job.typesOfEmployment.join(", ") : (job.type || "")}</Badge>
+                <TableCell className="text-gray-600">
+                  {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : "—"}
                 </TableCell>
-                <TableCell className="font-medium">{job.applicantsCount ?? 0}</TableCell>
-                <TableCell className="text-gray-600">{job.capacity ?? 0}</TableCell>
+                <TableCell className="text-gray-600">
+                  {job.applicationDeadline ? new Date(job.applicationDeadline).toLocaleDateString() : "—"}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{job.type || "—"}</Badge>
+                </TableCell>
+                <TableCell className="text-gray-600">
+                  {job.isRemote ? "Remote" : job.location || "—"}
+                </TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -104,15 +146,31 @@ export default function JobListingsPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/client/jobListings/${job._id}`}>View Job Details</Link>
+                        <Link href={`/jobs/${job._id}`}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Job
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/client/jobListings/${job._id}/applicants`}>View Applicants</Link>
+                        <Link href={`/dashboard/client/jobListings/${job._id}/applicants`}>
+                          View Applicants
+                        </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem>Edit Job</DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/dashboard/client/jobListings/${job._id}/edit`}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Job
+                        </Link>
+                      </DropdownMenuItem>
+                      {job.status === "active" && (
+                        <DropdownMenuItem onClick={() => handleCloseJob(job._id)}>
+                          Close Job
+                        </DropdownMenuItem>
+                      )}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem className="text-red-600">
+                            <Trash2 className="h-4 w-4 mr-2" />
                             Delete Job
                           </DropdownMenuItem>
                         </AlertDialogTrigger>
@@ -126,11 +184,11 @@ export default function JobListingsPage() {
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction 
-                              onClick={() => handleDeleteListing(job._id)}
+                              onClick={() => handleDeleteJob(job._id)}
                               className="bg-red-600 hover:bg-red-700"
-                              disabled={deleteListingMutation.isPending}
+                              disabled={deleteJobMutation.isPending}
                             >
-                              {deleteListingMutation.isPending ? "Deleting..." : "Delete Job"}
+                              {deleteJobMutation.isPending ? "Deleting..." : "Delete Job"}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

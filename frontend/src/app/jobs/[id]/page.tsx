@@ -7,28 +7,28 @@ import { Separator } from "@/components/ui/separator"
 import { MapPin, Clock, DollarSign, Share2, Heart, Briefcase } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useListing, useListings } from "@/hooks/useListings"
-import { useApplyToListing } from "@/hooks/useApplications"
-import { useAuthUser } from "@/hooks/useAuth"
+import { useJobById, useJobs, type Job } from "@/hooks/useJobs"
+import { useAuth } from "@/contexts/AuthContext"
 import { LoadingPage } from "@/components/ui/loading-spinner"
 import { ErrorPage } from "@/components/ui/error-boundary"
-import { use } from "react"
-
+import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
 
 const RELATED_JOBS_COUNT = 3
 
-export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params)
-  const { data, isLoading, error } = useListing(resolvedParams.id)
-  const { data: allListingsData } = useListings({ limit: 20 })
-  const { data: user } = useAuthUser()
-  const applyMutation = useApplyToListing()
+interface JobDetailPageProps {
+  params: { id: string }
+}
+
+export default function JobDetailPage({ params }: JobDetailPageProps) {
+  const router = useRouter()
+  const { toast } = useToast()
+  const { job, loading, error } = useJobById(params.id)
+  const { jobs: allJobs = [] } = useJobs({ limit: 20 })
+  const { user } = useAuth()
 
   // Check if user is an intern
   const isIntern = user?.role === 'intern'
-
-  // Extract the actual listing from the API response
-  const listing = (data as any)?.listing || (data as any)?.data
 
   // Helper function to validate and format logo URL
   const getValidLogoUrl = (logoUrl: string | undefined) => {
@@ -38,43 +38,45 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     return logoUrl
   }
 
-  // Get related jobs based on company or similar criteria
+  // Type guard to check if job has the expected properties
+  const isJobValid = (job: any): job is Job => {
+    return job && typeof job === 'object' && '_id' in job
+  }
+
+  // Get related jobs from the same company (max 3)
   const getRelatedJobs = () => {
-    if (!listing || !allListingsData?.data) return []
+    if (!job || !allJobs.length) return []
     
-    const allJobs = allListingsData.data
-    const currentJobId = listing._id || listing.id
-    const currentCompany = listing.company?.name
+    const currentJobId = job._id
+    const currentCompanyId = job.company?._id
     
-    // First try to get jobs from the same company
+    // Get jobs from the same company only
     const sameCompanyJobs = allJobs
-      .filter((job: any) => 
-        (job._id || job.id) !== currentJobId && 
-        job.company?.name === currentCompany
-      )
+      .filter(j => j._id !== currentJobId && j.company?._id === currentCompanyId)
       .slice(0, RELATED_JOBS_COUNT)
     
-    // If we have enough jobs from the same company, return them
-    if (sameCompanyJobs.length >= RELATED_JOBS_COUNT) {
-      return sameCompanyJobs
-    }
-    
-    // Otherwise, fill remaining slots with other jobs
-    const otherJobs = allJobs
-      .filter((job: any) => 
-        (job._id || job.id) !== currentJobId && 
-        job.company?.name !== currentCompany
-      )
-      .slice(0, RELATED_JOBS_COUNT - sameCompanyJobs.length)
-    
-    return [...sameCompanyJobs, ...otherJobs]
+    return sameCompanyJobs
   }
 
   const relatedJobs = getRelatedJobs()
 
-  if (isLoading) return <LoadingPage />
-  if (error) return <ErrorPage error={error} />
-  if (!listing) return <ErrorPage title="Job not found" description="The job listing you're looking for doesn't exist." />
+  const handleApply = () => {
+    if (!isIntern) {
+      // Redirect to login or show signup modal
+      router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
+      return
+    }
+    
+    // TODO: Implement application submission
+    toast({
+      title: 'Apply for job',
+      description: 'Application functionality will be implemented in the next step.',
+    })
+  }
+
+  if (loading) return <LoadingPage />
+  if (error) return <ErrorPage error={{ message: error.toString() }} />
+  if (!job || !isJobValid(job)) return <ErrorPage error={{ message: 'Job not found' }} />
 
   return (
     <div className="bg-white min-h-screen">
@@ -91,79 +93,112 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row justify-between gap-6 mb-6">
                   <div className="flex items-start gap-4">
-                    <Image
-                      src={getValidLogoUrl(listing?.company?.profile?.logoUrl)}
-                      alt={listing?.company?.name || "Company"}
-                      width={60}
-                      height={60}
-                      className="rounded-lg"
-                    />
+                    <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                      {job.company?.logo ? (
+                        <Image
+                          src={getValidLogoUrl(job.company.logo)}
+                          alt={`${job.company.name} logo`}
+                          width={80}
+                          height={80}
+                          className="object-contain p-2"
+                        />
+                      ) : (
+                        <div className="text-2xl font-bold text-gray-400">
+                          {job.company?.name?.charAt(0) || 'C'}
+                        </div>
+                      )}
+                    </div>
                     <div>
-                      <h1 className="text-2xl font-semibold text-gray-900">{listing?.title || "Loading..."}</h1>
-                      <p className="text-gray-600">{listing?.company?.name || ""}</p>
+                      <h1 className="text-2xl font-semibold text-gray-900">{job.title}</h1>
+                      <p className="text-gray-600">{job.company?.name}</p>
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mt-2">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {listing?.location || ""}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {listing?.createdAt ? new Date(listing.createdAt).toDateString() : ""}
-                        </span>
-                        {listing?.typesOfEmployment?.length > 0 ? <Badge variant="secondary">{listing.typesOfEmployment.join(", ")}</Badge> : null}
+                        <h2 className="text-xl font-semibold mb-4">Job Description</h2>
+                        <div className="prose max-w-none">
+                          <p>{job.description || 'No description provided.'}</p>
+                          
+                          {job.responsibilities && job.responsibilities.length > 0 && (
+                            <div className="mt-6">
+                              <h3 className="text-lg font-medium mb-2">Responsibilities</h3>
+                              <ul className="list-disc pl-5 space-y-2">
+                                {job.responsibilities.map((item: string, index: number) => (
+                                  <li key={index}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          
+                          {job.requirements && job.requirements.length > 0 && (
+                            <div className="mt-6">
+                              <h3 className="text-lg font-medium mb-2">Requirements</h3>
+                              <ul className="list-disc pl-5 space-y-2">
+                                {job.requirements.map((item: string, index: number) => (
+                                  <li key={index}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-2">
-                    <Button variant="outline" size="sm">
-                      <Heart className="h-4 w-4 mr-1" />
-                      Save
+                  <div className="flex items-center gap-4">
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => {
+                        // TODO: Implement save job functionality
+                        toast({
+                          title: 'Save Job',
+                          description: 'This feature will be implemented soon.'
+                        })
+                      }}
+                    >
+                      <Heart className="w-5 h-5" />
                     </Button>
-                    <Button variant="outline" size="sm">
-                      <Share2 className="h-4 w-4 mr-1" />
-                      Share
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => {
+                        // Implement share functionality
+                        if (navigator.share) {
+                          navigator.share({
+                            title: job.title,
+                            text: `Check out this job: ${job.title} at ${job.company?.name}`,
+                            url: window.location.href,
+                          }).catch(console.error);
+                        } else {
+                          navigator.clipboard.writeText(window.location.href);
+                          toast({
+                            title: 'Link copied to clipboard!',
+                            description: 'Share this job with others!',
+                          });
+                        }
+                      }}
+                    >
+                      <Share2 className="w-5 h-5" />
                     </Button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4">
-                  <div className="text-teal-600 text-lg font-medium flex items-center">
-                    <DollarSign className="h-5 w-5 mr-1" />
-                    {listing?.salaryRange ? `$${listing.salaryRange.min} - $${listing.salaryRange.max}` : listing?.salary || ""}
+                    <Button 
+                      className="bg-[#19C0A8] hover:bg-[#15a894] text-white" 
+                      onClick={handleApply}
+                      disabled={!isIntern}
+                    >
+                      {isIntern ? 'Apply Now' : 'Login as Intern to Apply'}
+                    </Button>
                   </div>
                 </div>
                 
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4">
+                  <div className="text-teal-600 text-lg font-medium flex items-center">
+                    <DollarSign className="h-5 w-5 mr-1" />
+                    {job.salary 
+                      ? `$${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()} ${job.salary.currency}`
+                      : 'Not specified'}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {[ ["Job Description", listing?.description], ["Key Responsibilities", listing?.keyResponsibilities], ["Preferred Skills", listing?.qualifications] ].map(([title, content], idx) => (
-              <Card key={idx}>
-                <CardHeader>
-                  <CardTitle>{title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {Array.isArray(content) ? (
-                    <ul className="space-y-2">
-                      {content.map((item, i) => (
-                        <li key={i} className="flex items-start">
-                          <span className="text-teal-600 mr-2">•</span>
-                          <span className="text-gray-700">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-700 leading-relaxed">{content as string}</p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-
-            <div className="flex flex-wrap gap-2">
-              {(listing?.skills || []).map((skill: string) => (
-                <Badge key={skill} variant="outline" className="text-sm">{skill}</Badge>
-              ))}
-            </div>
           </div>
 
           {/* Sidebar */}
@@ -172,7 +207,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               <CardContent className="p-6">
                 {isIntern ? (
                   <Button size="lg" className="w-full bg-teal-600 hover:bg-teal-700 mb-4" asChild>
-                    <Link href={`/jobs/${resolvedParams.id}/apply`}>Apply Now</Link>
+                    <Link href={`/jobs/${params.id}/apply`}>Apply Now</Link>
                   </Button>
                 ) : (
                   <Button size="lg" className="w-full bg-gray-400 text-white mb-4" disabled>
@@ -190,19 +225,36 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 <CardTitle>Job Overview</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {[
-                  ["Job Title", listing?.title],
-                  ["Location", listing?.location],
-                  ["Job Type", listing?.type],
-                  ["Salary", listing?.salaryRange ? `$${listing.salaryRange.min} - $${listing.salaryRange.max}` : ""],
-                ].map(([label, value], i) => (
-                  <div key={i}>
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>{label}</span>
-                      <span className="text-gray-900 font-medium">{value as string}</span>
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Job Type</p>
+                    <p className="font-medium">{job.type || 'Full-time'}</p>
                   </div>
-                ))}
+                  <div>
+                    <p className="text-sm text-gray-500">Experience</p>
+                    <p className="font-medium capitalize">{job.level || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Salary</p>
+                    <p className="font-medium">
+                      {job.salary 
+                        ? `$${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()} ${job.salary.currency}`
+                        : 'Not specified'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Location</p>
+                    <p className="font-medium">{job.isRemote ? 'Remote' : job.location || 'Not specified'}</p>
+                  </div>
+                  {job.applicationDeadline && (
+                    <div>
+                      <p className="text-sm text-gray-500">Application Deadline</p>
+                      <p className="font-medium">
+                        {new Date(job.applicationDeadline).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
              <Card>
@@ -235,52 +287,63 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
           </div>
         </div>
 
-        {/* Related Jobs */}
+        {/* Recent Jobs from Same Company */}
         <div className="mt-16">
-          <h2 className="text-xl font-semibold text-gray-900 mb-1">Related Jobs</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-1">Recent Jobs from {job.company?.name}</h2>
           <p className="text-sm text-gray-600 mb-6">
-            Jobs from the same company and similar opportunities.
+            Other opportunities from the same company.
           </p>
           <div className="space-y-4">
             {relatedJobs.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
-                <p>No related jobs found.</p>
-                <p className="text-sm mt-2">Debug: listing={!!listing}, allListingsData={!!allListingsData?.data}, dataLength={allListingsData?.data?.length || 0}, currentId={listing?._id || listing?.id}</p>
+                <p>No other jobs from this company found.</p>
+                <p className="text-sm mt-2">Check back later for more opportunities from {job.company?.name}.</p>
               </div>
             ) : (
-              relatedJobs.map((job: any) => (
-              <Card key={job._id || job.id} className="border p-4">
+              relatedJobs.map((relatedJob: any) => (
+              <Card key={relatedJob._id} className="border p-4">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex items-start gap-4">
-                    <Image
-                      src={getValidLogoUrl(job.company?.profile?.logoUrl)}
-                      alt={job.company?.name || "Company"}
-                      width={48}
-                      height={48}
-                      className="rounded-md"
-                    />
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                      {relatedJob.company?.logo ? (
+                        <Image
+                          src={relatedJob.company.logo}
+                          alt={`${relatedJob.company.name} logo`}
+                          width={48}
+                          height={48}
+                          className="object-contain p-2"
+                        />
+                      ) : (
+                        <div className="text-2xl font-bold text-gray-400">
+                          {relatedJob.company?.name?.charAt(0) || 'C'}
+                        </div>
+                      )}
+                    </div>
                     <div>
-                      <Badge className="mb-1">{job.typesOfEmployment?.join(", ") || "Full-time"}</Badge>
-                      <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
-                      <p className="text-sm text-gray-600">{job.company?.name}</p>
+                      <Badge className="mb-1">{relatedJob.type || "Full-time"}</Badge>
+                      <h3 className="text-lg font-semibold text-gray-900">{relatedJob.title}</h3>
+                      <p className="text-sm text-gray-600">{relatedJob.company?.name}</p>
                       <div className="flex flex-wrap gap-3 text-sm text-gray-500 mt-1">
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          {job.createdAt ? new Date(job.createdAt).toDateString() : "Recently"}
+                          {relatedJob.createdAt ? new Date(relatedJob.createdAt).toDateString() : "Recently"}
                         </div>
                         <div className="flex items-center gap-1">
                           <MapPin className="h-4 w-4" />
-                          {job.location}
+                          {relatedJob.isRemote ? "Remote" : relatedJob.location}
                         </div>
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-4 w-4" />
-                          {job.salaryRange ? `$${job.salaryRange.min} - $${job.salaryRange.max}` : job.salary || "Competitive"}
+                          {relatedJob.salary 
+                            ? `$${relatedJob.salary.min.toLocaleString()} - $${relatedJob.salary.max.toLocaleString()} ${relatedJob.salary.currency}`
+                            : "Competitive"
+                          }
                         </div>
                       </div>
                     </div>
                   </div>
                   <Button size="sm" variant="outline" className="text-teal-300 self-start md:self-auto" asChild>
-                    <Link href={`/jobs/${job._id || job.id}`}>Job Details</Link>
+                    <Link href={`/jobs/${relatedJob._id}`}>Job Details</Link>
                   </Button>
                 </div>
               </Card>

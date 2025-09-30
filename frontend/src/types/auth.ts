@@ -36,12 +36,23 @@ export interface CompanyProfile extends BaseUser {
   companySize?: string;
   website?: string;
   foundedYear?: number;
+  founded?: number;
+  employees?: string;
+  headquarters?: string;
   logo?: string;
+  techStack?: string[];
+  officeLocations?: Array<{
+    address: string;
+    city: string;
+    country: string;
+    isHeadquarters?: boolean;
+  }>;
   socialMedia?: {
     linkedin?: string;
     twitter?: string;
     facebook?: string;
     instagram?: string;
+    youtube?: string;
   };
   address?: {
     street?: string;

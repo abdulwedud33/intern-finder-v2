@@ -1,13 +1,6 @@
 "use client"
 
-import { Separator } from '@/components/ui/separator';
-import { Plus } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ArrowLeft,
   MoreVertical,
@@ -16,9 +9,35 @@ import {
   MessageSquare,
   Phone,
   Mail,
+  MapPin,
   Globe,
   Instagram,
   Twitter,
+  Linkedin,
+  Github,
+  Download,
+  Share2,
+  Bookmark,
+  Eye,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Clock,
+  User,
+  Briefcase,
+  GraduationCap,
+  Award,
+  Target,
+  TrendingUp,
+  BarChart3,
+  FileText,
+  Plus,
+  Edit,
+  Trash2,
+  Send,
+  Video,
+  Mic,
+  Camera
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,12 +46,130 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
+import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea as TextareaComponent } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getApplicationById, updateApplication, scheduleInterview } from "@/services/applicationsService"
 import { useToast } from "@/components/ui/use-toast"
 import { useParams } from "next/navigation"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { format } from "date-fns"
+import { useCreateInternReview } from "@/hooks/useReviews"
+
+// Mock data for demonstration
+const mockApplicantData = {
+  id: "1",
+  name: "Sarah Johnson",
+  role: "Frontend Developer",
+  avatar: "/placeholder-user.jpg",
+  rating: 4.8,
+  appliedJob: "Senior Frontend Developer",
+  appliedDate: "2024-01-15",
+  stage: "Interview",
+  stageProgress: 60,
+  matchScore: 92,
+  contact: {
+    email: "sarah.johnson@email.com",
+    phone: "+1 (555) 123-4567",
+    location: "San Francisco, CA",
+    linkedin: "https://linkedin.com/in/sarahjohnson",
+    github: "https://github.com/sarahjohnson",
+    website: "https://sarahjohnson.dev"
+  },
+  personalInfo: {
+    fullName: "Sarah Johnson",
+    age: "28",
+    gender: "Female",
+    dateOfBirth: "1995-03-15",
+    language: "English, Spanish",
+    address: "123 Main St, San Francisco, CA 94102"
+  },
+  professionalInfo: {
+    aboutMe: "Passionate frontend developer with 5+ years of experience building modern web applications. I love creating beautiful, responsive interfaces that provide exceptional user experiences. I'm always eager to learn new technologies and collaborate with talented teams.",
+    experience: "5+ years in frontend development with expertise in React, TypeScript, and modern CSS frameworks. Led multiple projects from conception to deployment, working closely with design and backend teams.",
+    currentJob: "Senior Frontend Developer at TechCorp",
+    experienceYears: "5",
+    education: "Bachelor of Computer Science - Stanford University",
+    skills: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Node.js", "GraphQL", "Figma", "Git"],
+    portfolio: "https://sarahjohnson.dev/portfolio"
+  },
+  interviews: [
+    {
+      id: 1,
+      interviewer: "John Smith",
+      date: "2024-01-20",
+      time: "10:00 AM - 11:00 AM",
+      type: "Technical Interview",
+      status: "Scheduled",
+      location: "Virtual Meeting",
+      notes: "Focus on React and TypeScript skills"
+    },
+    {
+      id: 2,
+      interviewer: "Maria Garcia",
+      date: "2024-01-18",
+      time: "2:00 PM - 3:00 PM",
+      type: "HR Interview",
+      status: "Completed",
+      location: "Office",
+      notes: "Cultural fit and team collaboration"
+    }
+  ],
+  notes: [
+    {
+      id: 1,
+      author: "John Smith",
+      avatar: "/placeholder-user.jpg",
+      date: "2024-01-18",
+      time: "2:30 PM",
+      text: "Excellent technical skills and great communication. Strong candidate for the role.",
+      replies: 2
+    },
+    {
+      id: 2,
+      author: "Maria Garcia",
+      avatar: "/placeholder-user.jpg",
+      date: "2024-01-17",
+      time: "10:15 AM",
+      text: "Very professional and enthusiastic. Would be a great addition to the team.",
+      replies: 0
+    }
+  ],
+  assignedTo: [
+    {
+      name: "John Smith",
+      role: "Technical Lead",
+      avatar: "/placeholder-user.jpg"
+    },
+    {
+      name: "Maria Garcia",
+      role: "HR Manager",
+      avatar: "/placeholder-user.jpg"
+    }
+  ],
+  documents: [
+    {
+      id: 1,
+      name: "Resume - Sarah Johnson.pdf",
+      type: "Resume",
+      size: "2.3 MB",
+      uploaded: "2024-01-15"
+    },
+    {
+      id: 2,
+      name: "Portfolio - Sarah Johnson.pdf",
+      type: "Portfolio",
+      size: "5.1 MB",
+      uploaded: "2024-01-15"
+    }
+  ]
+}
 
 export default function ApplicantDetailsPage() {
   const params = useParams()
@@ -40,219 +177,262 @@ export default function ApplicantDetailsPage() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
   
-  const [activeTab, setActiveTab] = useState("profile")
+  const [activeTab, setActiveTab] = useState("overview")
   const [rating, setRating] = useState(0)
   const [feedback, setFeedback] = useState("")
-  const [newNote, setNewNote] = useState("");
-  const [isNotePopoverOpen, setIsNotePopoverOpen] = useState(false);
-  const [notes, setNotes] = useState([
-    {
-      id: 1,
-      author: "Maria Kelly",
-      avatar: "https://placehold.co/150x150/d1d5db/000000?text=MK",
-      date: "10 July, 2021",
-      time: "11:30 AM",
-      text: "Please, do an interview stage immediately. The design division needs more new employee now",
-      replies: 2,
-    },
-    {
-      id: 2,
-      author: "Maria Kelly",
-      avatar: "https://placehold.co/150x150/d1d5db/000000?text=MK",
-      date: "13 July, 2021",
-      time: "10:30 AM",
-      text: "Please, do an interview stage immediately.",
-      replies: 0,
-    },
-  ]);
-
-  const { data } = useQuery({ 
-    queryKey: ["application", applicationId], 
-    queryFn: () => getApplicationById(applicationId) 
+  const [newNote, setNewNote] = useState("")
+  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false)
+  const [isInterviewDialogOpen, setIsInterviewDialogOpen] = useState(false)
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false)
+  const [reviewData, setReviewData] = useState({
+    rating: 0,
+    feedback: ""
   })
-  
-  const application = (data as any)?.data
-  const applicantData = {
-    id: application?._id || "",
-    name: application?.user?.name || "",
-    role: application?.user?.role || "",
-    avatar: application?.user?.avatar || "/placeholder.svg",
-    rating: application?.score || 0,
-    appliedJob: application?.listing?.title || "",
-    appliedDate: application?.createdAt ? new Date(application.createdAt).toLocaleDateString() : "",
-    stage: application?.stage || "Applied",
-    stageProgress: getStageProgress(application?.stage || "Applied"),
-    contact: {
-      email: application?.user?.email || "",
-      phone: application?.user?.phone || "",
-      instagram: application?.user?.instagram || "",
-      twitter: application?.user?.twitter || "",
-      website: application?.user?.website || "",
-    },
-    personalInfo: {
-      fullName: application?.user?.name || "",
-      gender: application?.user?.gender || "",
-      dateOfBirth: application?.user?.dateOfBirth || "",
-      language: application?.user?.language || "",
-      address: application?.user?.address || "",
-    },
-    professionalInfo: {
-      aboutMe: application?.user?.aboutMe || "",
-      experience: application?.user?.experience || "",
-      currentJob: application?.user?.currentJob || "",
-      experienceYears: application?.user?.experienceYears || "",
-      education: application?.user?.education || "",
-      skills: Array.isArray(application?.user?.skills) ? application?.user?.skills : [],
-    },
-    interviews: application?.interviews || [],
-    notes: application?.notes || [],
-    assignedTo: application?.assignedTo || []
-  }
+  const [interviewData, setInterviewData] = useState({
+    interviewer: "",
+    date: "",
+    time: "",
+    type: "Technical Interview",
+    location: "Virtual Meeting",
+    notes: ""
+  })
 
-  function getStageProgress(stage: string): number {
-    const stages = ["Applied", "Review", "Shortlisted", "Interview", "Hired"]
-    const index = stages.indexOf(stage)
-    return index >= 0 ? ((index + 1) / stages.length) * 100 : 0
-  }
+  // Mock query - replace with real API call
+  const { data: application, isLoading } = useQuery({
+    queryKey: ["application", applicationId], 
+    queryFn: async () => {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      return { data: mockApplicantData }
+    }
+  })
 
+  const applicantData = application?.data || mockApplicantData
+
+  // Mock mutations
   const updateStageMutation = useMutation({
     mutationFn: async (newStage: string) => {
-      return await updateApplication(applicationId, { stage: newStage })
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      return { success: true }
     },
     onSuccess: () => {
       toast({ title: "Stage updated successfully" })
-      queryClient.invalidateQueries({ queryKey: ["application", applicationId] })
-      queryClient.invalidateQueries({ queryKey: ["company-applications"] })
     },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: unknown } } }
-      const message = typeof err?.response?.data?.message === "string" ? err.response.data.message : "Failed to update stage"
-      toast({ title: "Could not update stage", description: String(message), variant: "destructive" })
-    },
+    onError: () => {
+      toast({ title: "Failed to update stage", variant: "destructive" })
+    }
   })
 
   const scheduleInterviewMutation = useMutation({
-    mutationFn: async (interviewData: { date: string; time: string; location: string; interviewer: string }) => {
-      return await scheduleInterview(applicationId, interviewData)
+    mutationFn: async (data: any) => {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      return { success: true }
     },
     onSuccess: () => {
       toast({ title: "Interview scheduled successfully" })
-      queryClient.invalidateQueries({ queryKey: ["application", applicationId] })
+      setIsInterviewDialogOpen(false)
+      setInterviewData({
+        interviewer: "",
+        date: "",
+        time: "",
+        type: "Technical Interview",
+        location: "Virtual Meeting",
+        notes: ""
+      })
     },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: unknown } } }
-      const message = typeof err?.response?.data?.message === "string" ? err.response.data.message : "Failed to schedule interview"
-      toast({ title: "Could not schedule interview", description: String(message), variant: "destructive" })
-    },
+    onError: () => {
+      toast({ title: "Failed to schedule interview", variant: "destructive" })
+    }
   })
 
-  const handleAddNote = () => {
-    if (newNote.trim() !== "") {
-      const newNoteObject = {
-        id: notes.length + 1,
-        author: "Current User",
-        avatar: "https://placehold.co/150x150/888888/FFFFFF?text=CU",
-        date: new Date().toLocaleDateString("en-US", { day: 'numeric', month: 'long', year: 'numeric' }),
-        time: new Date().toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' }),
-        text: newNote,
-        replies: 0,
-      };
-      setNotes([newNoteObject, ...notes]);
-      setNewNote("");
-      setIsNotePopoverOpen(false);
+  const addNoteMutation = useMutation({
+    mutationFn: async (note: string) => {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500))
+      return { success: true }
+    },
+    onSuccess: () => {
+      toast({ title: "Note added successfully" })
+      setNewNote("")
+      setIsNoteDialogOpen(false)
+    },
+    onError: () => {
+      toast({ title: "Failed to add note", variant: "destructive" })
     }
-  };
+  })
+
+  // Review mutation
+  const createReviewMutation = useCreateInternReview()
 
   const handleStageUpdate = (newStage: string) => {
     updateStageMutation.mutate(newStage)
   }
 
   const handleScheduleInterview = () => {
-    // This would typically open a modal with interview scheduling form
-    const interviewData = {
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week from now
-      time: "10:00 AM - 11:00 AM",
-      location: "Virtual Meeting",
-      interviewer: "Hiring Manager"
+    if (!interviewData.interviewer || !interviewData.date || !interviewData.time) {
+      toast({ title: "Please fill in all required fields", variant: "destructive" })
+      return
     }
     scheduleInterviewMutation.mutate(interviewData)
   }
 
-  if (!application) {
+  const handleAddNote = () => {
+    if (!newNote.trim()) {
+      toast({ title: "Please enter a note", variant: "destructive" })
+      return
+    }
+    addNoteMutation.mutate(newNote)
+  }
+
+  const handleSubmitReview = () => {
+    if (reviewData.rating === 0) {
+      toast({ title: "Please select a rating", variant: "destructive" })
+      return
+    }
+    if (!reviewData.feedback.trim()) {
+      toast({ title: "Please enter feedback", variant: "destructive" })
+      return
+    }
+    
+    // Mock job ID - replace with actual job ID from application data
+    const jobId = "mock-job-id"
+    createReviewMutation.mutate({
+      internId: applicationId,
+      jobId: jobId,
+      data: {
+        rating: reviewData.rating,
+        feedback: reviewData.feedback
+      }
+    })
+    
+    if (createReviewMutation.isSuccess) {
+      setIsReviewDialogOpen(false)
+      setReviewData({ rating: 0, feedback: "" })
+    }
+  }
+
+  const getStageColor = (stage: string) => {
+    switch (stage) {
+      case "Applied": return "bg-blue-100 text-blue-800"
+      case "Review": return "bg-yellow-100 text-yellow-800"
+      case "Shortlisted": return "bg-purple-100 text-purple-800"
+      case "Interview": return "bg-green-100 text-green-800"
+      case "Hired": return "bg-emerald-100 text-emerald-800"
+      default: return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getInterviewStatusColor = (status: string) => {
+    switch (status) {
+      case "Scheduled": return "bg-blue-100 text-blue-800"
+      case "Completed": return "bg-green-100 text-green-800"
+      case "Cancelled": return "bg-red-100 text-red-800"
+      default: return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading application details...</p>
-          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading applicant details...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/client/applicants">
-            <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="hover:bg-white/50">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Applicant Details
+                Back to Applicants
             </Button>
           </Link>
-          
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Applicant Details</h1>
+              <p className="text-gray-600">Review and manage candidate information</p>
         </div>
+          </div>
+          <div className="flex items-center gap-2">
         <Button variant="outline" size="sm">
-          <MoreVertical className="h-4 w-4 mr-2" />
-          More Action
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+            <Button variant="outline" size="sm">
+              <Bookmark className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+            <Button variant="outline" size="sm">
+              <MoreVertical className="h-4 w-4" />
         </Button>
+          </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left Sidebar */}
-        <div className="lg:col-span-1">
-          <Card>
+          <div className="lg:col-span-1 space-y-6">
+            {/* Profile Card */}
+            <Card className="shadow-lg">
             <CardContent className="p-6">
               <div className="text-center mb-6">
-                <Avatar className="h-20 w-20 mx-auto mb-4">
-                  <AvatarImage src={applicantData.avatar || "/placeholder.svg"} alt={applicantData.name} />
-                  <AvatarFallback>
-                    {applicantData.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
+                  <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-white shadow-lg">
+                    <AvatarImage src={applicantData.avatar} alt={applicantData.name} />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xl font-bold">
+                      {applicantData.name.split(" ").map(n => n[0]).join("")}
                   </AvatarFallback>
                 </Avatar>
-                <h3 className="font-semibold text-lg">{applicantData.name}</h3>
-                <p className="text-gray-600 text-sm">{applicantData.role}</p>
+                  <h3 className="font-bold text-xl text-gray-900">{applicantData.name}</h3>
+                  <p className="text-gray-600">{applicantData.role}</p>
                 <div className="flex items-center justify-center gap-1 mt-2">
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm">{applicantData.rating}</span>
+                    <span className="text-sm font-medium">{applicantData.rating}</span>
+                    <span className="text-xs text-gray-500">(4.8/5)</span>
                 </div>
               </div>
 
               <div className="space-y-4 text-sm">
                 <div>
-                  <p className="text-gray-600">Applied Jobs</p>
-                  <p className="font-medium">{applicantData.appliedJob}</p>
+                    <p className="text-gray-600 font-medium">Applied for</p>
+                    <p className="font-semibold text-gray-900">{applicantData.appliedJob}</p>
                   <p className="text-gray-500 text-xs">{applicantData.appliedDate}</p>
                 </div>
 
                 <div>
-                  <p className="text-gray-600 mb-2">Stage</p>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="h-2 bg-blue-600 rounded-full flex-1"></div>
-                    <span className="text-xs text-blue-600">{applicantData.stage}</span>
-                  </div>
+                    <p className="text-gray-600 font-medium mb-2">Current Stage</p>
+                    <Badge className={`${getStageColor(applicantData.stage)} font-medium`}>
+                      {applicantData.stage}
+                    </Badge>
+                    <div className="mt-2">
                   <Progress value={applicantData.stageProgress} className="h-2" />
+                      <p className="text-xs text-gray-500 mt-1">{applicantData.stageProgress}% complete</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-600 font-medium">Match Score</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-500 h-2 rounded-full" 
+                          style={{ width: `${applicantData.matchScore}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm font-medium">{applicantData.matchScore}%</span>
+                    </div>
                 </div>
 
                 <Button 
-                  className="w-full bg-teal-600 text-white" 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
                   size="sm"
-                  onClick={handleScheduleInterview}
+                    onClick={() => setIsInterviewDialogOpen(true)}
                   disabled={scheduleInterviewMutation.isPending}
                 >
                   <Calendar className="h-4 w-4 mr-2" />
@@ -263,31 +443,84 @@ export default function ApplicantDetailsPage() {
           </Card>
 
           {/* Contact Info */}
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="text-base">Contact</CardTitle>
+            <Card className="shadow-lg">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <User className="h-4 w-4 text-blue-600" />
+                  Contact Information
+                </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-3 text-sm">
                 <Mail className="h-4 w-4 text-gray-400" />
-                <span>{applicantData.contact.email}</span>
+                  <a href={`mailto:${applicantData.contact.email}`} className="text-blue-600 hover:underline">
+                    {applicantData.contact.email}
+                  </a>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Phone className="h-4 w-4 text-gray-400" />
-                <span>{applicantData.contact.phone}</span>
+                  <a href={`tel:${applicantData.contact.phone}`} className="text-blue-600 hover:underline">
+                    {applicantData.contact.phone}
+                  </a>
               </div>
               <div className="flex items-center gap-3 text-sm">
-                <Instagram className="h-4 w-4 text-gray-400" />
-                <span>{applicantData.contact.instagram}</span>
+                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <span>{applicantData.contact.location}</span>
               </div>
+                {applicantData.contact.linkedin && (
               <div className="flex items-center gap-3 text-sm">
-                <Twitter className="h-4 w-4 text-gray-400" />
-                <span>{applicantData.contact.twitter}</span>
+                    <Linkedin className="h-4 w-4 text-blue-600" />
+                    <a href={applicantData.contact.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      LinkedIn Profile
+                    </a>
               </div>
+                )}
+                {applicantData.contact.github && (
               <div className="flex items-center gap-3 text-sm">
-                <Globe className="h-4 w-4 text-gray-400" />
-                <span>{applicantData.contact.website}</span>
+                    <Github className="h-4 w-4 text-gray-800" />
+                    <a href={applicantData.contact.github} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      GitHub Profile
+                    </a>
               </div>
+                )}
+                {applicantData.contact.website && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Globe className="h-4 w-4 text-green-600" />
+                    <a href={applicantData.contact.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      Personal Website
+                    </a>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="shadow-lg">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button variant="outline" size="sm" className="w-full justify-start">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Send Message
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => setIsReviewDialogOpen(true)}
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  Write Review
+                </Button>
+                <Button variant="outline" size="sm" className="w-full justify-start">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Resume
+                </Button>
+                <Button variant="outline" size="sm" className="w-full justify-start">
+                  <Video className="h-4 w-4 mr-2" />
+                  Video Call
+                </Button>
             </CardContent>
           </Card>
         </div>
@@ -295,268 +528,145 @@ export default function ApplicantDetailsPage() {
         {/* Main Content */}
         <div className="lg:col-span-3">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="profile">Applicant Profile</TabsTrigger>
-              <TabsTrigger value="resume">Resume</TabsTrigger>
-              <TabsTrigger value="progress">Hiring Progress</TabsTrigger>
-              <TabsTrigger value="schedule">Interview Schedule</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-5 bg-white shadow-sm">
+                <TabsTrigger value="overview" className="flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="profile" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Profile
+                </TabsTrigger>
+                <TabsTrigger value="interviews" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Interviews
+                </TabsTrigger>
+                <TabsTrigger value="reviews" className="flex items-center gap-2">
+                  <Star className="h-4 w-4" />
+                  Reviews
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Documents
+                </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="profile" className="mt-6">
-              <div className="space-y-6">
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="mt-6 space-y-6">
                 {/* Current Stage */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-base">Current Stage</CardTitle>
-                    <Button variant="outline" size="sm">
-                      Give Rating
-                    </Button>
+                <Card className="shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="h-5 w-5 text-blue-600" />
+                      Application Status
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                                          <div className="flex items-center gap-4 mb-4">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Badge 
-                              className={`cursor-pointer ${applicantData.stage === "Applied" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-600"}`}
-                            >
-                              Applied
-                            </Badge>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Update Application Stage</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to move this application to the "Applied" stage?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleStageUpdate("Applied")}>
-                                Update Stage
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Badge 
-                              className={`cursor-pointer ${applicantData.stage === "Review" ? "bg-orange-100 text-orange-800" : "bg-gray-100 text-gray-600"}`}
-                            >
-                              Review
-                            </Badge>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Update Application Stage</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to move this application to the "Review" stage?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleStageUpdate("Review")}>
-                                Update Stage
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Badge 
-                              className={`cursor-pointer ${applicantData.stage === "Shortlisted" ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-600"}`}
-                            >
-                              Shortlisted
-                            </Badge>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Update Application Stage</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to move this application to the "Shortlisted" stage?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleStageUpdate("Shortlisted")}>
-                                Update Stage
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Badge 
-                              className={`cursor-pointer ${applicantData.stage === "Interview" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-600"}`}
-                            >
-                              Interview
-                            </Badge>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Update Application Stage</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to move this application to the "Interview" stage?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleStageUpdate("Interview")}>
-                                Update Stage
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Badge 
-                              className={`cursor-pointer ${applicantData.stage === "Hired" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}
-                            >
-                              Hired
-                            </Badge>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Update Application Stage</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                <AlertDialogDescription>
-                                  Are you sure you want to move this application to the "Hired" stage?
-                                </AlertDialogDescription>
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleStageUpdate("Hired")}>
-                                Update Stage
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
                       <div>
-                        <p className="text-gray-600">Stage Info</p>
-                        <p>Current Stage</p>
-                        <p className="font-medium">{applicantData.stage}</p>
+                        <p className="text-sm text-gray-600">Current Stage</p>
+                        <Badge className={`${getStageColor(applicantData.stage)} text-base px-3 py-1`}>
+                          {applicantData.stage}
+                            </Badge>
                       </div>
-                      <div>
-                        <p className="text-gray-600">Stage Progress</p>
-                        <p className="text-blue-600">{applicantData.stageProgress}%</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-gray-600">Assigned to</span>
-                          <div className="flex -space-x-2">
-                            {applicantData.assignedTo.map((person: any, index: number) => (
-                              <Avatar key={index} className="h-6 w-6 border-2 border-white">
-                                <AvatarImage src={person.avatar} />
-                                <AvatarFallback>{person.name.split(" ").map((n: string) => n[0]).join("")}</AvatarFallback>
-                              </Avatar>
-                            ))}
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600">Progress</p>
+                        <p className="text-2xl font-bold text-blue-600">{applicantData.stageProgress}%</p>
+                      </div>
                           </div>
-                        </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Applied</span>
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Review</span>
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Shortlisted</span>
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Interview</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-blue-500 rounded-full bg-blue-100"></div>
+                          <span className="text-sm text-blue-600 font-medium">In Progress</span>
+                      </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Hired</span>
+                        <div className="w-4 h-4 border-2 border-gray-300 rounded-full"></div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Personal Info */}
-                <Card>
+                {/* Skills & Experience */}
+                <Card className="shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-base">Personal Info</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-600">Full Name</p>
-                        <p className="font-medium">{applicantData.personalInfo.fullName}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Gender</p>
-                        <p className="font-medium">{applicantData.personalInfo.gender}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Date of Birth</p>
-                        <p className="font-medium">{applicantData.personalInfo.dateOfBirth}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Language</p>
-                        <p className="font-medium">{applicantData.personalInfo.language}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-gray-600">Address</p>
-                        <p className="font-medium">{applicantData.personalInfo.address}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Professional Info */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Professional Info</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Award className="h-5 w-5 text-purple-600" />
+                      Skills & Experience
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <p className="text-gray-600 text-sm mb-2">About Me</p>
-                      <p className="text-sm">{applicantData.professionalInfo.aboutMe}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 text-sm mb-2">Experience</p>
-                      <p className="text-sm">{applicantData.professionalInfo.experience}</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-gray-600 text-sm">Current Job</p>
-                        <p className="font-medium">{applicantData.professionalInfo.currentJob}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-sm">Experience in Years</p>
-                        <p className="font-medium">{applicantData.professionalInfo.experienceYears}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-sm">Highest Qualification Held</p>
-                        <p className="font-medium">{applicantData.professionalInfo.education}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-sm">Skill set</p>
-                        <div className="flex gap-2 mt-1">
-                          {applicantData.professionalInfo.skills.map((skill: string, index: number) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
+                      <p className="text-sm font-medium text-gray-600 mb-2">Technical Skills</p>
+                      <div className="flex flex-wrap gap-2">
+                        {applicantData.professionalInfo.skills.map((skill, index) => (
+                          <Badge key={index} variant="secondary" className="px-3 py-1">
                               {skill}
                             </Badge>
                           ))}
                         </div>
                       </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 mb-2">Experience</p>
+                      <p className="text-sm text-gray-700">{applicantData.professionalInfo.experience}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 mb-2">Education</p>
+                      <p className="text-sm text-gray-700">{applicantData.professionalInfo.education}</p>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Notes */}
-                <Card>
+                <Card className="shadow-lg">
                   <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-base">Notes</CardTitle>
-                    <Button variant="outline" size="sm">
-                      Add Notes
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-green-600" />
+                      Team Notes
+                    </CardTitle>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsNoteDialogOpen(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Note
                     </Button>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {applicantData.notes.map((note: any) => (
-                      <div key={note.id} className="flex gap-3">
+                    {applicantData.notes.map((note) => (
+                      <div key={note.id} className="flex gap-3 p-4 bg-gray-50 rounded-lg">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src="/professional-headshot-kathryn-murphy.png" />
-                          <AvatarFallback>MK</AvatarFallback>
+                          <AvatarImage src={note.avatar} alt={note.author} />
+                          <AvatarFallback className="bg-blue-100 text-blue-700">
+                            {note.author.split(" ").map(n => n[0]).join("")}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-medium text-sm">{note.author}</span>
-                            <span className="text-xs text-gray-500">{note.date}</span>
+                            <span className="text-xs text-gray-500">{note.date} • {note.time}</span>
                           </div>
-                          <p className="text-sm text-gray-700">{note.content}</p>
-                          {note.replies && (
+                          <p className="text-sm text-gray-700">{note.text}</p>
+                          {note.replies > 0 && (
                             <Button variant="link" size="sm" className="p-0 h-auto text-xs text-blue-600">
-                              {note.replies} Replies
+                              {note.replies} {note.replies === 1 ? "Reply" : "Replies"}
                             </Button>
                           )}
                         </div>
@@ -564,213 +674,300 @@ export default function ApplicantDetailsPage() {
                     ))}
                   </CardContent>
                 </Card>
-              </div>
             </TabsContent>
 
-            <TabsContent value="resume" className="mt-6">
-              <Card>
-                <CardContent className="p-8">
-                  <div className="max-w-2xl mx-auto">
-                    <div className="text-center mb-8">
-                      <h1 className="text-2xl font-bold">{applicantData.name}</h1>
-                      <p className="text-lg text-gray-600">{applicantData.role}</p>
-                      <div className="flex justify-center gap-4 mt-2 text-sm text-gray-600">
-                        <span>{applicantData.contact.email}</span>
-                        <span>{applicantData.contact.phone}</span>
+              {/* Profile Tab */}
+              <TabsContent value="profile" className="mt-6 space-y-6">
+                {/* Personal Information */}
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5 text-blue-600" />
+                      Personal Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Full Name</p>
+                        <p className="text-gray-900">{applicantData.personalInfo.fullName}</p>
                       </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Age</p>
+                        <p className="text-gray-900">{applicantData.personalInfo.age} years old</p>
                     </div>
-
-                    <div className="space-y-6">
-                      <section>
-                        <h2 className="text-lg font-semibold mb-3 border-b pb-1">About Me</h2>
-                        <p className="text-sm leading-relaxed">{applicantData.professionalInfo.aboutMe}</p>
-                      </section>
-
-                      <section>
-                        <h2 className="text-lg font-semibold mb-3 border-b pb-1">Work Experience</h2>
-                        <div className="space-y-4">
                           <div>
-                            <h3 className="font-medium">Current Position</h3>
-                            <p className="text-sm text-gray-600">{applicantData.professionalInfo.currentJob} • {applicantData.professionalInfo.experienceYears}</p>
-                            <p className="text-sm mt-2">{applicantData.professionalInfo.experience}</p>
+                        <p className="text-sm font-medium text-gray-600">Gender</p>
+                        <p className="text-gray-900">{applicantData.personalInfo.gender}</p>
                           </div>
-                        </div>
-                      </section>
-
-                      <section>
-                        <h2 className="text-lg font-semibold mb-3 border-b pb-1">Education</h2>
                         <div>
-                          <h3 className="font-medium">{applicantData.professionalInfo.education}</h3>
+                        <p className="text-sm font-medium text-gray-600">Languages</p>
+                        <p className="text-gray-900">{applicantData.personalInfo.language}</p>
                         </div>
-                      </section>
-
-                      <section>
-                        <h2 className="text-lg font-semibold mb-3 border-b pb-1">Skills</h2>
-                        <div className="flex flex-wrap gap-2">
-                          {applicantData.professionalInfo.skills.map((skill: string, index: number) => (
-                            <Badge key={index} variant="secondary">
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
-                      </section>
+                      <div className="md:col-span-2">
+                        <p className="text-sm font-medium text-gray-600">Address</p>
+                        <p className="text-gray-900">{applicantData.personalInfo.address}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
 
-            <TabsContent value="progress" className="mt-6">
-            <Card>
-              <CardContent className="p-6">
-                {/* Stage Info Section */}
-                <div className="mb-6">
-                  <h2 className="text-lg font-semibold mb-4">Stage Info</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 text-sm">
+                {/* Professional Information */}
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Briefcase className="h-5 w-5 text-green-600" />
+                      Professional Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
                     <div>
-                      <p className="text-gray-500">Current Stage</p>
-                      <p className="font-medium text-gray-900">{applicantData.stage}</p>
+                      <p className="text-sm font-medium text-gray-600 mb-2">About Me</p>
+                      <p className="text-gray-700 leading-relaxed">{applicantData.professionalInfo.aboutMe}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Stage Progress</p>
-                      <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 font-semibold px-2 py-1 text-xs rounded-full">
-                        {applicantData.stageProgress}%
-                      </Badge>
+                      <p className="text-sm font-medium text-gray-600 mb-2">Current Position</p>
+                      <p className="text-gray-900">{applicantData.professionalInfo.currentJob}</p>
+                      <p className="text-sm text-gray-600">{applicantData.professionalInfo.experienceYears} years of experience</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Applied Date</p>
-                      <p className="font-medium text-gray-900">{applicantData.appliedDate}</p>
+                      <p className="text-sm font-medium text-gray-600 mb-2">Education</p>
+                      <p className="text-gray-900">{applicantData.professionalInfo.education}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Assigned to</p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        {applicantData.assignedTo.map((person: any, index: number) => (
-                          <Avatar key={index} className="h-8 w-8">
-                            <AvatarImage src={person.avatar} alt={person.name} />
-                            <AvatarFallback>{person.name.split(" ").map((n: string) => n[0]).join("")}</AvatarFallback>
-                          </Avatar>
-                        ))}
+                      <p className="text-sm font-medium text-gray-600 mb-2">Portfolio</p>
+                      <a 
+                        href={applicantData.professionalInfo.portfolio} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {applicantData.professionalInfo.portfolio}
+                      </a>
                       </div>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
+              {/* Interviews Tab */}
+              <TabsContent value="interviews" className="mt-6 space-y-6">
+                <Card className="shadow-lg">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-purple-600" />
+                      Interview Schedule
+                    </CardTitle>
                     <Button 
-                      className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-xl py-3 text-base"
-                      disabled={updateStageMutation.isPending}
+                      className="bg-purple-600 hover:bg-purple-700 text-white" 
+                      size="sm"
+                      onClick={() => setIsInterviewDialogOpen(true)}
                     >
-                      {updateStageMutation.isPending ? "Updating..." : "Move to Next Step"}
+                      <Plus className="h-4 w-4 mr-2" />
+                      Schedule Interview
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Move to Next Stage</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to move this application to the next stage: "{getNextStage(applicantData.stage)}"?
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleStageUpdate(getNextStage(applicantData.stage))}>
-                        Move to Next Stage
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                <Separator className="my-6" />
-
-                {/* Notes Section */}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {applicantData.interviews.map((interview) => (
+                        <div key={interview.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src="/placeholder-user.jpg" alt={interview.interviewer} />
+                              <AvatarFallback className="bg-purple-100 text-purple-700">
+                                {interview.interviewer.split(" ").map(n => n[0]).join("")}
+                              </AvatarFallback>
+                            </Avatar>
                 <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold">Notes</h2>
-                    {/* Popover for Add Notes */}
-                    <Popover open={isNotePopoverOpen} onOpenChange={setIsNotePopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-teal-600 hover:text-teal-700 font-semibold">
-                          <Plus className="h-4 w-4 mr-1" /> Add Notes
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[300px] p-4 bg-white rounded-lg shadow-lg">
-                        <Textarea
-                          placeholder="Write your note here..."
-                          value={newNote}
-                          onChange={(e) => setNewNote(e.target.value)}
-                          className="mb-2"
-                          rows={4}
-                        />
-                        <Button onClick={handleAddNote} className="w-full bg-teal-600 hover:bg-teal-700 text-white">
-                          Submit
-                        </Button>
-                      </PopoverContent>
-                    </Popover>
+                              <p className="font-medium text-gray-900">{interview.interviewer}</p>
+                              <p className="text-sm text-gray-600">{interview.type}</p>
+                              <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {interview.date}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {interview.time}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {interview.location}
+                                </span>
                   </div>
-                  {/* List of notes */}
-                  {notes.map((note) => (
-                    <div key={note.id} className="flex space-x-3 mb-4 last:mb-0 items-start">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={note.avatar} alt={note.author} />
-                        <AvatarFallback>{note.author.split(" ").map((n: string) => n[0]).join("")}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="font-semibold text-sm">{note.author}</span>
-                          <span className="text-xs text-gray-500">{note.date} • {note.time}</span>
                         </div>
-                        <p className="text-sm text-gray-700 mb-1">{note.text}</p>
-                        {note.replies > 0 && (
-                          <span className="text-xs text-teal-600 font-medium">
-                            {note.replies} {note.replies === 1 ? "Reply" : "Replies"}
-                          </span>
-                        )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className={getInterviewStatusColor(interview.status)}>
+                              {interview.status}
+                            </Badge>
+                            <Button variant="outline" size="sm">
+                              <MessageSquare className="h-4 w-4 mr-2" />
+                              Feedback
+                            </Button>
                       </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+            </TabsContent>
 
-            <TabsContent value="schedule" className="mt-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-base">Interview List</CardTitle>
-                  <Button 
-                    className="bg-teal-600 text-white" 
-                    size="sm"
-                    onClick={handleScheduleInterview}
-                    disabled={scheduleInterviewMutation.isPending}
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    {scheduleInterviewMutation.isPending ? "Scheduling..." : "Add Schedule Interview"}
-                  </Button>
+              {/* Reviews Tab */}
+              <TabsContent value="reviews" className="mt-6 space-y-6">
+                <Card className="shadow-lg">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Star className="h-5 w-5 text-yellow-600" />
+                      Performance Review
+                    </CardTitle>
+                    <Button 
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white" 
+                      size="sm"
+                      onClick={() => setIsReviewDialogOpen(true)}
+                    >
+                      <Star className="h-4 w-4 mr-2" />
+                      Write Review
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Review Form */}
+                    <div className="p-6 bg-gray-50 rounded-lg">
+                      <h4 className="font-semibold text-gray-900 mb-4">Rate this candidate's performance</h4>
+                      
+                      {/* Star Rating */}
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-600 mb-2">Overall Rating</p>
+                        <div className="flex items-center space-x-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setReviewData(prev => ({ ...prev, rating: star }))}
+                              className={`p-1 ${
+                                star <= reviewData.rating
+                                  ? "text-yellow-400"
+                                  : "text-gray-300 hover:text-yellow-300"
+                              }`}
+                            >
+                              <Star className="h-8 w-8 fill-current" />
+                            </button>
+                          ))}
+                          <span className="ml-3 text-sm font-medium text-gray-600">
+                            {reviewData.rating > 0 ? `${reviewData.rating} out of 5` : "Select a rating"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Feedback Text */}
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-600 mb-2">Detailed Feedback</p>
+                        <TextareaComponent
+                          placeholder="Write detailed feedback about the candidate's performance, skills, and areas for improvement..."
+                          value={reviewData.feedback}
+                          onChange={(e) => setReviewData(prev => ({ ...prev, feedback: e.target.value }))}
+                          rows={4}
+                          className="resize-none"
+                        />
+                      </div>
+
+                      {/* Submit Button */}
+                      <div className="flex justify-end">
+                        <Button 
+                          onClick={handleSubmitReview}
+                          disabled={createReviewMutation.isPending || reviewData.rating === 0 || !reviewData.feedback.trim()}
+                          className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                        >
+                          {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Existing Reviews */}
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-4">Previous Reviews</h4>
+                      <div className="space-y-4">
+                        {/* Mock existing review */}
+                        <div className="p-4 border rounded-lg bg-white">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src="/placeholder-user.jpg" alt="Reviewer" />
+                                <AvatarFallback className="bg-blue-100 text-blue-700">
+                                  JS
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-gray-900">John Smith</p>
+                                <p className="text-sm text-gray-500">Technical Lead</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="flex items-center space-x-1 mb-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`h-4 w-4 ${
+                                      star <= 4
+                                        ? "text-yellow-400 fill-yellow-400"
+                                        : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <p className="text-xs text-gray-500">2 days ago</p>
+                            </div>
+                          </div>
+                          <p className="text-gray-700 text-sm leading-relaxed">
+                            "Sarah demonstrated excellent technical skills during the interview process. 
+                            Her problem-solving approach and communication were outstanding. 
+                            She would be a great addition to our team."
+                          </p>
+                        </div>
+
+                        {/* Empty state if no reviews */}
+                        <div className="text-center py-8 text-gray-500">
+                          <Star className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                          <p className="text-lg font-medium text-gray-900 mb-2">No reviews yet</p>
+                          <p className="text-sm">Be the first to review this candidate's performance.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Documents Tab */}
+              <TabsContent value="documents" className="mt-6 space-y-6">
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-orange-600" />
+                      Documents & Files
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {applicantData.interviews.map((interview: any) => (
-                      <div key={interview.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src="/professional-headshot-kathryn-murphy.png" />
-                            <AvatarFallback>
-                              {interview.interviewer
-                                .split(" ")
-                                .map((n: string) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
+                      {applicantData.documents.map((doc) => (
+                        <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
+                          <div className="flex items-center gap-4">
+                            <div className="p-2 bg-orange-100 rounded-lg">
+                              <FileText className="h-6 w-6 text-orange-600" />
+                            </div>
                           <div>
-                            <p className="font-medium">{interview.interviewer}</p>
-                            <p className="text-sm text-gray-600">{interview.date}</p>
-                            <p className="text-sm text-gray-600">{interview.time}</p>
-                            <p className="text-sm text-gray-600">{interview.location}</p>
+                              <p className="font-medium text-gray-900">{doc.name}</p>
+                              <p className="text-sm text-gray-600">{doc.type} • {doc.size} • {doc.uploaded}</p>
                           </div>
                         </div>
-                        <Button className="text-teal-400" variant="outline" size="sm">
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Add Feedback
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
                         </Button>
+                          </div>
                       </div>
                     ))}
                   </div>
@@ -779,13 +976,183 @@ export default function ApplicantDetailsPage() {
             </TabsContent>
           </Tabs>
         </div>
+        </div>
+
+        {/* Add Note Dialog */}
+        <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Note</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <TextareaComponent
+                placeholder="Write your note here..."
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                rows={4}
+              />
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleAddNote}
+                  disabled={addNoteMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {addNoteMutation.isPending ? "Adding..." : "Add Note"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Schedule Interview Dialog */}
+        <Dialog open={isInterviewDialogOpen} onOpenChange={setIsInterviewDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Schedule Interview</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="interviewer">Interviewer</Label>
+                  <Input
+                    id="interviewer"
+                    value={interviewData.interviewer}
+                    onChange={(e) => setInterviewData(prev => ({ ...prev, interviewer: e.target.value }))}
+                    placeholder="Enter interviewer name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="type">Interview Type</Label>
+                  <Select value={interviewData.type} onValueChange={(value) => setInterviewData(prev => ({ ...prev, type: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Technical Interview">Technical Interview</SelectItem>
+                      <SelectItem value="HR Interview">HR Interview</SelectItem>
+                      <SelectItem value="Final Interview">Final Interview</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="date">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={interviewData.date}
+                    onChange={(e) => setInterviewData(prev => ({ ...prev, date: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="time">Time</Label>
+                  <Input
+                    id="time"
+                    type="time"
+                    value={interviewData.time}
+                    onChange={(e) => setInterviewData(prev => ({ ...prev, time: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={interviewData.location}
+                  onChange={(e) => setInterviewData(prev => ({ ...prev, location: e.target.value }))}
+                  placeholder="Enter location or meeting link"
+                />
+              </div>
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <TextareaComponent
+                  id="notes"
+                  value={interviewData.notes}
+                  onChange={(e) => setInterviewData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Add any notes about the interview..."
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsInterviewDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleScheduleInterview}
+                  disabled={scheduleInterviewMutation.isPending}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  {scheduleInterviewMutation.isPending ? "Scheduling..." : "Schedule Interview"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Review Dialog */}
+        <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Write Performance Review</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Star Rating */}
+              <div>
+                <Label htmlFor="rating">Overall Rating</Label>
+                <div className="flex items-center space-x-1 mt-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewData(prev => ({ ...prev, rating: star }))}
+                      className={`p-1 ${
+                        star <= reviewData.rating
+                          ? "text-yellow-400"
+                          : "text-gray-300 hover:text-yellow-300"
+                      }`}
+                    >
+                      <Star className="h-6 w-6 fill-current" />
+                    </button>
+                  ))}
+                  <span className="ml-3 text-sm font-medium text-gray-600">
+                    {reviewData.rating > 0 ? `${reviewData.rating} out of 5` : "Select a rating"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Feedback */}
+              <div>
+                <Label htmlFor="feedback">Detailed Feedback</Label>
+                <TextareaComponent
+                  id="feedback"
+                  placeholder="Write detailed feedback about the candidate's performance, skills, and areas for improvement..."
+                  value={reviewData.feedback}
+                  onChange={(e) => setReviewData(prev => ({ ...prev, feedback: e.target.value }))}
+                  rows={4}
+                  className="mt-2 resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsReviewDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSubmitReview}
+                  disabled={createReviewMutation.isPending || reviewData.rating === 0 || !reviewData.feedback.trim()}
+                  className="bg-yellow-600 hover:bg-yellow-700"
+                >
+                  {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
-}
-
-function getNextStage(currentStage: string): string {
-  const stages = ["Applied", "Review", "Shortlisted", "Interview", "Hired"]
-  const currentIndex = stages.indexOf(currentStage)
-  return currentIndex < stages.length - 1 ? stages[currentIndex + 1] : currentStage
 }

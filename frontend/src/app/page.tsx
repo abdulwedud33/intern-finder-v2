@@ -4,21 +4,27 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, MapPin, Star, ArrowRight } from "lucide-react"
+import { Search, MapPin, Star, ArrowRight, Users, Building2, Briefcase, TrendingUp, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import briefCase from "../../public/images/briefcase(2) 2.png";
-import building from "../../public/images/building 1.png";
-import g2081 from "../../public/images/g2081.png";
-import logo1 from "../../public/images/logo(1).png";
-import logo2 from "../../public/images/logo(2).png";
-import logo from "../../public/images/logo.png";
-import logos from "../../public/images/logos.png";
-import goodLife from "../../public/images/good life.avif";
-import work1 from "../../public/images/work1.jpg";
-import work2 from "../../public/images/work2.jpg";
-import betterFuture from "../../public/images/better future.jpg";
+import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useJobs } from "@/hooks/useJobs"
+import { useCompanies } from "@/hooks/useCompanies"
 import { LoadingCard } from "@/components/ui/loading-spinner"
+
+// Import images
+import briefCase from "../../public/images/briefcase(2) 2.png"
+import building from "../../public/images/building 1.png"
+import g2081 from "../../public/images/g2081.png"
+import logo1 from "../../public/images/logo(1).png"
+import logo2 from "../../public/images/logo(2).png"
+import logo from "../../public/images/logo.png"
+import logos from "../../public/images/logos.png"
+import goodLife from "../../public/images/good life.avif"
+import work1 from "../../public/images/work1.jpg"
+import work2 from "../../public/images/work2.jpg"
+import betterFuture from "../../public/images/better future.jpg"
 
 const FEATURED_JOBS_COUNT = 4
 
@@ -58,137 +64,166 @@ const blogPosts = [
   },
 ]
 
-import { useEffect, useState } from "react"
-
 export default function Homepage() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [featuredJobs, setFeaturedJobs] = useState<any[]>([])
+  const router = useRouter()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [locationQuery, setLocationQuery] = useState("")
+  
+  // Fetch data for stats and featured jobs
+  const { jobs: allJobs, loading: jobsLoading, error: jobsError, total: totalJobs } = useJobs({ limit: 4 })
+  const { companies, loading: companiesLoading, total: totalCompanies } = useCompanies({ limit: 1 })
+  
+  // Mock data for users count (replace with real API call when available)
+  const [stats, setStats] = useState({
+    totalJobs: 0,
+    totalCompanies: 0,
+    totalUsers: 0,
+    activeJobs: 0
+  })
 
+  // Update stats when data loads
   useEffect(() => {
-    // Simulate fetching jobs (replace with real API call)
-    setIsLoading(true)
-    setError(null)
-    setTimeout(() => {
-      // Example: Replace with actual fetch logic
-      // setFeaturedJobs(data)
-      setFeaturedJobs([
-        {
-          id: "1",
-          _id: "1",
-          title: "Frontend Developer",
-          company: {
-            name: "Tech Corp",
-            profile: { logoUrl: "/placeholder.svg" }
-          },
-          typesOfEmployment: ["Full-time"],
-          location: "Remote",
-          createdAt: new Date().toISOString(),
-          salaryRange: { min: 50000, max: 80000 },
-          salary: "Competitive"
-        },
-        {
-          id: "2",
-          _id: "2",
-          title: "Backend Developer",
-          company: {
-            name: "Innovate LLC",
-            profile: { logoUrl: "/placeholder.svg" }
-          },
-          typesOfEmployment: ["Part-time"],
-          location: "New York",
-          createdAt: new Date().toISOString(),
-          salaryRange: { min: 60000, max: 90000 },
-          salary: "Competitive"
-        }
-      ])
-      setIsLoading(false)
-    }, 1200)
-  }, [])
+    setStats({
+      totalJobs: totalJobs || 0,
+      totalCompanies: totalCompanies || 0,
+      totalUsers: 15000, // Mock data - replace with real API call
+      activeJobs: totalJobs || 0
+    })
+  }, [totalJobs, totalCompanies])
+
+  // Get the first 4 jobs as featured jobs
+  const featuredJobs = allJobs.slice(0, 4)
+  const isLoading = jobsLoading
+  const error = jobsError
+
+  // Handle search form submission
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim() || locationQuery.trim()) {
+      // Build query parameters
+      const params = new URLSearchParams()
+      if (searchQuery.trim()) params.set('search', searchQuery.trim())
+      if (locationQuery.trim()) params.set('location', locationQuery.trim())
+      
+      // Navigate to jobs page with filters
+      router.push(`/jobs?${params.toString()}`)
+    } else {
+      // If no search terms, just go to jobs page
+      router.push('/jobs')
+    }
+  }
+
+  // Handle "Search Jobs" button click
+  const handleSearchJobsClick = () => {
+    handleSearch(new Event('submit') as any)
+  }
+
+  // Handle "Find Your Company" button click
+  const handleFindCompanyClick = () => {
+    router.push('/dashboard/intern/company')
+  }
+
+  // Handle "Get Started Now" button click
+  const handleGetStartedClick = () => {
+    router.push('/register')
+  }
 
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative bg-[url('/images/hero-section-bg.jpg')] bg-cover bg-center min-h-screen text-white">
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/80"></div>
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/80"></div>
 
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center items-center min-h-screen py-12">
-        {/* Heading */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl mt-12 font-bold mb-4 text-center">
-          Find Your Dream Job Today!
-        </h1>
-        <p className="text-base sm:text-lg text-gray-300 text-center max-w-xl md:max-w-2xl mb-6 sm:mb-8">
-          Connecting Talent with Opportunity: Your Gateway to Career Success
-        </p>
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center items-center min-h-screen py-12">
+          {/* Heading */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl mt-12 font-bold mb-4 text-center">
+            Find Your Dream Job Today!
+          </h1>
+          <p className="text-base sm:text-lg text-gray-300 text-center max-w-xl md:max-w-2xl mb-6 sm:mb-8">
+            Connecting Talent with Opportunity: Your Gateway to Career Success
+          </p>
 
-        {/* Search Bar */}
-        <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4 max-w-4xl mx-auto flex flex-col w-full mb-8 sm:mb-10">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input placeholder="Job title, keywords, or company" className="pl-10 h-11 sm:h-12 text-gray-900 w-full" />
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="bg-white rounded-lg shadow-lg p-3 sm:p-4 max-w-4xl mx-auto flex flex-col w-full mb-8 sm:mb-10">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input 
+                  placeholder="Job title, keywords, or company" 
+                  className="pl-10 h-11 sm:h-12 text-gray-900 w-full" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex-1 relative">
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input 
+                  placeholder="Location" 
+                  className="pl-10 h-11 sm:h-12 text-gray-900 w-full" 
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                />
+              </div>
+              <Button 
+                type="submit"
+                className="h-11 sm:h-12 px-6 sm:px-8 bg-teal-500 hover:bg-teal-600 w-full sm:w-auto"
+              >
+                Search Jobs
+              </Button>
             </div>
-            <div className="flex-1 relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input placeholder="Location" className="pl-10 h-11 sm:h-12 text-gray-900 w-full" />
+          </form>
+
+          {/* Stats */}
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-10 text-center mb-8 sm:mb-10">
+            <div className="flex flex-row items-center gap-2">
+              <div className="flex items-center justify-center bg-teal-400 rounded-full p-1">
+                <Image src={briefCase} alt="Briefcase Icon" width={24} height={24} className="m-1 rounded-xl" />
+              </div>
+              <div className="text-white flex flex-col">
+                <span className="text-md sm:text-xl font-bold">
+                  {stats.totalJobs > 0 ? `${stats.totalJobs.toLocaleString()}+` : "25,000+"}
+                </span>
+                <span className="text-sm sm:text-base">jobs</span>
+              </div>
             </div>
-            <div className="flex-1">
-              <Input
-                placeholder="Select Category"
-                className="h-11 sm:h-12 px-4 rounded-full border border-gray-300 text-black focus:outline-none w-full"
-              />
+            <div className="flex flex-row items-center gap-2">
+              <div className="flex items-center justify-center bg-teal-400 rounded-full p-1">
+                <Image src={building} alt="Building Icon" width={24} height={24} className="m-1 rounded-xl" />
+              </div>
+              <div className="text-white flex flex-col">
+                <span className="text-md sm:text-xl font-bold">
+                  {stats.totalCompanies > 0 ? `${stats.totalCompanies.toLocaleString()}+` : "1,000+"}
+                </span>
+                <span className="text-sm sm:text-base">companies</span>
+              </div>
             </div>
-            <Button className="h-11 sm:h-12 px-6 sm:px-8 bg-teal-500 hover:bg-teal-600 w-full sm:w-auto">
-              Search Jobs
-            </Button>
+            <div className="flex flex-row items-center gap-2">
+              <div className="flex items-center justify-center bg-teal-400 rounded-full p-1">
+                <Image src={g2081} alt="Users Icon" width={24} height={24} className="m-1 rounded-xl" />
+              </div>
+              <div className="text-white flex flex-col">
+                <span className="text-md sm:text-xl font-bold">
+                  {stats.totalUsers.toLocaleString()}+
+                </span>
+                <span className="text-sm sm:text-base">users</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-10 text-center mb-8 sm:mb-10">
-          <div className="flex flex-row items-center gap-2">
-            <div className="flex items-center justify-center bg-teal-400 rounded-full p-1">
-              <Image src={briefCase} alt="Briefcase Icon" width={24} height={24} className="m-1 rounded-xl" />
-            </div>
-            <div className="text-white flex flex-col">
-              <span className="text-md sm:text-xl">25,000+</span>
-              <span className="text-sm sm:text-base">jobs</span>
-            </div>
-          </div>
-          <div className="flex flex-row items-center gap-2">
-            <div className="flex items-center justify-center bg-teal-400 rounded-full p-1">
-              <Image src={building} alt="Building Icon" width={24} height={24} className="m-1 rounded-xl" />
-            </div>
-            <div className="text-white flex flex-col">
-              <span className="text-md sm:text-xl">1,000+</span>
-              <span className="text-sm sm:text-base">companies</span>
-            </div>
-          </div>
-          <div className="flex flex-row items-center gap-2">
-            <div className="flex items-center justify-center bg-teal-400 rounded-full p-1">
-              <Image src={g2081} alt="Users Icon" width={24} height={24} className="m-1 rounded-xl" />
-            </div>
-            <div className="text-white flex flex-col">
-              <span className="text-md sm:text-xl">100,000+</span>
-              <span className="text-sm sm:text-base">users</span>
-            </div>
+        {/* Logos */}
+        <div className="absolute bottom-0 w-full bg-black py-4 px-4 sm:px-6">
+          <div className="flex flex-wrap justify-center sm:justify-evenly gap-4 sm:gap-6 md:gap-8 items-center">
+            <Image src={logo1} alt="Slack" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
+            <Image src={logo2} alt="Adobe" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
+            <Image src={logo} alt="Asana" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
+            <Image src={logos} alt="Linear" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Logos */}
-      <div className="absolute bottom-0 w-full bg-black py-4 px-4 sm:px-6">
-        <div className="flex flex-wrap justify-center sm:justify-evenly gap-4 sm:gap-6 md:gap-8 items-center">
-          <Image src={logo1} alt="Slack" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
-          <Image src={logo2} alt="Adobe" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
-          <Image src={logo} alt="Asana" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
-          <Image src={logos} alt="Linear" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
-        </div>
-      </div>
-    </section>
-
-      {/* live fetched jobs */}
+      {/* Featured Jobs Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
@@ -212,39 +247,52 @@ export default function Homepage() {
               <div className="col-span-full text-center text-gray-500">No jobs found.</div>
             ) : (
               featuredJobs.map((job: any) => (
-                <Card key={job.id} className="hover:shadow-lg transition-shadow border border-gray-200">
+                <Card key={job._id} className="hover:shadow-lg transition-shadow border border-gray-200">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-4">
-                        <Image
-                          src={job.company?.profile?.logoUrl && job.company.profile.logoUrl !== "no-logo.jpg" ? job.company.profile.logoUrl : "/placeholder.svg"}
-                          alt={job.company?.name || "Company"}
-                          width={48}
-                          height={48}
-                          className="rounded-lg"
-                        />
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                          {job.company?.logo ? (
+                            <Image
+                              src={job.company.logo}
+                              alt={`${job.company.name} logo`}
+                              width={48}
+                              height={48}
+                              className="object-contain p-2"
+                            />
+                          ) : (
+                            <div className="text-lg font-bold text-gray-400">
+                              {job.company?.name?.charAt(0) || 'C'}
+                            </div>
+                          )}
+                        </div>
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
                           <p className="text-gray-600">{job.company?.name}</p>
                         </div>
                       </div>
                       <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        {job.typesOfEmployment?.join(", ") || "Full-time"}
+                        {job.type || "Full-time"}
                       </Badge>
                     </div>
 
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
                       <div className="flex items-center">
                         <MapPin className="h-4 w-4 mr-1" />
-                        {job.location}
+                        {job.isRemote ? "Remote" : job.location}
                       </div>
                       <span>{job.createdAt ? new Date(job.createdAt).toDateString() : "Recently"}</span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-semibold text-teal-600">{job.salaryRange ? `$${job.salaryRange.min} - $${job.salaryRange.max}` : job.salary || "Competitive"}</span>
+                      <span className="text-lg font-semibold text-teal-600">
+                        {job.salary 
+                          ? `$${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()} ${job.salary.currency}`
+                          : "Competitive"
+                        }
+                      </span>
                       <Button className="bg-teal-500 hover:bg-teal-600" asChild>
-                        <Link href={`/jobs/${job._id || job.id}`}>View</Link>
+                        <Link href={`/jobs/${job._id}`}>View</Link>
                       </Button>
                     </div>
                   </CardContent>
@@ -254,7 +302,6 @@ export default function Homepage() {
           </div>
         </div>
       </section>
-      
 
       {/* Good Life Section */}
       <section className="py-16 text-black">
@@ -280,23 +327,43 @@ export default function Homepage() {
               <h4 className="text-3xl md:text-4xl font-bold text-teal-600 mb-6">
                 A Good Company
               </h4>
-              <p>
+              <p className="text-gray-600 mb-6">
                 We connect you with top companies looking for talent like you. Explore opportunities that match your skills and aspirations.
               </p>
-                <Button className="text-white bg-teal-700 px-8 mt-6 py-4 text-lg font-semibold">
-                  Find Your Company
-                </Button>
+              <Button 
+                className="text-white bg-teal-700 px-8 mt-6 py-4 text-lg font-semibold hover:bg-teal-800"
+                onClick={handleFindCompanyClick}
+              >
+                Find Your Company
+              </Button>
+              
+              {/* Updated Stats with real data */}
               <div className="flex flex-wrap justify-center lg:justify-start gap-8 mt-12">
                 <div className="flex flex-col items-center lg:items-start">
-                  <span className="text-3xl font-bold text-teal-600">12k+</span>
-                  <span className="text-gray-600">Happy Employees</span>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-6 w-6 text-teal-600" />
+                    <span className="text-3xl font-bold text-teal-600">
+                      {stats.totalUsers.toLocaleString()}+
+                    </span>
+                  </div>
+                  <span className="text-gray-600">Happy Users</span>
                 </div>
                 <div className="flex flex-col items-center lg:items-start">
-                  <span className="text-3xl font-bold text-teal-600">20k+</span>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-6 w-6 text-teal-600" />
+                    <span className="text-3xl font-bold text-teal-600">
+                      {stats.totalCompanies > 0 ? `${stats.totalCompanies.toLocaleString()}+` : "1,000+"}
+                    </span>
+                  </div>
                   <span className="text-gray-600">Companies</span>
                 </div>
                 <div className="flex flex-col items-center lg:items-start">
-                  <span className="text-3xl font-bold text-teal-600">18k+</span>
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-6 w-6 text-teal-600" />
+                    <span className="text-3xl font-bold text-teal-600">
+                      {stats.activeJobs > 0 ? `${stats.activeJobs.toLocaleString()}+` : "500+"}
+                    </span>
+                  </div>
                   <span className="text-gray-600">Active Jobs</span>
                 </div>
               </div>
@@ -313,20 +380,23 @@ export default function Homepage() {
               Create A Better<br className="hidden md:block" />
               Future For Yourself
             </h2>
-            <p className="text-sm mb-8 max-w-2xl mx-auto">
+            <p className="text-sm mb-8 max-w-2xl mx-auto text-gray-300">
               Join thousands of professionals who found their dream jobs through our platform.
             </p>
-            <Button className="text-white bg-teal-700 px-8 py-4 text-lg font-semibold">
+            <Button 
+              className="text-white bg-teal-700 px-8 py-4 text-lg font-semibold hover:bg-teal-800"
+              onClick={handleGetStartedClick}
+            >
               Get Started Now
             </Button>
           </div>
           <div className="relative w-full lg:w-1/2 h-96 rounded-lg overflow-hidden">
-              <Image 
-                src={betterFuture} 
-                alt="Better Future"
-                fill
-                className="object-cover"
-              />
+            <Image 
+              src={betterFuture} 
+              alt="Better Future"
+              fill
+              className="object-cover"
+            />
           </div>
         </div>
       </section>
@@ -369,6 +439,37 @@ export default function Homepage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action Section */}
+      <section className="py-16 bg-gray-700 text-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Ready to Find Your Dream Job?
+          </h2>
+          <p className="text-xl mb-8 text-teal-100 max-w-2xl mx-auto">
+            Join thousands of professionals who have already found their perfect career match.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              className="bg-white text-teal-600 hover:bg-gray-100 px-8 py-3"
+              onClick={handleSearchJobsClick}
+            >
+              <Search className="h-5 w-5 mr-2" />
+              Search Jobs
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-white text-white hover:bg-white hover:text-teal-600 px-8 py-3"
+              onClick={handleGetStartedClick}
+            >
+              <Users className="h-5 w-5 mr-2" />
+              Get Started
+            </Button>
           </div>
         </div>
       </section>

@@ -1,16 +1,18 @@
 'use client'
 
-import { LayoutDashboard, MessageSquare, FileText, Building2, User, Settings, HelpCircle } from "lucide-react"
+import { LayoutDashboard, MessageSquare, FileText, Building2, User, Settings, HelpCircle, ChevronRight, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
+import { useState } from "react"
 
 
 export function ClientSidebar() {
 const pathname = usePathname();
-const { logout } = useAuth();
+const { logout, user } = useAuth();
+const [isOpen, setIsOpen] = useState(false);
 
 const links = [
     { href: "/dashboard/client", label: "Dashboard", icon: LayoutDashboard },
@@ -26,8 +28,39 @@ const link2= [
   ];  
 
   return (
-    <aside className="w-64 bg-[#EBF5F4] border-r border-gray-200 min-h-screen">
-      <div className="p-6">
+    <>
+      {/* Mobile Toggle Button */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="fixed top-4 left-4 z-50 md:hidden bg-teal-500 text-white p-3 rounded-lg shadow-lg hover:bg-teal-600 transition-colors border-2 border-white"
+        aria-label="Open Sidebar"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={cn(
+        "w-64 bg-[#EBF5F4] border-r border-gray-200 min-h-screen fixed md:relative z-50 transition-transform duration-300 ease-in-out",
+        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}>
+        {/* Mobile Close Button */}
+        <button
+          onClick={() => setIsOpen(false)}
+          className="md:hidden absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          aria-label="Close Sidebar"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="p-6">
         {/* Main Navigation */}
         <nav className="space-y-3">
       {links.map((item) => {
@@ -37,6 +70,7 @@ const link2= [
           <Link
             key={item.href}
             href={item.href}
+            onClick={() => setIsOpen(false)}
             className={cn(
               "flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors",
               isActive
@@ -62,6 +96,7 @@ const link2= [
           <Link
             key={item.href}
             href={item.href}
+            onClick={() => setIsOpen(false)}
             className={cn(
               "flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors",
               isActive
@@ -91,14 +126,24 @@ const link2= [
           </div>
         </button>
         )}
-        <Link href="/dashboard/intern/profile" className="flex items-center space-x-2 hover:bg-gray-50 p-1 rounded-lg transition-colors">
+        <Link 
+          href="/dashboard/client/profile" 
+          className="flex items-center space-x-2 hover:bg-gray-50 p-1 rounded-lg transition-colors"
+          onClick={() => setIsOpen(false)}
+        >
           <Avatar className="w-12 h-12">
-            <AvatarFallback>IF</AvatarFallback>
+            <AvatarImage 
+              src={user?.role === 'company' ? '/placeholder-logo.svg' : user?.avatar} 
+              alt={user?.name} 
+            />
+            <AvatarFallback className="bg-teal-500 text-white">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'CF'}
+            </AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-sm font-medium text-gray-900">intern name</p>
+            <p className="text-sm font-medium text-gray-900">{user?.name || 'Company Name'}</p>
             <p className="text-xs text-gray-500">
-              internemail@gmail.com
+              {user?.email || 'companyemail@gmail.com'}
             </p>
           </div>
         </Link>
@@ -106,5 +151,6 @@ const link2= [
        
       </div>
     </aside>
+    </>
   )
 }

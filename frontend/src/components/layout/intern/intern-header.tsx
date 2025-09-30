@@ -1,7 +1,9 @@
 "use client"
 
-import { Bell, User, Menu, ChevronRight } from "lucide-react"
+import { Bell, User, Menu, ChevronRight, LogOut, Settings, Briefcase, UserCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   Popover,
   PopoverContent,
@@ -11,10 +13,12 @@ import Link from "next/link"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { usePathname } from "next/navigation"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function InternHeader() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const { user, logout } = useAuth()
 
   return (
     <header className="bg-gray-900 text-white px-6 py-4">
@@ -99,23 +103,102 @@ export function InternHeader() {
               </div>
             </PopoverContent>
           </Popover>
-         <Link href="/dashboard/intern/profile">
-         <Button variant="ghost" size="icon" className="text-white hover:bg-gray-800">
-            <User className="h-5 w-5" />
-          </Button>
-         </Link>
-          
+
+          {/* User Avatar Dropdown */}
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage 
+                      src={user.avatar} 
+                      alt={user.name} 
+                    />
+                    <AvatarFallback className="bg-teal-500 text-white">
+                      {user.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground capitalize">
+                      {user.role}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/intern" className="flex items-center">
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/intern/profile" className="flex items-center">
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/intern/settings" className="flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={logout}
+                  className="flex items-center text-red-600 focus:text-red-600"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Mobile Menu Toggle */}
-        <button
-          className="md:hidden text-white"
-          onClick={() => setIsOpen(true)}
-          aria-label="Open Menu"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
+        {user ? (
+          <button
+            className="md:hidden text-white"
+            onClick={() => setIsOpen(true)}
+            aria-label="Open Menu"
+          >
+            <Avatar className="h-8 w-8">
+              <AvatarImage 
+                src={user.avatar} 
+                alt={user.name} 
+              />
+              <AvatarFallback className="bg-teal-500 text-white text-sm">
+                {user.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </button>
+        ) : (
+          <button
+            className="md:hidden text-white"
+            onClick={() => setIsOpen(true)}
+            aria-label="Open Menu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        )}
       </div>
+
+      {/* Mobile Menu Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
 
       {/* Mobile Drawer */}
       <div
@@ -138,6 +221,66 @@ export function InternHeader() {
         </div>
 
         <div className="px-4 py-4 space-y-4">
+          {/* User Info Section */}
+          {user && (
+            <div className="space-y-2">
+              <div className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg border border-gray-600">
+                <Avatar className="h-10 w-10 ring-2 ring-teal-500/20">
+                  <AvatarImage 
+                    src={user.avatar} 
+                    alt={user.name} 
+                  />
+                  <AvatarFallback className="bg-teal-500 text-white">
+                    {user.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                  <p className="text-xs text-gray-300 truncate">{user.email}</p>
+                  <p className="text-xs text-teal-400 capitalize">{user.role}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <Link
+                  href="/dashboard/intern"
+                  className="flex items-center px-3 py-2 text-sm text-gray-300 hover:text-teal-400 hover:bg-gray-700 rounded-md transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Briefcase className="w-4 h-4 mr-3" />
+                  Dashboard
+                </Link>
+                <Link
+                  href="/dashboard/intern/profile"
+                  className="flex items-center px-3 py-2 text-sm text-gray-300 hover:text-teal-400 hover:bg-gray-700 rounded-md transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <UserCircle className="w-4 h-4 mr-3" />
+                  Profile
+                </Link>
+                <Link
+                  href="/dashboard/intern/settings"
+                  className="flex items-center px-3 py-2 text-sm text-gray-300 hover:text-teal-400 hover:bg-gray-700 rounded-md transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Settings className="w-4 h-4 mr-3" />
+                  Settings
+                </Link>
+                <button
+                  onClick={() => {
+                    logout()
+                    setIsOpen(false)
+                  }}
+                  className="flex items-center w-full px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-700 rounded-md transition-colors"
+                >
+                  <LogOut className="w-4 h-4 mr-3" />
+                  Log out
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation Links */}
           <nav className="flex flex-col gap-3 space-y-2">
             <Link href="/" onClick={() => setIsOpen(false)} className="text-white hover:text-green-400">
               Home

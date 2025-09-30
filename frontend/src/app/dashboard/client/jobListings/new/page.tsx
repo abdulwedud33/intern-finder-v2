@@ -11,9 +11,9 @@ import { ArrowLeft, CheckCircle } from "lucide-react"
 import { Check } from 'lucide-react'; 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useCreateListing } from "@/hooks/useListings"
-import { toast } from "sonner"
-import type { CreateListingRequest } from "@/services/listingsService"
+import { useCreateJob } from "@/hooks/useJobManagement"
+import { useToast } from "@/components/ui/use-toast"
+import type { CreateJobRequest } from "@/services/jobManagementService"
 
 export default function NewJobPage() {
   const [currentStep, setCurrentStep] = useState(1)
@@ -37,7 +37,8 @@ export default function NewJobPage() {
     niceToHaves: "",
   })
   const router = useRouter()
-  const createListingMutation = useCreateListing()
+  const createJobMutation = useCreateJob()
+  const { toast } = useToast()
 
   const steps = [
     { number: 1, title: "Job Information", icon: "📋" },
@@ -472,7 +473,11 @@ export default function NewJobPage() {
               className="bg-teal-500 hover:bg-teal-600"
               onClick={() => {
                 if (!formData.location || !formData.jobTitle) {
-                  toast.error("Please fill in Job Title and Location.")
+                  toast({
+                    title: "Missing required fields",
+                    description: "Please fill in Job Title and Location.",
+                    variant: "destructive",
+                  });
                   return
                 }
 
@@ -482,28 +487,48 @@ export default function NewJobPage() {
                   formData.employmentType.remote ? "remote" : undefined,
                 ].filter(Boolean) as Array<'full-time' | 'part-time' | 'internship' | 'contract'>
 
-                const payload: CreateListingRequest = {
+                const payload: CreateJobRequest = {
                   title: formData.jobTitle,
-                  description: [formData.jobDescription, formData.responsibilities].filter(Boolean).join("\n\n"),
+                  description: formData.jobDescription || "",
                   location: formData.location,
                   type: employmentTypes[0] || "internship",
+                  level: "entry", // Default level
                   requirements: formData.professionalSkills.split(",").map(s => s.trim()).filter(Boolean),
+                  responsibilities: formData.responsibilities.split(",").map(s => s.trim()).filter(Boolean),
+                  qualifications: formData.qualifications.split(",").map(s => s.trim()).filter(Boolean),
+                  applicationDeadline: formData.dueDate || undefined,
+                  isRemote: formData.employmentType.remote,
+                  status: "active",
                   salary: formData.salaryRangeMin && formData.salaryRangeMax 
-                    ? `$${formData.salaryRangeMin} - $${formData.salaryRangeMax}`
+                    ? {
+                        min: formData.salaryRangeMin,
+                        max: formData.salaryRangeMax,
+                        currency: "USD",
+                        period: "yearly"
+                      }
                     : undefined,
-                  benefits: [],
-                  deadline: formData.dueDate || undefined,
                 }
 
-                createListingMutation.mutate(payload, {
+                createJobMutation.mutate(payload, {
                   onSuccess: () => {
+                    toast({
+                      title: "Job created successfully",
+                      description: "Your job listing has been posted.",
+                    });
                     router.push("/dashboard/client/jobListings")
+                  },
+                  onError: () => {
+                    toast({
+                      title: "Failed to create job",
+                      description: "Please try again later.",
+                      variant: "destructive",
+                    });
                   }
                 })
               }}
-              disabled={createListingMutation.isPending}
+              disabled={createJobMutation.isPending}
             >
-              {createListingMutation.isPending ? "Posting..." : "Post Job"}
+              {createJobMutation.isPending ? "Creating..." : "Create Job"}
             </Button>
           )}
         </div>
