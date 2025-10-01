@@ -60,7 +60,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/components/ui/use-toast"
 import { useParams } from "next/navigation"
 import { format } from "date-fns"
-import { useCreateInternReview } from "@/hooks/useReviews"
+import { useCreateInternReview, useReviewsForTarget } from "@/hooks/useReviews"
+import { ReviewForm, ReviewCard, StarRatingDisplay } from "@/components/reviews/ReviewForm"
 
 // Mock data for demonstration
 const mockApplicantData = {
@@ -263,8 +264,9 @@ export default function ApplicantDetailsPage() {
     }
   })
 
-  // Review mutation
+  // Review mutations and data
   const createReviewMutation = useCreateInternReview()
+  const { data: reviewsData, isLoading: reviewsLoading } = useReviewsForTarget(application?.data?.id || '', 'intern')
 
   const handleStageUpdate = (newStage: string) => {
     updateStageMutation.mutate(newStage)
@@ -286,31 +288,15 @@ export default function ApplicantDetailsPage() {
     addNoteMutation.mutate(newNote)
   }
 
-  const handleSubmitReview = () => {
-    if (reviewData.rating === 0) {
-      toast({ title: "Please select a rating", variant: "destructive" })
-      return
-    }
-    if (!reviewData.feedback.trim()) {
-      toast({ title: "Please enter feedback", variant: "destructive" })
-      return
-    }
-    
-    // Mock job ID - replace with actual job ID from application data
-    const jobId = "mock-job-id"
+  const handleSubmitReview = (data: any) => {
     createReviewMutation.mutate({
       internId: applicationId,
-      jobId: jobId,
+      jobId: application?.data?.appliedJob || '',
       data: {
-        rating: reviewData.rating,
-        feedback: reviewData.feedback
+        rating: data.rating,
+        feedback: data.content
       }
     })
-    
-    if (createReviewMutation.isSuccess) {
-      setIsReviewDialogOpen(false)
-      setReviewData({ rating: 0, feedback: "" })
-    }
   }
 
   const getStageColor = (stage: string) => {
@@ -830,107 +816,36 @@ export default function ApplicantDetailsPage() {
                     </Button>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Review Form */}
-                    <div className="p-6 bg-gray-50 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 mb-4">Rate this candidate's performance</h4>
-                      
-                      {/* Star Rating */}
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-gray-600 mb-2">Overall Rating</p>
-                        <div className="flex items-center space-x-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              type="button"
-                              onClick={() => setReviewData(prev => ({ ...prev, rating: star }))}
-                              className={`p-1 ${
-                                star <= reviewData.rating
-                                  ? "text-yellow-400"
-                                  : "text-gray-300 hover:text-yellow-300"
-                              }`}
-                            >
-                              <Star className="h-8 w-8 fill-current" />
-                            </button>
-                          ))}
-                          <span className="ml-3 text-sm font-medium text-gray-600">
-                            {reviewData.rating > 0 ? `${reviewData.rating} out of 5` : "Select a rating"}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Feedback Text */}
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-gray-600 mb-2">Detailed Feedback</p>
-                        <TextareaComponent
-                          placeholder="Write detailed feedback about the candidate's performance, skills, and areas for improvement..."
-                          value={reviewData.feedback}
-                          onChange={(e) => setReviewData(prev => ({ ...prev, feedback: e.target.value }))}
-                          rows={4}
-                          className="resize-none"
-                        />
-                      </div>
-
-                      {/* Submit Button */}
-                      <div className="flex justify-end">
-                        <Button 
-                          onClick={handleSubmitReview}
-                          disabled={createReviewMutation.isPending || reviewData.rating === 0 || !reviewData.feedback.trim()}
-                          className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                        >
-                          {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
-                        </Button>
-                      </div>
-                    </div>
+                    {/* Review Form - Moved to Dialog */}
 
                     {/* Existing Reviews */}
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-4">Previous Reviews</h4>
-                      <div className="space-y-4">
-                        {/* Mock existing review */}
-                        <div className="p-4 border rounded-lg bg-white">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                              <Avatar className="h-10 w-10">
-                                <AvatarImage src="/placeholder-user.jpg" alt="Reviewer" />
-                                <AvatarFallback className="bg-blue-100 text-blue-700">
-                                  JS
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium text-gray-900">John Smith</p>
-                                <p className="text-sm text-gray-500">Technical Lead</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="flex items-center space-x-1 mb-1">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                  <Star
-                                    key={star}
-                                    className={`h-4 w-4 ${
-                                      star <= 4
-                                        ? "text-yellow-400 fill-yellow-400"
-                                        : "text-gray-300"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                              <p className="text-xs text-gray-500">2 days ago</p>
-                            </div>
+                      {reviewsLoading ? (
+                        <div className="space-y-4">
+                          <div className="animate-pulse">
+                            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                           </div>
-                          <p className="text-gray-700 text-sm leading-relaxed">
-                            "Sarah demonstrated excellent technical skills during the interview process. 
-                            Her problem-solving approach and communication were outstanding. 
-                            She would be a great addition to our team."
-                          </p>
                         </div>
-
-                        {/* Empty state if no reviews */}
+                      ) : reviewsData?.data && reviewsData.data.length > 0 ? (
+                        <div className="space-y-4">
+                          {reviewsData.data.map((review: any) => (
+                            <ReviewCard 
+                              key={review._id} 
+                              review={review}
+                              canEdit={false}
+                              canDelete={false}
+                            />
+                          ))}
+                        </div>
+                      ) : (
                         <div className="text-center py-8 text-gray-500">
                           <Star className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                           <p className="text-lg font-medium text-gray-900 mb-2">No reviews yet</p>
                           <p className="text-sm">Be the first to review this candidate's performance.</p>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -1095,61 +1010,21 @@ export default function ApplicantDetailsPage() {
 
         {/* Review Dialog */}
         <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Write Performance Review</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              {/* Star Rating */}
-              <div>
-                <Label htmlFor="rating">Overall Rating</Label>
-                <div className="flex items-center space-x-1 mt-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setReviewData(prev => ({ ...prev, rating: star }))}
-                      className={`p-1 ${
-                        star <= reviewData.rating
-                          ? "text-yellow-400"
-                          : "text-gray-300 hover:text-yellow-300"
-                      }`}
-                    >
-                      <Star className="h-6 w-6 fill-current" />
-                    </button>
-                  ))}
-                  <span className="ml-3 text-sm font-medium text-gray-600">
-                    {reviewData.rating > 0 ? `${reviewData.rating} out of 5` : "Select a rating"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Feedback */}
-              <div>
-                <Label htmlFor="feedback">Detailed Feedback</Label>
-                <TextareaComponent
-                  id="feedback"
-                  placeholder="Write detailed feedback about the candidate's performance, skills, and areas for improvement..."
-                  value={reviewData.feedback}
-                  onChange={(e) => setReviewData(prev => ({ ...prev, feedback: e.target.value }))}
-                  rows={4}
-                  className="mt-2 resize-none"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsReviewDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleSubmitReview}
-                  disabled={createReviewMutation.isPending || reviewData.rating === 0 || !reviewData.feedback.trim()}
-                  className="bg-yellow-600 hover:bg-yellow-700"
-                >
-                  {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
-                </Button>
-              </div>
-            </div>
+            <ReviewForm
+              targetId={application?.data?.id || ''}
+              targetName={application?.data?.name || 'Candidate'}
+              targetType="Intern"
+              jobId={application?.data?.appliedJob}
+              jobTitle={application?.data?.appliedJob}
+              onSubmit={handleSubmitReview}
+              onCancel={() => setIsReviewDialogOpen(false)}
+              mode="create"
+              isLoading={createReviewMutation.isPending}
+            />
           </DialogContent>
         </Dialog>
       </div>

@@ -32,7 +32,8 @@ import {
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
 import { useUploadProfilePhoto, useUploadResume } from "@/hooks/useFileUpload"
-import { FileUpload } from "@/components/ui/file-upload"
+import { useMyProfile, useUpdateProfile, useUploadProfilePicture, useUploadResume as useUploadResumeProfile } from "@/hooks/useInternProfile"
+import { EnhancedFileUpload } from "@/components/ui/enhanced-file-upload"
 import { LoadingPage } from "@/components/ui/loading-spinner"
 import { ErrorPage } from "@/components/ui/error-boundary"
 import { toast } from "sonner"
@@ -46,13 +47,16 @@ import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [isAddingExperience, setIsAddingExperience] = useState(false)
   const [activeTab, setActiveTab] = useState("overview")
   
-  const uploadProfilePhotoMutation = useUploadProfilePhoto()
-  const uploadResumeMutation = useUploadResume()
+  // Real data hooks
+  const { data: profileData, isLoading: profileLoading, error: profileError } = useMyProfile()
+  const updateProfileMutation = useUpdateProfile()
+  const uploadProfilePhotoMutation = useUploadProfilePicture()
+  const uploadResumeMutation = useUploadResumeProfile()
 
   const handleProfilePhotoUpload = (file: File) => {
     uploadProfilePhotoMutation.mutate(file)
@@ -61,77 +65,61 @@ export default function ProfilePage() {
   const handleResumeUpload = (file: File) => {
     uploadResumeMutation.mutate(file)
   }
-  
-  // Mock data for demonstration - replace with real data from hooks
-  const profileData = {
-    name: user?.name || "John Doe",
-    email: user?.email || "john.doe@example.com",
-    title: "Frontend Developer",
-    location: "San Francisco, CA",
-    bio: "Passionate frontend developer with 3+ years of experience building modern web applications. I love creating beautiful, responsive interfaces that provide exceptional user experiences.",
-    profilePicture: user?.avatar || "/placeholder-user.jpg",
-    coverImage: "/images/hero-section-bg.jpg",
-    skills: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Node.js", "Python", "Figma", "Git"],
-    experiences: [
-      {
-        id: 1,
-        title: "Frontend Developer",
-        company: "TechCorp Inc.",
-        duration: "2022 - Present",
-        description: "Led development of responsive web applications using React and TypeScript. Collaborated with design team to implement pixel-perfect UIs.",
-        type: "Full-time"
-      },
-      {
-        id: 2,
-        title: "Junior Developer",
-        company: "StartupXYZ",
-        duration: "2021 - 2022",
-        description: "Developed and maintained web applications using modern JavaScript frameworks. Worked closely with senior developers to learn best practices.",
-        type: "Full-time"
+
+  // Handle profile updates
+  const handleUpdateProfile = (updatedData: any) => {
+    updateProfileMutation.mutate(updatedData, {
+      onSuccess: () => {
+        setIsEditing(false)
       }
-    ],
-    education: [
-      {
-        id: 1,
-        degree: "Bachelor of Computer Science",
-        school: "University of California",
-        year: "2017 - 2021",
-        gpa: "3.8"
-      }
-    ],
-    projects: [
-      {
-        id: 1,
-        name: "E-commerce Platform",
-        description: "Full-stack e-commerce solution with React, Node.js, and MongoDB",
-        tech: ["React", "Node.js", "MongoDB", "Stripe"],
-        image: "/web-design-portfolio.png",
-        link: "https://github.com/johndoe/ecommerce"
-      },
-      {
-        id: 2,
-        name: "Task Management App",
-        description: "Collaborative task management tool with real-time updates",
-        tech: ["Next.js", "TypeScript", "Prisma", "PostgreSQL"],
-        image: "/mobile-app-design-concept.png",
-        link: "https://github.com/johndoe/taskapp"
-      }
-    ],
-    socialLinks: {
-      linkedin: "https://linkedin.com/in/johndoe",
-      github: "https://github.com/johndoe",
-      portfolio: "https://johndoe.dev",
-      twitter: "https://twitter.com/johndoe"
-    },
-    stats: {
-      profileViews: 1247,
-      applications: 23,
-      interviews: 8,
-      offers: 3
-    }
+    })
   }
 
-  if (loading) return <LoadingPage />
+  if (authLoading || profileLoading) return <LoadingPage />
+  if (profileError) return <ErrorPage error={{ message: profileError.toString() }} />
+  if (!profileData?.data) return <ErrorPage error={{ message: 'Profile not found' }} />
+
+  const profile: any = profileData.data
+
+  // Transform backend data to match frontend expectations
+  const transformedProfile: any = {
+    name: profile.name || user?.name || "John Doe",
+    email: profile.email || user?.email || "john.doe@example.com",
+    title: profile.headline || "Frontend Developer",
+    location: profile.location || "San Francisco, CA",
+    bio: profile.bio || "Passionate frontend developer with 3+ years of experience building modern web applications. I love creating beautiful, responsive interfaces that provide exceptional user experiences.",
+    profilePicture: profile.avatar || user?.avatar || "/placeholder-user.jpg",
+    coverImage: "/images/hero-section-bg.jpg",
+    skills: profile.skills?.map((skill: any) => skill.name) || ["React", "TypeScript", "Next.js", "Tailwind CSS", "Node.js", "Python", "Figma", "Git"],
+    experiences: profile.experience?.map((exp: any, index: number) => ({
+      id: exp._id || index + 1,
+      title: exp.title,
+      company: exp.company,
+      duration: `${new Date(exp.startDate).getFullYear()} - ${exp.isCurrent ? 'Present' : new Date(exp.endDate || '').getFullYear()}`,
+      description: exp.description || "",
+      type: "Full-time"
+    })) || [],
+    education: profile.education?.map((edu: any, index: number) => ({
+      id: edu._id || index + 1,
+      degree: edu.degree,
+      school: edu.institution,
+      year: `${new Date(edu.startDate).getFullYear()} - ${edu.isCurrent ? 'Present' : new Date(edu.endDate || '').getFullYear()}`,
+      gpa: edu.gpa?.toString() || "3.8"
+    })) || [],
+    projects: [], // Projects would need to be added to the backend model
+    socialLinks: {
+      linkedin: profile.social?.linkedin || profile.linkedinUrl || "https://linkedin.com/in/johndoe",
+      github: profile.social?.github || profile.githubUrl || "https://github.com/johndoe",
+      portfolio: profile.portfolioUrl || "https://johndoe.dev",
+      twitter: profile.social?.twitter || "https://twitter.com/johndoe"
+    },
+    stats: {
+      profileViews: 1247, // This would come from analytics API
+      applications: 23, // This would come from applications API
+      interviews: 8, // This would come from interviews API
+      offers: 3 // This would come from applications API
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -139,7 +127,7 @@ export default function ProfilePage() {
       <div className="relative">
         <div className="h-64 md:h-80 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 relative overflow-hidden">
           <Image
-            src={profileData.coverImage}
+            src={transformedProfile.coverImage}
             alt="Cover"
             fill
             className="object-cover opacity-20"
@@ -155,12 +143,12 @@ export default function ProfilePage() {
             <div className="relative">
                 <Avatar className="h-32 w-32 border-4 border-white shadow-2xl">
                 <AvatarImage 
-                    src={profileData.profilePicture} 
-                    alt={profileData.name}
+                    src={transformedProfile.profilePicture} 
+                    alt={transformedProfile.name}
                   className="object-cover"
                 />
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-2xl font-bold">
-                    {profileData.name.split(' ').map(n => n[0]).join('')}
+                    {transformedProfile.name.split(' ').map((n: string) => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
               <Dialog>
@@ -177,10 +165,17 @@ export default function ProfilePage() {
                     <DialogTitle>Update Profile Photo</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <FileUpload
-                      onFileSelect={handleProfilePhotoUpload}
-                      fileType="image"
+                    <EnhancedFileUpload
+                      onFileUploaded={(fileUrl, filename) => {
+                        // File is automatically uploaded and profile updated
+                        toast.success("Profile photo updated successfully!")
+                      }}
+                      currentFile={transformedProfile.photo}
+                      fileType="profile-photo"
                       maxSize={5}
+                      showPreview={true}
+                      showDownload={true}
+                      showDelete={true}
                       accept="image/*"
                       disabled={uploadProfilePhotoMutation.isPending}
                     />
@@ -196,11 +191,11 @@ export default function ProfilePage() {
               <div className="flex-1 text-white">
                 <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold mb-2">{profileData.name}</h1>
-                    <p className="text-xl text-blue-100 mb-2">{profileData.title}</p>
+                    <h1 className="text-3xl font-bold mb-2">{transformedProfile.name}</h1>
+                    <p className="text-xl text-blue-100 mb-2">{transformedProfile.title}</p>
                     <div className="flex items-center gap-2 text-blue-100">
                       <MapPin className="h-4 w-4" />
-                      <span>{profileData.location}</span>
+                      <span>{transformedProfile.location}</span>
                     </div>
                   </div>
                   
@@ -230,19 +225,19 @@ export default function ProfilePage() {
               {/* Stats Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="text-center p-4 hover:shadow-lg transition-shadow">
-                  <div className="text-2xl font-bold text-blue-600">{profileData.stats.profileViews}</div>
+                  <div className="text-2xl font-bold text-blue-600">{transformedProfile.stats.profileViews}</div>
                   <div className="text-sm text-gray-600">Profile Views</div>
                 </Card>
                 <Card className="text-center p-4 hover:shadow-lg transition-shadow">
-                  <div className="text-2xl font-bold text-green-600">{profileData.stats.applications}</div>
+                  <div className="text-2xl font-bold text-green-600">{transformedProfile.stats.applications}</div>
                   <div className="text-sm text-gray-600">Applications</div>
                 </Card>
                 <Card className="text-center p-4 hover:shadow-lg transition-shadow">
-                  <div className="text-2xl font-bold text-purple-600">{profileData.stats.interviews}</div>
+                  <div className="text-2xl font-bold text-purple-600">{transformedProfile.stats.interviews}</div>
                   <div className="text-sm text-gray-600">Interviews</div>
                 </Card>
                 <Card className="text-center p-4 hover:shadow-lg transition-shadow">
-                  <div className="text-2xl font-bold text-orange-600">{profileData.stats.offers}</div>
+                  <div className="text-2xl font-bold text-orange-600">{transformedProfile.stats.offers}</div>
                   <div className="text-sm text-gray-600">Offers</div>
                 </Card>
               </div>
@@ -267,7 +262,7 @@ export default function ProfilePage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-700 leading-relaxed">{profileData.bio}</p>
+                      <p className="text-gray-700 leading-relaxed">{transformedProfile.bio}</p>
             </CardContent>
           </Card>
 
@@ -281,7 +276,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
                       <div className="flex flex-wrap gap-2">
-                        {profileData.skills.map((skill, index) => (
+                        {transformedProfile.skills.map((skill: string, index: number) => (
                           <Badge key={index} variant="secondary" className="px-3 py-1 text-sm">
                             {skill}
                           </Badge>
@@ -305,7 +300,7 @@ export default function ProfilePage() {
                   </Button>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      {profileData.experiences.map((exp) => (
+                      {transformedProfile.experiences.map((exp: any) => (
                         <div key={exp.id} className="border-l-4 border-blue-500 pl-4 py-2">
                           <div className="flex justify-between items-start">
                       <div>
@@ -333,7 +328,7 @@ export default function ProfilePage() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {profileData.projects.map((project) => (
+                        {transformedProfile.projects.map((project: any) => (
                           <div key={project.id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
                             <div className="aspect-video relative">
                               <Image
@@ -347,7 +342,7 @@ export default function ProfilePage() {
                               <h3 className="font-semibold text-lg mb-2">{project.name}</h3>
                               <p className="text-gray-600 text-sm mb-3">{project.description}</p>
                               <div className="flex flex-wrap gap-1 mb-3">
-                                {project.tech.map((tech, index) => (
+                                {project.tech.map((tech: string, index: number) => (
                                   <Badge key={index} variant="outline" className="text-xs">
                                     {tech}
                                   </Badge>
@@ -377,7 +372,7 @@ export default function ProfilePage() {
                       </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                      {profileData.education.map((edu) => (
+                      {transformedProfile.education.map((edu: any) => (
                         <div key={edu.id} className="border-l-4 border-green-500 pl-4 py-2">
                           <h3 className="font-semibold text-lg">{edu.degree}</h3>
                           <p className="text-green-600 font-medium">{edu.school}</p>
@@ -404,13 +399,13 @@ export default function ProfilePage() {
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-3">
                     <Mail className="h-4 w-4 text-blue-500" />
-                    <a href={`mailto:${profileData.email}`} className="text-sm text-blue-600 hover:underline">
-                      {profileData.email}
+                    <a href={`mailto:${transformedProfile.email}`} className="text-sm text-blue-600 hover:underline">
+                      {transformedProfile.email}
                     </a>
                   </div>
                   <div className="flex items-center gap-3">
                     <MapPin className="h-4 w-4 text-red-500" />
-                    <span className="text-sm text-gray-700">{profileData.location}</span>
+                    <span className="text-sm text-gray-700">{transformedProfile.location}</span>
                 </div>
             </CardContent>
           </Card>
@@ -424,7 +419,7 @@ export default function ProfilePage() {
                   </CardTitle>
             </CardHeader>
                 <CardContent className="space-y-3">
-                  {Object.entries(profileData.socialLinks).map(([platform, url]) => (
+                  {Object.entries(transformedProfile.socialLinks).map(([platform, url]: [string, any]) => (
                     <a
                       key={platform}
                       href={url}
@@ -472,10 +467,17 @@ export default function ProfilePage() {
             <CardContent className="space-y-4">
                   <div>
                     <h4 className="font-medium text-gray-900 mb-2">Resume</h4>
-                    <FileUpload
-                      onFileSelect={handleResumeUpload}
-                      fileType="document"
+                    <EnhancedFileUpload
+                      onFileUploaded={(fileUrl, filename) => {
+                        // File is automatically uploaded and profile updated
+                        toast.success("Resume updated successfully!")
+                      }}
+                      currentFile={transformedProfile.resume}
+                      fileType="resume"
                       maxSize={10}
+                      showPreview={false}
+                      showDownload={true}
+                      showDelete={true}
                       accept=".pdf,.doc,.docx"
                       disabled={uploadResumeMutation.isPending}
                     />
@@ -551,6 +553,267 @@ export default function ProfilePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Profile Editing Modal */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+          </DialogHeader>
+          <ProfileEditForm 
+            profile={profile} 
+            onSave={handleUpdateProfile}
+            onCancel={() => setIsEditing(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
+  )
+}
+
+// Profile Edit Form Component
+function ProfileEditForm({ profile, onSave, onCancel }: { 
+  profile: any; 
+  onSave: (data: any) => void; 
+  onCancel: () => void; 
+}) {
+  const [formData, setFormData] = useState({
+    name: profile.name || '',
+    headline: profile.headline || '',
+    bio: profile.bio || '',
+    location: profile.location || '',
+    website: profile.website || '',
+    social: {
+      github: profile.social?.github || '',
+      linkedin: profile.social?.linkedin || '',
+      twitter: profile.social?.twitter || ''
+    },
+    skills: profile.skills?.map((s: any) => s.name) || [],
+    education: profile.education || [],
+    experience: profile.experience || []
+  })
+
+  const [newSkill, setNewSkill] = useState('')
+  const [newEducation, setNewEducation] = useState({
+    institution: '',
+    degree: '',
+    fieldOfStudy: '',
+    startDate: '',
+    endDate: '',
+    isCurrent: false,
+    gpa: ''
+  })
+  const [newExperience, setNewExperience] = useState({
+    title: '',
+    company: '',
+    location: '',
+    startDate: '',
+    endDate: '',
+    isCurrent: false,
+    description: ''
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Transform data for backend
+    const updateData = {
+      ...formData,
+      skills: formData.skills.map((skill: string) => ({ name: skill, level: 'intermediate' })),
+      education: formData.education,
+      experience: formData.experience
+    }
+    
+    onSave(updateData)
+  }
+
+  const addSkill = () => {
+    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        skills: [...prev.skills, newSkill.trim()]
+      }))
+      setNewSkill('')
+    }
+  }
+
+  const removeSkill = (skillToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter((skill: string) => skill !== skillToRemove)
+    }))
+  }
+
+  const addEducation = () => {
+    if (newEducation.institution && newEducation.degree && newEducation.fieldOfStudy) {
+      setFormData(prev => ({
+        ...prev,
+        education: [...prev.education, { ...newEducation, gpa: parseFloat(newEducation.gpa) || undefined }]
+      }))
+      setNewEducation({
+        institution: '',
+        degree: '',
+        fieldOfStudy: '',
+        startDate: '',
+        endDate: '',
+        isCurrent: false,
+        gpa: ''
+      })
+    }
+  }
+
+  const addExperience = () => {
+    if (newExperience.title && newExperience.company) {
+      setFormData(prev => ({
+        ...prev,
+        experience: [...prev.experience, newExperience]
+      }))
+      setNewExperience({
+        title: '',
+        company: '',
+        location: '',
+        startDate: '',
+        endDate: '',
+        isCurrent: false,
+        description: ''
+      })
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Basic Information */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Basic Information</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="name">Full Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="headline">Professional Headline</Label>
+            <Input
+              id="headline"
+              value={formData.headline}
+              onChange={(e) => setFormData(prev => ({ ...prev, headline: e.target.value }))}
+              placeholder="e.g., Frontend Developer"
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="bio">Bio</Label>
+          <Textarea
+            id="bio"
+            value={formData.bio}
+            onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+            rows={3}
+            placeholder="Tell us about yourself..."
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="location">Location</Label>
+            <Input
+              id="location"
+              value={formData.location}
+              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+              placeholder="e.g., San Francisco, CA"
+            />
+          </div>
+          <div>
+            <Label htmlFor="website">Website</Label>
+            <Input
+              id="website"
+              value={formData.website}
+              onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+              placeholder="https://yourwebsite.com"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Social Links */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Social Links</h3>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="github">GitHub</Label>
+            <Input
+              id="github"
+              value={formData.social.github}
+              onChange={(e) => setFormData(prev => ({ 
+                ...prev, 
+                social: { ...prev.social, github: e.target.value }
+              }))}
+              placeholder="https://github.com/username"
+            />
+          </div>
+          <div>
+            <Label htmlFor="linkedin">LinkedIn</Label>
+            <Input
+              id="linkedin"
+              value={formData.social.linkedin}
+              onChange={(e) => setFormData(prev => ({ 
+                ...prev, 
+                social: { ...prev.social, linkedin: e.target.value }
+              }))}
+              placeholder="https://linkedin.com/in/username"
+            />
+          </div>
+          <div>
+            <Label htmlFor="twitter">Twitter</Label>
+            <Input
+              id="twitter"
+              value={formData.social.twitter}
+              onChange={(e) => setFormData(prev => ({ 
+                ...prev, 
+                social: { ...prev.social, twitter: e.target.value }
+              }))}
+              placeholder="https://twitter.com/username"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Skills */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Skills</h3>
+        <div className="flex gap-2">
+          <Input
+            value={newSkill}
+            onChange={(e) => setNewSkill(e.target.value)}
+            placeholder="Add a skill"
+            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+          />
+          <Button type="button" onClick={addSkill}>Add</Button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {formData.skills.map((skill: string, index: number) => (
+            <Badge key={index} variant="secondary" className="flex items-center gap-1">
+              {skill}
+              <X 
+                className="h-3 w-3 cursor-pointer" 
+                onClick={() => removeSkill(skill)}
+              />
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      {/* Form Actions */}
+      <div className="flex justify-end space-x-2 pt-4 border-t">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          Save Changes
+        </Button>
+      </div>
+    </form>
   )
 }

@@ -47,6 +47,14 @@ import { useJobs } from "@/hooks/useJobs"
 import { useMyApplications } from "@/hooks/useApplications"
 import { useMyInterviews } from "@/hooks/useInterviews"
 import { useCompanies } from "@/hooks/useCompanies"
+import { useDashboardStats, useApplicationStats, useInterviewStats } from "@/hooks/useStats"
+import { useInternDashboardData, useChartData, useApplicationStatusChart } from "@/hooks/useDashboardData"
+import { 
+  ApplicationStatusChart, 
+  WeeklyPerformanceChart, 
+  StatCard, 
+  RecentActivity 
+} from "@/components/dashboard/DynamicCharts"
 import { LoadingPage } from "@/components/ui/loading-spinner"
 import { ErrorPage } from "@/components/ui/error-boundary"
 
@@ -246,6 +254,33 @@ export default function InternDashboard() {
   const { data: applicationsData, isLoading: applicationsLoading } = useMyApplications()
   const { data: interviewsData, isLoading: interviewsLoading } = useMyInterviews()
   const { companies, loading: companiesLoading } = useCompanies({ limit: 6 })
+  
+  // Real statistics hooks
+  const { data: dashboardStatsData, isLoading: dashboardStatsLoading } = useDashboardStats()
+  const { data: applicationStats, isLoading: applicationStatsLoading } = useApplicationStats()
+  const { data: interviewStats, isLoading: interviewStatsLoading } = useInterviewStats()
+
+  // New dashboard data hooks
+  const { 
+    applicationStats: myAppStats, 
+    myRecentApplications, 
+    upcomingInterviews,
+    isLoading: internDataLoading 
+  } = useInternDashboardData()
+  
+  const { 
+    weeklyPerformanceData, 
+    recentActivity,
+    isLoading: chartDataLoading 
+  } = useChartData({
+    dateRange: {
+      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      end: new Date().toISOString()
+    },
+    limit: 50
+  })
+  
+  const { data: applicationStatusChart, isLoading: applicationStatusLoading } = useApplicationStatusChart()
 
   // Update time every minute
   useEffect(() => {
@@ -286,15 +321,25 @@ export default function InternDashboard() {
 
   const applications = (applicationsData as any)?.data || (applicationsData as any)?.applications || mockRecentApplications
   const interviews = (interviewsData as any)?.data || []
-  const stats = calculateStats(applications, interviews)
+  const dashboardStats = dashboardStatsData?.data
+  
+  // Use real statistics from backend, fallback to calculated stats
+  const stats = {
+    totalApplications: dashboardStats?.applications?.total || applications.length,
+    interviews: dashboardStats?.interviews?.total || interviews.length,
+    offers: dashboardStats?.applications?.accepted || applications.filter((app: any) => app.status === 'hired').length,
+    profileViews: 1247, // This would come from analytics API
+    savedJobs: 12, // This would come from saved jobs API
+    companiesViewed: 45 // This would come from analytics API
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
+      <div className="flex items-center justify-between">
+        <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
                 {getGreeting()}, {user?.name || "Intern"}! 👋
               </h1>
@@ -307,8 +352,8 @@ export default function InternDashboard() {
                 <p className="text-sm text-gray-500">Last updated</p>
                 <p className="text-sm font-medium text-gray-900">
                   {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </div>
+          </p>
+        </div>
               <Button variant="outline" size="sm">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
@@ -341,7 +386,7 @@ export default function InternDashboard() {
                   <p className="text-green-100 text-xs">+2 this week</p>
                 </div>
                 <Users className="h-12 w-12 text-green-200" />
-              </div>
+      </div>
             </CardContent>
           </Card>
 
@@ -398,13 +443,13 @@ export default function InternDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Application Progress */}
               <Card className="lg:col-span-2">
-                <CardHeader>
+          <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-blue-600" />
                     Application Progress
                   </CardTitle>
-                </CardHeader>
-                <CardContent>
+          </CardHeader>
+          <CardContent>
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -414,38 +459,38 @@ export default function InternDashboard() {
                       <div className="w-20 h-20">
                         <div className="relative w-20 h-20">
                           <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
-                            <path
-                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                              fill="none"
-                              stroke="#e5e7eb"
-                              strokeWidth="3"
-                            />
-                            <path
-                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                              fill="none"
-                              stroke="#3b82f6"
-                              strokeWidth="3"
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="3"
+                  />
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="#3b82f6"
+                    strokeWidth="3"
                               strokeDasharray="68, 100"
-                            />
-                          </svg>
+                  />
+                </svg>
                           <div className="absolute inset-0 flex items-center justify-center">
                             <span className="text-sm font-bold text-gray-900">68%</span>
                           </div>
                         </div>
-                      </div>
-                    </div>
+              </div>
+            </div>
                     
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                           <span className="text-sm text-gray-600">Interviewed</span>
-                        </div>
+                </div>
                         <span className="text-sm font-medium">35%</span>
-                      </div>
-                      <div className="flex items-center justify-between">
+              </div>
+              <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                           <span className="text-sm text-gray-600">In Review</span>
                         </div>
                         <span className="text-sm font-medium">33%</span>
@@ -454,22 +499,22 @@ export default function InternDashboard() {
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                           <span className="text-sm text-gray-600">Declined</span>
-                        </div>
+                </div>
                         <span className="text-sm font-medium">32%</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              </div>
+            </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              {/* Upcoming Interviews */}
-              <Card>
-                <CardHeader>
+        {/* Upcoming Interviews */}
+        <Card>
+          <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-green-600" />
                     Upcoming Interviews
                   </CardTitle>
-                </CardHeader>
+          </CardHeader>
                 <CardContent className="space-y-4">
                   {interviews.filter((interview: any) => interview.status === 'scheduled').slice(0, 2).map((interview: any) => (
                     <div key={interview.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow bg-gradient-to-r from-green-50 to-blue-50">
@@ -497,7 +542,7 @@ export default function InternDashboard() {
                                 <User className="h-3 w-3" />
                                 {interview.interviewer?.name || 'Interviewer'}
                               </span>
-                            </div>
+            </div>
                             <div className="flex items-center gap-2 mt-2">
                               <Badge variant="outline" className="text-xs">
                                 {interview.type?.charAt(0).toUpperCase() + interview.type?.slice(1) || 'Interview'}
@@ -505,16 +550,16 @@ export default function InternDashboard() {
                               <Badge className="bg-green-100 text-green-700 text-xs">
                                 {interview.status?.charAt(0).toUpperCase() + interview.status?.slice(1) || 'Scheduled'}
                               </Badge>
-                            </div>
-                          </div>
-                        </div>
+                </div>
+              </div>
+            </div>
                         {interview.meetingLink && (
                           <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                             Join Meeting
                           </Button>
                         )}
                       </div>
-                    </div>
+            </div>
                   ))}
                   <Button variant="outline" className="w-full" asChild>
                     <Link href="/dashboard/intern/applications">
@@ -522,27 +567,27 @@ export default function InternDashboard() {
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Link>
                   </Button>
-                </CardContent>
-              </Card>
-            </div>
+          </CardContent>
+        </Card>
+      </div>
 
             {/* Application Status Overview */}
-            <Card>
-              <CardHeader>
+      <Card>
+        <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Target className="h-5 w-5 text-purple-600" />
                   Application Status Overview
                 </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
                   {mockApplicationStatuses.map((app) => (
                     <div key={app.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
-                      <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4">
                         <div className="p-2 bg-purple-100 rounded-full">
                           <Briefcase className="h-5 w-5 text-purple-600" />
                         </div>
-                        <div>
+                <div>
                           <h4 className="font-semibold text-gray-900">{app.position}</h4>
                           <p className="text-sm text-gray-600">{app.company}</p>
                           <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
@@ -561,8 +606,8 @@ export default function InternDashboard() {
                             <span>Interview: {new Date(app.interviewDate).toLocaleDateString()}</span>
                           </div>
                         )}
-                      </div>
-                    </div>
+                </div>
+              </div>
                   ))}
                 </div>
               </CardContent>
@@ -606,12 +651,12 @@ export default function InternDashboard() {
                       <div className="flex items-center gap-4">
                         <Badge className={getStatusColor(application.status)}>
                           {getStatusText(application.status)}
-                        </Badge>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                </Badge>
+                <Button variant="ghost" size="icon">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
                   ))}
                 </div>
               </CardContent>
@@ -646,17 +691,17 @@ export default function InternDashboard() {
                           <p className="text-xs text-gray-500">
                             Applied on {new Date(application.appliedDate || application.createdAt).toLocaleDateString()}
                           </p>
-                        </div>
-                      </div>
+              </div>
+                </div>
                       <div className="flex items-center gap-4">
                         <Badge className={getStatusColor(application.status)}>
                           {getStatusText(application.status)}
-                        </Badge>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                </Badge>
+                <Button variant="ghost" size="icon">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
                   ))}
                 </div>
               </CardContent>
@@ -705,8 +750,8 @@ export default function InternDashboard() {
                             Apply Now
                           </Button>
                         </div>
-                      </div>
-                    </div>
+                </div>
+              </div>
                   ))}
                 </CardContent>
               </Card>
@@ -730,10 +775,10 @@ export default function InternDashboard() {
                             <MapPin className="h-3 w-3" />
                             {job.location}
                           </p>
-                        </div>
+                </div>
                         <Badge variant="outline" className="text-xs">
                           Featured
-                        </Badge>
+                </Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-gray-600">
@@ -748,10 +793,10 @@ export default function InternDashboard() {
                             <Link href={`/jobs/${job._id}`}>
                               View Job
                             </Link>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                </Button>
+              </div>
+            </div>
+          </div>
                   ))}
                 </CardContent>
               </Card>
@@ -819,10 +864,10 @@ export default function InternDashboard() {
                   <Bell className="h-6 w-6" />
                   <span className="text-sm">Notifications</span>
                 </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
       </div>
     </div>
   )

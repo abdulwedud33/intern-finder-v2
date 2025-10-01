@@ -28,7 +28,9 @@ import {
   Edit,
   Trash2
 } from "lucide-react"
-import { useMyInterviews, useCreateInterview, useUpdateInterview, useCancelInterview, useRescheduleInterview, useSubmitInterviewFeedback } from "@/hooks/useInterviews"
+import { useMyInterviews, useCompanyInterviews, useCreateInterview, useUpdateInterview, useDeleteInterview, useCancelInterview, useRescheduleInterview, useSubmitInterviewFeedback } from "@/hooks/useInterviews"
+import { InterviewForm, InterviewCard } from "@/components/interviews/InterviewForm"
+import { InterviewTable, InterviewStats } from "@/components/interviews/InterviewTable"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
 import { format, formatDistanceToNow, isAfter, isBefore, startOfDay } from "date-fns"
@@ -74,21 +76,30 @@ const calculateInterviewStats = (interviews: any[]) => {
 }
 
 export default function ClientInterviewsPage() {
-  const { data, isLoading, error } = useMyInterviews()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [sortBy, setSortBy] = useState("newest")
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid")
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [editingInterview, setEditingInterview] = useState<any>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  
+  // Get company ID from user context (you'll need to implement this)
+  const companyId = "company-id" // Replace with actual company ID from context
+  
+  const { data, isLoading, error } = useCompanyInterviews(companyId)
   const { data: applicationsData } = useCompanyApplications()
   const createInterviewMutation = useCreateInterview()
   const updateInterviewMutation = useUpdateInterview()
+  const deleteInterviewMutation = useDeleteInterview()
   const cancelInterviewMutation = useCancelInterview()
   const rescheduleInterviewMutation = useRescheduleInterview()
   const submitFeedbackMutation = useSubmitInterviewFeedback()
   const { toast } = useToast()
   
-  const interviews = (data as any)?.data || []
-  const applications = (applicationsData as any)?.data || []
-  const interviewStats = calculateInterviewStats(interviews)
-  
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const interviews = useMemo(() => (data as any)?.data || [], [data])
+  const applications = useMemo(() => (applicationsData as any)?.data || [], [applicationsData])
+  const interviewStats = useMemo(() => calculateInterviewStats(interviews), [interviews])
   const [typeFilter, setTypeFilter] = useState("all")
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false)
@@ -115,6 +126,51 @@ export default function ClientInterviewsPage() {
     improvements: "",
     outcome: "pending" as "passed" | "failed" | "pending"
   })
+
+  // Handler functions
+  const handleCreateInterview = (data: any) => {
+    createInterviewMutation.mutate(data, {
+      onSuccess: () => {
+        setIsCreateDialogOpen(false)
+        setScheduleData({
+          applicationId: "",
+          scheduledDate: "",
+          duration: 60,
+          type: "video",
+          location: "",
+          meetingLink: "",
+          notes: ""
+        })
+      }
+    })
+  }
+
+  const handleUpdateInterview = (data: any) => {
+    if (editingInterview) {
+      updateInterviewMutation.mutate({
+        interviewId: editingInterview._id,
+        updateData: data
+      }, {
+        onSuccess: () => {
+          setIsEditDialogOpen(false)
+          setEditingInterview(null)
+        }
+      })
+    }
+  }
+
+  const handleDeleteInterview = (interviewId: string) => {
+    deleteInterviewMutation.mutate(interviewId)
+  }
+
+  const handleCancelInterview = (interviewId: string) => {
+    cancelInterviewMutation.mutate({ interviewId, reason: "Cancelled by company" })
+  }
+
+  const handleRescheduleInterview = (interview: any) => {
+    setEditingInterview(interview)
+    setIsEditDialogOpen(true)
+  }
 
   // Filter interviews based on search and filters
   const filteredInterviews = useMemo(() => {
@@ -173,14 +229,6 @@ export default function ClientInterviewsPage() {
     })
   }
 
-  const handleRescheduleInterview = (interview: any) => {
-    setSelectedInterview(interview)
-    setRescheduleData({
-      newDate: format(new Date(interview.scheduledDate), "yyyy-MM-dd'T'HH:mm"),
-      reason: ""
-    })
-    setIsRescheduleOpen(true)
-  }
 
   const handleRescheduleSubmit = () => {
     if (!selectedInterview || !rescheduleData.newDate) return
@@ -233,11 +281,6 @@ export default function ClientInterviewsPage() {
     })
   }
 
-  const handleCancelInterview = (interviewId: string) => {
-    if (confirm("Are you sure you want to cancel this interview?")) {
-      cancelInterviewMutation.mutate({ interviewId })
-    }
-  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -287,7 +330,7 @@ export default function ClientInterviewsPage() {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button onClick={() => setIsScheduleOpen(true)} size="sm">
+          <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Schedule Interview
           </Button>
@@ -295,55 +338,7 @@ export default function ClientInterviewsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm font-medium">Total Interviews</p>
-                <p className="text-3xl font-bold">{interviewStats.totalInterviews}</p>
-              </div>
-              <Calendar className="h-12 w-12 text-blue-200" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm font-medium">Upcoming</p>
-                <p className="text-3xl font-bold">{interviewStats.upcomingInterviews}</p>
-              </div>
-              <Clock className="h-12 w-12 text-green-200" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-100 text-sm font-medium">Completed</p>
-                <p className="text-3xl font-bold">{interviewStats.completedInterviews}</p>
-              </div>
-              <CheckCircle className="h-12 w-12 text-purple-200" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-100 text-sm font-medium">Success Rate</p>
-                <p className="text-3xl font-bold">{interviewStats.successRate}%</p>
-              </div>
-              <Star className="h-12 w-12 text-orange-200" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <InterviewStats interviews={interviews} isLoading={isLoading} />
 
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -869,6 +864,42 @@ export default function ClientInterviewsPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Interview Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Schedule Interview</DialogTitle>
+          </DialogHeader>
+          <InterviewForm
+            onSubmit={handleCreateInterview}
+            onCancel={() => setIsCreateDialogOpen(false)}
+            mode="create"
+            isLoading={createInterviewMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Interview Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Interview</DialogTitle>
+          </DialogHeader>
+          {editingInterview && (
+            <InterviewForm
+              interview={editingInterview}
+              onSubmit={handleUpdateInterview}
+              onCancel={() => {
+                setIsEditDialogOpen(false)
+                setEditingInterview(null)
+              }}
+              mode="edit"
+              isLoading={updateInterviewMutation.isPending}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

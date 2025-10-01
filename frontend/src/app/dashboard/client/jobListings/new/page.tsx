@@ -13,7 +13,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCreateJob } from "@/hooks/useJobManagement"
 import { useUploadJobPhoto } from "@/hooks/useFileUpload"
-import { FileUpload } from "@/components/ui/file-upload"
+import { EnhancedFileUpload } from "@/components/ui/enhanced-file-upload"
 import { useToast } from "@/components/ui/use-toast"
 import type { CreateJobRequest } from "@/services/jobManagementService"
 
@@ -143,12 +143,20 @@ export default function NewJobPage() {
       <p className="text-xs text-gray-500">Optional: Add a photo for this job posting</p>
     </div>
     <div className="flex flex-col space-y-1">
-      <FileUpload
-        onFileSelect={handleJobPhotoUpload}
-        fileType="image"
+      <EnhancedFileUpload
+        onFileUploaded={(fileUrl, filename) => {
+          // File is stored for upload after job creation
+          toast({
+            title: "Job photo selected!",
+            description: "It will be uploaded when you create the job."
+          })
+        }}
+        currentFile={formData.photoFile ? URL.createObjectURL(formData.photoFile) : null}
+        fileType="job-photo"
         maxSize={5}
-        accept="image/*"
-        disabled={uploadJobPhotoMutation.isPending}
+        showPreview={true}
+        showDownload={false}
+        showDelete={true}
       />
       <p className="text-xs text-gray-500">Max size: 5MB. Supported formats: JPG, PNG, GIF</p>
     </div>

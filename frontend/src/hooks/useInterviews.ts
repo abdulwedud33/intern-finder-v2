@@ -11,6 +11,16 @@ export function useMyInterviews() {
   });
 }
 
+// Hook for getting company interviews
+export function useCompanyInterviews(companyId: string) {
+  return useQuery({
+    queryKey: ['interviews', 'company', companyId],
+    queryFn: () => interviewService.getCompanyInterviews(companyId),
+    enabled: !!companyId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+}
+
 // Hook for getting application interviews
 export function useApplicationInterviews(applicationId: string) {
   return useQuery({
@@ -75,6 +85,31 @@ export function useUpdateInterview() {
     onError: (error: any) => {
       toast({
         title: "Failed to update interview",
+        description: error.response?.data?.message || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+// Hook for deleting an interview
+export function useDeleteInterview() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: (interviewId: string) => interviewService.deleteInterview(interviewId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['interviews'] });
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      toast({
+        title: "Interview deleted",
+        description: "The interview has been successfully deleted.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to delete interview",
         description: error.response?.data?.message || "An unexpected error occurred.",
         variant: "destructive",
       });

@@ -4,6 +4,7 @@ export interface Review {
   _id: string
   rating: number
   content: string
+  feedback?: string
   reviewer: {
     _id: string
     name: string
@@ -28,6 +29,22 @@ export interface Review {
   updatedAt: string
 }
 
+export interface CreateReviewRequest {
+  target: string
+  targetModel: 'Intern' | 'Company'
+  rating: number
+  content: string
+  feedback?: string
+  job?: string
+  direction: 'company_to_intern' | 'intern_to_company'
+}
+
+export interface UpdateReviewRequest {
+  rating?: number
+  content?: string
+  feedback?: string
+}
+
 export interface ReviewsResponse {
   success: boolean
   count: number
@@ -36,6 +53,40 @@ export interface ReviewsResponse {
 }
 
 export const reviewService = {
+  // Get all reviews with pagination and filtering
+  getReviews: async (params?: {
+    page?: number
+    limit?: number
+    sort?: string
+    target?: string
+    reviewer?: string
+    rating?: number
+    status?: string
+  }): Promise<{
+    success: boolean
+    count: number
+    pagination: any
+    data: Review[]
+  }> => {
+    const queryParams = new URLSearchParams()
+    if (params?.page) queryParams.append('page', params.page.toString())
+    if (params?.limit) queryParams.append('limit', params.limit.toString())
+    if (params?.sort) queryParams.append('sort', params.sort)
+    if (params?.target) queryParams.append('target', params.target)
+    if (params?.reviewer) queryParams.append('reviewer', params.reviewer)
+    if (params?.rating) queryParams.append('rating', params.rating.toString())
+    if (params?.status) queryParams.append('status', params.status)
+    
+    const response = await api.get(`/reviews?${queryParams.toString()}`)
+    return response.data
+  },
+
+  // Get a single review by ID
+  getReview: async (reviewId: string): Promise<{ success: boolean; data: Review }> => {
+    const response = await api.get(`/reviews/${reviewId}`)
+    return response.data
+  },
+
   // Get reviews about the current user (for interns)
   getReviewsAboutMe: async (): Promise<ReviewsResponse> => {
     const response = await api.get('/reviews/about-me')
@@ -54,6 +105,24 @@ export const reviewService = {
     return response.data
   },
 
+  // Create a new review
+  createReview: async (data: CreateReviewRequest): Promise<{ success: boolean; data: Review }> => {
+    const response = await api.post('/reviews', data)
+    return response.data
+  },
+
+  // Update an existing review
+  updateReview: async (reviewId: string, data: UpdateReviewRequest): Promise<{ success: boolean; data: Review }> => {
+    const response = await api.put(`/reviews/${reviewId}`, data)
+    return response.data
+  },
+
+  // Delete a review
+  deleteReview: async (reviewId: string): Promise<{ success: boolean; message: string }> => {
+    const response = await api.delete(`/reviews/${reviewId}`)
+    return response.data
+  },
+
   // Create or update a company review (intern reviewing company)
   createCompanyReview: async (companyId: string, data: { rating: number; feedback: string }): Promise<Review> => {
     const response = await api.post(`/reviews/company-reviews/${companyId}`, data)
@@ -64,5 +133,11 @@ export const reviewService = {
   createInternReview: async (internId: string, jobId: string, data: { rating: number; feedback: string }): Promise<Review> => {
     const response = await api.post(`/reviews/intern-reviews/${internId}/${jobId}`, data)
     return response.data.data
+  },
+
+  // Get company's intern reviews
+  getCompanyInternReviews: async (): Promise<{ success: boolean; data: Review[] }> => {
+    const response = await api.get('/reviews/intern-reviews')
+    return response.data
   }
 }

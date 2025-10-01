@@ -21,7 +21,11 @@ import {
   SortAsc,
   SortDesc
 } from "lucide-react"
-import { useReviewsAboutMe } from "@/hooks/useReviews"
+import { useReviewsAboutMe, useMyReviews, useDeleteReview } from "@/hooks/useReviews"
+import { ReviewForm, ReviewCard as ReviewCardComponent, StarRatingDisplay } from "@/components/reviews/ReviewForm"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Review } from "@/services/reviewService"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
 import { Input } from "@/components/ui/input"
@@ -131,15 +135,30 @@ export default function ReviewsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("newest")
   const [filterBy, setFilterBy] = useState("all")
+  const [activeTab, setActiveTab] = useState("received")
+  const [editingReview, setEditingReview] = useState<Review | null>(null)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   
-  const { data, isLoading, error } = useReviewsAboutMe()
-  
-  const reviews = data?.data || []
-  const averageRating = data?.averageRating || 0
-  const totalReviews = data?.count || 0
+  // Real data from API
+  const reviewsAboutMe = useReviewsAboutMe()
+  const myReviews = useMyReviews()
+  const deleteReviewMutation = useDeleteReview()
+
+  const { data: receivedReviewsData, isLoading: receivedLoading, error: receivedError } = reviewsAboutMe
+  const { data: myReviewsData, isLoading: myLoading, error: myError } = myReviews
+
+  const receivedReviews = receivedReviewsData?.data || []
+  const myReviewsList = myReviewsData?.data || []
+  const averageRating = receivedReviewsData?.averageRating || 0
+  const totalReviews = receivedReviewsData?.count || 0
+
+  // Get current reviews based on active tab
+  const currentReviews = activeTab === 'received' ? receivedReviews : myReviewsList
+  const isLoading = activeTab === 'received' ? receivedLoading : myLoading
+  const error = activeTab === 'received' ? receivedError : myError
 
   // Filter and sort reviews
-  const filteredReviews = reviews.filter((review: any) => {
+  const filteredReviews = currentReviews.filter((review: any) => {
     const matchesSearch = review.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          review.reviewer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (review.job?.title || '').toLowerCase().includes(searchQuery.toLowerCase())
@@ -220,7 +239,7 @@ export default function ReviewsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Approved Reviews</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">
-                  {reviews.filter((r: any) => r.status === 'approved').length}
+                  {receivedReviews.filter((r: any) => r.status === 'approved').length}
                 </p>
               </div>
               <div className="p-3 bg-green-100 rounded-full">
@@ -277,42 +296,143 @@ export default function ReviewsPage() {
         </CardContent>
       </Card>
 
-      {/* Reviews List */}
-      <div className="space-y-4">
-        {sortedReviews.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No reviews yet</h3>
-              <p className="text-gray-600 mb-4">
-                {searchQuery || filterBy !== 'all' 
-                  ? "No reviews match your current filters." 
-                  : "You haven't received any reviews yet. Complete some internships to get feedback from companies."
-                }
-              </p>
-              {searchQuery || filterBy !== 'all' ? (
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setSearchQuery("")
-                    setFilterBy("all")
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="received">Reviews About Me ({receivedReviews.length})</TabsTrigger>
+          <TabsTrigger value="written">My Reviews ({myReviewsList.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="received">
+          <div className="space-y-4">
+            {sortedReviews.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No reviews yet</h3>
+                  <p className="text-gray-600 mb-4">
+                    {searchQuery || filterBy !== 'all' 
+                      ? "No reviews match your current filters." 
+                      : "You haven't received any reviews yet. Complete some internships to get feedback from companies."
+                    }
+                  </p>
+                  {searchQuery || filterBy !== 'all' ? (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setSearchQuery("")
+                        setFilterBy("all")
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  ) : (
+                    <Button asChild>
+                      <a href="/jobs">Browse Jobs</a>
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              sortedReviews.map((review: any) => (
+                <ReviewCardComponent 
+                  key={review._id} 
+                  review={review}
+                  canEdit={false}
+                  canDelete={false}
+                />
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="written">
+          <div className="space-y-4">
+            <div className="flex justify-end mb-4">
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                Write Review
+              </Button>
+            </div>
+            {sortedReviews.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No reviews written</h3>
+                  <p className="text-gray-600 mb-4">
+                    You haven't written any reviews yet.
+                  </p>
+                  <Button onClick={() => setIsCreateDialogOpen(true)}>
+                    Write Your First Review
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              sortedReviews.map((review: any) => (
+                <ReviewCardComponent 
+                  key={review._id} 
+                  review={review}
+                  canEdit={true}
+                  canDelete={true}
+                  onEdit={setEditingReview}
+                  onDelete={(reviewId: string) => {
+                    if (confirm('Are you sure you want to delete this review?')) {
+                      deleteReviewMutation.mutate(reviewId)
+                    }
                   }}
-                >
-                  Clear Filters
-                </Button>
-              ) : (
-                <Button asChild>
-                  <a href="/jobs">Browse Jobs</a>
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          sortedReviews.map((review: any) => (
-            <ReviewCard key={review._id} review={review} />
-          ))
-        )}
-      </div>
+                  isLoading={deleteReviewMutation.isPending}
+                />
+              ))
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Create Review Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Write a Review</DialogTitle>
+          </DialogHeader>
+          <ReviewForm
+            targetId=""
+            targetName=""
+            targetType="Company"
+            onSubmit={(data) => {
+              // Handle review creation
+              console.log('Creating review:', data)
+              setIsCreateDialogOpen(false)
+            }}
+            onCancel={() => setIsCreateDialogOpen(false)}
+            mode="create"
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Review Dialog */}
+      <Dialog open={!!editingReview} onOpenChange={() => setEditingReview(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Review</DialogTitle>
+          </DialogHeader>
+          {editingReview && (
+            <ReviewForm
+              review={editingReview}
+              targetId={editingReview.target._id}
+              targetName={editingReview.target.name}
+              targetType={editingReview.targetModel}
+              jobId={editingReview.job?._id}
+              jobTitle={editingReview.job?.title}
+              onSubmit={(data) => {
+                // Handle review update
+                console.log('Updating review:', data)
+                setEditingReview(null)
+              }}
+              onCancel={() => setEditingReview(null)}
+              mode="edit"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Pagination */}
       {sortedReviews.length > 0 && (

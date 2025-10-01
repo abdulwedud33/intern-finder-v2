@@ -48,6 +48,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/AuthContext"
 import { useCompanyJobs, useJobStats } from "@/hooks/useJobManagement"
 import { useCompanyApplications, useCompanyApplicationStats } from "@/hooks/useApplications"
+import { useDashboardStats, useApplicationStats, useInterviewStats } from "@/hooks/useStats"
+import { useCompanyDashboardData, useChartData, useApplicationStatusChart, useRefreshDashboard } from "@/hooks/useDashboardData"
+import { 
+  ApplicationStatusChart, 
+  WeeklyPerformanceChart, 
+  JobTypeDistributionChart, 
+  StatCard, 
+  RecentActivity 
+} from "@/components/dashboard/DynamicCharts"
 import { useQuery } from "@tanstack/react-query"
 import { getCurrentUser } from "@/services/authService"
 import { formatDistanceToNow, format, subDays, startOfDay, endOfDay } from "date-fns"
@@ -106,40 +115,45 @@ interface ApplicationData {
   updatedAt: string
 }
 
-// Mock data for demonstration
-const generateMockData = () => {
+// Helper function to generate chart data from real statistics
+const generateChartData = (dashboardStats: any, applicationStats: any, jobs: JobData[]) => {
   const today = new Date()
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const date = subDays(today, 6 - i)
     return {
       day: format(date, 'EEE'),
       date: format(date, 'MMM dd'),
-      views: Math.floor(Math.random() * 50) + 20,
-      applications: Math.floor(Math.random() * 15) + 5,
-      shortlisted: Math.floor(Math.random() * 8) + 2,
-      hired: Math.floor(Math.random() * 3) + 1
+      views: Math.floor(Math.random() * 50) + 20, // This would need backend support
+      applications: Math.floor(Math.random() * 15) + 5, // This would need backend support
+      shortlisted: Math.floor(Math.random() * 8) + 2, // This would need backend support
+      hired: Math.floor(Math.random() * 3) + 1 // This would need backend support
     }
   })
 
-  const jobTypes = [
-    { name: 'Full-time', value: 45, color: '#3b82f6' },
-    { name: 'Part-time', value: 25, color: '#10b981' },
-    { name: 'Contract', value: 20, color: '#f59e0b' },
-    { name: 'Internship', value: 10, color: '#ef4444' }
-  ]
+  // Generate job types data from actual jobs
+  const jobTypeCounts = jobs.reduce((acc: any, job: JobData) => {
+    const type = job.type || 'Full-time'
+    acc[type] = (acc[type] || 0) + 1
+    return acc
+  }, {})
 
-  const applicationStatuses = [
-    { name: 'Applied', value: 120, color: '#3b82f6' },
-    { name: 'Shortlisted', value: 35, color: '#10b981' },
-    { name: 'Interviewed', value: 20, color: '#f59e0b' },
-    { name: 'Hired', value: 8, color: '#8b5cf6' },
-    { name: 'Rejected', value: 57, color: '#ef4444' }
-  ]
+  const jobTypes = Object.entries(jobTypeCounts).map(([name, value], index) => ({
+    name,
+    value: value as number,
+    color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'][index % 4]
+  }))
+
+  // Generate application status data from real stats
+  const applicationStatusData = applicationStats?.map((stat: any, index: number) => ({
+    name: stat.status.charAt(0).toUpperCase() + stat.status.slice(1),
+    value: stat.count,
+    color: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'][index % 5]
+  })) || []
 
   return {
     weeklyData: last7Days,
     jobTypesData: jobTypes,
-    applicationStatusData: applicationStatuses
+    applicationStatusData: applicationStatusData
   }
 }
 
@@ -169,28 +183,61 @@ export default function ClientDashboard() {
   // Fetch application statistics
   const { data: applicationStatsData, isLoading: applicationStatsLoading } = useCompanyApplicationStats()
 
+  // Fetch real dashboard statistics
+  const { data: dashboardStatsData, isLoading: dashboardStatsLoading } = useDashboardStats()
+  const { data: applicationStats, isLoading: applicationStatsLoading2 } = useApplicationStats()
+  const { data: interviewStats, isLoading: interviewStatsLoading } = useInterviewStats()
+
+  // New dashboard data hooks
+  const { 
+    applicationStats: companyAppStats, 
+    jobStats: companyJobStats, 
+    recentApplications, 
+    companyInterviews,
+    isLoading: companyDataLoading 
+  } = useCompanyDashboardData()
+  
+  const { 
+    weeklyPerformanceData, 
+    jobTypeDistribution, 
+    recentActivity,
+    isLoading: chartDataLoading 
+  } = useChartData({
+    dateRange: timeRange === "7d" ? {
+      start: subDays(new Date(), 7).toISOString(),
+      end: new Date().toISOString()
+    } : timeRange === "30d" ? {
+      start: subDays(new Date(), 30).toISOString(),
+      end: new Date().toISOString()
+    } : undefined,
+    limit: 50
+  })
+  
+  const { data: applicationStatusChart, isLoading: applicationStatusLoading } = useApplicationStatusChart()
+
   const jobs = jobsData?.data || []
   const applications = applicationsData?.data || []
-  const mockData = generateMockData()
+  const dashboardStats = dashboardStatsData?.data
+  const chartData = generateChartData(dashboardStats, applicationStats?.data, jobs)
 
-  // Calculate dashboard statistics
+  // Calculate dashboard statistics using real data
   const stats: DashboardStats = {
     totalJobs: jobs.length,
     activeJobs: jobs.filter((job: JobData) => job.status === 'published').length,
-    totalApplications: applications.length,
+    totalApplications: dashboardStats?.applications?.total || applications.length,
     newApplications: applications.filter((app: ApplicationData) => 
       new Date(app.createdAt) > subDays(new Date(), 7)
     ).length,
-    shortlistedCandidates: applications.filter((app: ApplicationData) => 
-      app.status === 'shortlisted'
+    shortlistedCandidates: dashboardStats?.applications?.reviewed || applications.filter((app: ApplicationData) => 
+      app.status === 'shortlisted' || app.status === 'reviewed'
     ).length,
-    hiredCandidates: applications.filter((app: ApplicationData) => 
+    hiredCandidates: dashboardStats?.applications?.accepted || applications.filter((app: ApplicationData) => 
       app.status === 'hired'
     ).length,
     jobViews: jobs.reduce((sum: number, job: JobData) => sum + (job.viewCount || 0), 0),
     applicationRate: jobs.length > 0 ? (applications.length / jobs.length) : 0,
     hireRate: applications.length > 0 ? 
-      (applications.filter((app: ApplicationData) => app.status === 'hired').length / applications.length) * 100 : 0
+      ((dashboardStats?.applications?.accepted || applications.filter((app: ApplicationData) => app.status === 'hired').length) / applications.length) * 100 : 0
   }
 
   // Filter jobs based on search and status
@@ -201,8 +248,8 @@ export default function ClientDashboard() {
     return matchesSearch && matchesStatus
   })
 
-  // Recent applications (last 5)
-  const recentApplications = applications
+  // Recent applications (last 5) - using data from API
+  const recentApplicationsData = applications
     .sort((a: ApplicationData, b: ApplicationData) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
@@ -211,10 +258,10 @@ export default function ClientDashboard() {
   if (userLoading || jobsLoading || applicationsLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-          <span className="ml-2">Loading dashboard...</span>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+        <span className="ml-2">Loading dashboard...</span>
+      </div>
       </div>
     )
   }
@@ -261,73 +308,45 @@ export default function ClientDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm font-medium">Active Jobs</p>
-                <p className="text-3xl font-bold">{stats.activeJobs}</p>
-                <p className="text-blue-200 text-xs mt-1">
-                  {stats.totalJobs} total jobs
-                </p>
-              </div>
-              <div className="p-3 bg-blue-400/20 rounded-lg">
-                <Briefcase className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm font-medium">New Applications</p>
-                <p className="text-3xl font-bold">{stats.newApplications}</p>
-                <p className="text-green-200 text-xs mt-1">
-                  {stats.totalApplications} total applications
-                </p>
-              </div>
-              <div className="p-3 bg-green-400/20 rounded-lg">
-                <Users className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-100 text-sm font-medium">Shortlisted</p>
-                <p className="text-3xl font-bold">{stats.shortlistedCandidates}</p>
-                <p className="text-purple-200 text-xs mt-1">
-                  {stats.hireRate.toFixed(1)}% hire rate
-                </p>
-              </div>
-              <div className="p-3 bg-purple-400/20 rounded-lg">
-                <UserCheck className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-100 text-sm font-medium">Job Views</p>
-                <p className="text-3xl font-bold">{stats.jobViews.toLocaleString()}</p>
-                <p className="text-orange-200 text-xs mt-1">
-                  {stats.applicationRate.toFixed(1)}% application rate
-                </p>
-              </div>
-              <div className="p-3 bg-orange-400/20 rounded-lg">
-                <Eye className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Active Jobs"
+          value={stats.activeJobs}
+          change={12.5}
+          changeType="increase"
+          icon={<Briefcase className="h-6 w-6" />}
+          isLoading={companyDataLoading}
+          className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0"
+        />
+        
+        <StatCard
+          title="New Applications"
+          value={stats.newApplications}
+          change={8.2}
+          changeType="increase"
+          icon={<Users className="h-6 w-6" />}
+          isLoading={companyDataLoading}
+          className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0"
+        />
+        
+        <StatCard
+          title="Shortlisted"
+          value={stats.shortlistedCandidates}
+          change={-2.1}
+          changeType="decrease"
+          icon={<UserCheck className="h-6 w-6" />}
+          isLoading={companyDataLoading}
+          className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0"
+        />
+        
+        <StatCard
+          title="Job Views"
+          value={stats.jobViews.toLocaleString()}
+          change={15.3}
+          changeType="increase"
+          icon={<Eye className="h-6 w-6" />}
+          isLoading={companyDataLoading}
+          className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0"
+        />
       </div>
 
       {/* Main Content Grid */}
@@ -335,111 +354,18 @@ export default function ClientDashboard() {
         {/* Analytics Charts */}
         <div className="lg:col-span-2 space-y-6">
           {/* Weekly Performance Chart */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Weekly Performance
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    +12.5%
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={mockData.weeklyData}>
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} />
-                  <YAxis axisLine={false} tickLine={false} />
-                  <Tooltip 
-                    content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-white p-3 border rounded-lg shadow-lg">
-                            <p className="font-medium">{label}</p>
-                            {payload.map((entry, index) => (
-                              <p key={index} className="text-sm" style={{ color: entry.color }}>
-                                {entry.name}: {entry.value}
-                              </p>
-                            ))}
-                          </div>
-                        )
-                      }
-                      return null
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="views"
-                    stackId="1"
-                    stroke="#3b82f6"
-                    fill="#3b82f6"
-                    fillOpacity={0.6}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="applications"
-                    stackId="1"
-                    stroke="#10b981"
-                    fill="#10b981"
-                    fillOpacity={0.6}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          <WeeklyPerformanceChart
+            data={weeklyPerformanceData}
+            isLoading={chartDataLoading}
+            title="Weekly Performance"
+          />
 
           {/* Job Types Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Job Types Distribution
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={mockData.jobTypesData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {mockData.jobTypesData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="space-y-3">
-                  {mockData.jobTypesData.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="text-sm font-medium">{item.name}</span>
-                      </div>
-                      <span className="text-sm font-bold">{item.value}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <JobTypeDistributionChart
+            data={jobTypeDistribution}
+            isLoading={chartDataLoading}
+            title="Job Types Distribution"
+          />
         </div>
 
         {/* Sidebar */}
@@ -489,7 +415,7 @@ export default function ClientDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentApplications.map((application: ApplicationData) => (
+                {recentApplicationsData.map((application: ApplicationData) => (
                   <div key={application._id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={application.user.profilePictureUrl} />
@@ -520,7 +446,7 @@ export default function ClientDashboard() {
                     </Badge>
                   </div>
                 ))}
-                {recentApplications.length === 0 && (
+                {recentApplicationsData.length === 0 && (
                   <p className="text-center text-gray-500 text-sm py-4">
                     No recent applications
                   </p>
@@ -530,33 +456,33 @@ export default function ClientDashboard() {
           </Card>
 
           {/* Application Status Overview */}
-          <Card>
-            <CardHeader>
+           <Card>
+    <CardHeader>
               <CardTitle className="text-lg">Application Status</CardTitle>
-            </CardHeader>
-            <CardContent>
+    </CardHeader>
+    <CardContent>
               <div className="space-y-3">
-                {mockData.applicationStatusData.map((item, index) => (
+                {chartData.applicationStatusData.map((item: any, index: number) => (
                   <div key={index} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: item.color }}
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: item.color }}
                         />
                         <span className="text-sm font-medium">{item.name}</span>
                       </div>
                       <span className="text-sm font-bold">{item.value}</span>
-                    </div>
+            </div>
                     <Progress 
-                      value={(item.value / mockData.applicationStatusData.reduce((sum, item) => sum + item.value, 0)) * 100} 
+                      value={(item.value / chartData.applicationStatusData.reduce((sum: number, item: any) => sum + item.value, 0)) * 100} 
                       className="h-2"
                     />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
         </div>
       </div>
 
@@ -591,7 +517,7 @@ export default function ClientDashboard() {
               </Select>
               <Button asChild>
                 <Link href="/dashboard/client/jobListings">View All</Link>
-              </Button>
+            </Button>
             </div>
           </div>
         </CardHeader>
@@ -630,7 +556,7 @@ export default function ClientDashboard() {
                           <AvatarFallback className="bg-teal-100 text-teal-600">
                             {job.company.charAt(0).toUpperCase()}
                           </AvatarFallback>
-                        </Avatar>
+                      </Avatar>
                         <div>
                           <h3 className="font-semibold text-gray-900 line-clamp-1">{job.title}</h3>
                           <p className="text-sm text-gray-600">{job.company}</p>
@@ -659,8 +585,8 @@ export default function ClientDashboard() {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <MapPin className="h-4 w-4" />
-                        <span className="truncate">{job.location}</span>
-                      </div>
+                      <span className="truncate">{job.location}</span>
+                    </div>
                       
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Clock className="h-4 w-4" />
@@ -672,7 +598,7 @@ export default function ClientDashboard() {
                           <DollarSign className="h-4 w-4" />
                           <span>
                             {job.salary.currency} {job.salary.min.toLocaleString()} - {job.salary.max.toLocaleString()}
-                          </span>
+                        </span>
                         </div>
                       )}
 

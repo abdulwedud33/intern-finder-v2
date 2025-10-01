@@ -11,6 +11,7 @@ export interface Interview {
     name: string;
     email: string;
     role: string;
+    avatar?: string;
   };
   scheduledDate: string;
   duration: number; // in minutes
@@ -63,6 +64,12 @@ export const interviewService = {
     return response.data;
   },
 
+  // Get interviews for a specific company
+  async getCompanyInterviews(companyId: string): Promise<InterviewResponse> {
+    const response = await api.get(`/interviews/companies/${companyId}/interviews`);
+    return response.data;
+  },
+
   // Get interviews for a specific application
   async getApplicationInterviews(applicationId: string): Promise<InterviewResponse> {
     const response = await api.get(`/interviews/application/${applicationId}`);
@@ -84,6 +91,12 @@ export const interviewService = {
   // Update an interview
   async updateInterview(interviewId: string, updateData: UpdateInterviewRequest): Promise<InterviewResponse> {
     const response = await api.put(`/interviews/${interviewId}`, updateData);
+    return response.data;
+  },
+
+  // Delete an interview
+  async deleteInterview(interviewId: string): Promise<{ success: boolean; message: string }> {
+    const response = await api.delete(`/interviews/${interviewId}`);
     return response.data;
   },
 

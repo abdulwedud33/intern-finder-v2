@@ -26,6 +26,8 @@ import {
   RefreshCw
 } from "lucide-react"
 import { useMyInterviews, useCancelInterview, useRescheduleInterview } from "@/hooks/useInterviews"
+import { InterviewCard } from "@/components/interviews/InterviewForm"
+import { InterviewStats } from "@/components/interviews/InterviewTable"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
 import { format, formatDistanceToNow, isAfter, isBefore, startOfDay } from "date-fns"

@@ -29,7 +29,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useUploadCompanyLogo } from "@/hooks/useFileUpload"
-import { FileUpload } from "@/components/ui/file-upload"
+import { EnhancedFileUpload } from "@/components/ui/enhanced-file-upload"
 import { useToast } from "@/components/ui/use-toast"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
@@ -290,10 +290,20 @@ export default function ClientProfilePage() {
                         <DialogTitle>Update Company Logo</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4">
-                        <FileUpload
-                          onFileSelect={handleLogoUpload}
-                          fileType="image"
+                        <EnhancedFileUpload
+                          onFileUploaded={(fileUrl, filename) => {
+                            // File is automatically uploaded and profile updated
+                            toast({
+                              title: "Company logo updated successfully!",
+                              description: "Your company logo has been updated."
+                            })
+                          }}
+                          currentFile={profile?.logo}
+                          fileType="company-logo"
                           maxSize={5}
+                          showPreview={true}
+                          showDownload={true}
+                          showDelete={true}
                           accept="image/*"
                           disabled={uploadLogoMutation.isPending}
                         />
