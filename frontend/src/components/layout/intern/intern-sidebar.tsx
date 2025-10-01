@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutDashboard, MessageSquare, FileText, Building2, User, Settings, HelpCircle, ChevronRight, X, Star, Calendar } from "lucide-react"
+import { LayoutDashboard, MessageSquare, FileText, Building2, User, Settings, HelpCircle, ChevronRight, X, Star, Calendar, Briefcase } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { usePathname } from "next/navigation"
@@ -20,6 +20,7 @@ const links = [
     { href: "/dashboard/intern/applications", label: "My Applications", icon: FileText, startWith: "/dashboard/intern/applications"},
     { href: "/dashboard/intern/reviews", label: "Reviews & Feedback", icon: Star, startWith: "/dashboard/intern/reviews"},
     { href: "/dashboard/intern/interviews", label: "Interviews", icon: Calendar, startWith: "/dashboard/intern/interviews"},
+    { href: "/dashboard/intern/work-history", label: "Work History", icon: Briefcase, startWith: "/dashboard/intern/work-history"},
     { href: "/dashboard/intern/company", label: "Company", icon: Building2, startWith: "/dashboard/intern/company"},
     { href: "/dashboard/intern/profile", label: "Profile", icon: User, startWith: "/dashboard/intern/profile"},
   ];
