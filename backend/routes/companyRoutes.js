@@ -5,7 +5,7 @@ const {
   updateCompanyProfile,
   getCompanyById,
   getCompanies,
-  // uploadCompanyLogo,
+  uploadCompanyLogo,
   // uploadCompanyCover,
   // getCompanyStats
 } = require('../controllers/companyController');
@@ -18,8 +18,8 @@ router.use(protect);
 // Company-specific routes (require company role)
 router.get('/me', authorize('company'), getCompanyProfile);
 router.put('/me', authorize('company'), updateCompanyProfile);
-// Upload routes (commented out for now)
-// router.put('/me/logo', authorize('company'), uploadCompanyLogo);
+// Upload routes
+router.put('/me/logo', authorize('company'), uploadCompanyLogo);
 // router.put('/me/cover', authorize('company'), uploadCompanyCover);
 // router.get('/me/stats', authorize('company'), getCompanyStats);
 // Admin routes (only accessible by admins)

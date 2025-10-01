@@ -329,7 +329,7 @@ export default function ApplicantsPage() {
     let filtered = applications
 
     if (searchTerm) {
-      filtered = filtered.filter(app => 
+      filtered = filtered.filter((app: any) => 
         app.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         app.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         app.job.company.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -337,7 +337,7 @@ export default function ApplicantsPage() {
     }
 
     if (statusFilter !== "all") {
-      filtered = filtered.filter(app => app.status === statusFilter)
+      filtered = filtered.filter((app: any) => app.status === statusFilter)
     }
 
     return filtered
@@ -347,7 +347,7 @@ export default function ApplicantsPage() {
   const stageCounts = useMemo(() => {
     const counts = STAGES.map(stage => ({
       ...stage,
-      count: applications.filter(app => app.status === stage.id).length
+      count: applications.filter((app: any) => app.status === stage.id).length
     }))
     return counts
   }, [applications])
@@ -593,7 +593,7 @@ export default function ApplicantsPage() {
         <div className="overflow-x-auto pb-4">
               <div className="flex gap-6 min-w-max">
                 {stageCounts.map((stage) => {
-                  const stageApplications = filteredApplications.filter(app => app.status === stage.id)
+                  const stageApplications = filteredApplications.filter((app: any) => app.status === stage.id)
               return (
                     <div key={stage.id} className="w-80 flex-shrink-0">
                       <div className={`p-4 rounded-t-lg ${stage.className} bg-opacity-20 border-b-2 border-${stage.color}-300`}>

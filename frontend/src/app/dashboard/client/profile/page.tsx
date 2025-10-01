@@ -28,6 +28,8 @@ import {
   Trash2
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
+import { useUploadCompanyLogo } from "@/hooks/useFileUpload"
+import { FileUpload } from "@/components/ui/file-upload"
 import { useToast } from "@/components/ui/use-toast"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
@@ -93,6 +95,12 @@ export default function ClientProfilePage() {
     queryFn: getCurrentUser,
     enabled: !!user,
   })
+  
+  const uploadLogoMutation = useUploadCompanyLogo()
+
+  const handleLogoUpload = (file: File) => {
+    uploadLogoMutation.mutate(file)
+  }
 
   const [formData, setFormData] = useState<ProfileFormData>({
     name: "",
@@ -263,26 +271,39 @@ export default function ClientProfilePage() {
                   </AvatarFallback>
                 </Avatar>
                 {isEditing && (
-                  <Button
-                    size="sm"
-                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
-                    onClick={() => document.getElementById('logo-upload')?.click()}
-                    disabled={isUploading}
-                  >
-                    {isUploading ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                    ) : (
-                      <Upload className="h-4 w-4" />
-                    )}
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
+                        disabled={uploadLogoMutation.isPending}
+                      >
+                        {uploadLogoMutation.isPending ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                        ) : (
+                          <Upload className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Update Company Logo</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <FileUpload
+                          onFileSelect={handleLogoUpload}
+                          fileType="image"
+                          maxSize={5}
+                          accept="image/*"
+                          disabled={uploadLogoMutation.isPending}
+                        />
+                        <p className="text-sm text-gray-500">
+                          Upload your company logo. Max size: 5MB. Supported formats: JPG, PNG, GIF
+                        </p>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 )}
-                <input
-                  id="logo-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
               </div>
 
               <div className="flex-1">

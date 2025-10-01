@@ -110,7 +110,12 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                     </div>
                     <div>
                       <h1 className="text-2xl font-semibold text-gray-900">{job.title}</h1>
-                      <p className="text-gray-600">{job.company?.name}</p>
+                      <Link 
+                        href={`/jobs/${params.id}/${job.company?._id}`}
+                        className="text-gray-600 hover:text-teal-600 transition-colors duration-200"
+                      >
+                        {job.company?.name}
+                      </Link>
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mt-2">
                         <h2 className="text-xl font-semibold mb-4">Job Description</h2>
                         <div className="prose max-w-none">
@@ -217,6 +222,16 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                 <Button variant="outline" size="lg" className="w-full">
                   Save Job
                 </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="w-full" 
+                  asChild
+                >
+                  <Link href={`/jobs/${params.id}/${job.company?._id}`}>
+                    View Company
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
 
@@ -322,7 +337,12 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                     <div>
                       <Badge className="mb-1">{relatedJob.type || "Full-time"}</Badge>
                       <h3 className="text-lg font-semibold text-gray-900">{relatedJob.title}</h3>
-                      <p className="text-sm text-gray-600">{relatedJob.company?.name}</p>
+                      <Link 
+                        href={`/jobs/${params.id}/${relatedJob.company?._id}`}
+                        className="text-sm text-gray-600 hover:text-teal-600 transition-colors duration-200"
+                      >
+                        {relatedJob.company?.name}
+                      </Link>
                       <div className="flex flex-wrap gap-3 text-sm text-gray-500 mt-1">
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />

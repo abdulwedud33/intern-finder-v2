@@ -45,18 +45,28 @@ import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
 import { useJobs } from "@/hooks/useJobs"
 import { useMyApplications } from "@/hooks/useApplications"
+import { useMyInterviews } from "@/hooks/useInterviews"
 import { useCompanies } from "@/hooks/useCompanies"
 import { LoadingPage } from "@/components/ui/loading-spinner"
 import { ErrorPage } from "@/components/ui/error-boundary"
 
-// Mock data for demonstration
-const mockStats = {
-  totalApplications: 23,
-  interviews: 8,
-  offers: 3,
-  profileViews: 1247,
-  savedJobs: 12,
-  companiesViewed: 45
+// Calculate real statistics from data
+const calculateStats = (applications: any[], interviews: any[]) => {
+  const totalApplications = applications.length
+  const interviewsCount = interviews.length
+  const offers = applications.filter((app: any) => app.status === 'hired').length
+  const profileViews = 1247 // This would come from analytics API
+  const savedJobs = 12 // This would come from saved jobs API
+  const companiesViewed = 45 // This would come from analytics API
+  
+  return {
+    totalApplications,
+    interviews: interviewsCount,
+    offers,
+    profileViews,
+    savedJobs,
+    companiesViewed
+  }
 }
 
 const mockRecentApplications = [
@@ -234,6 +244,7 @@ export default function InternDashboard() {
   // Real data hooks
   const { jobs: featuredJobs, loading: jobsLoading } = useJobs({ limit: 4 })
   const { data: applicationsData, isLoading: applicationsLoading } = useMyApplications()
+  const { data: interviewsData, isLoading: interviewsLoading } = useMyInterviews()
   const { companies, loading: companiesLoading } = useCompanies({ limit: 6 })
 
   // Update time every minute
@@ -274,6 +285,8 @@ export default function InternDashboard() {
   }
 
   const applications = (applicationsData as any)?.data || (applicationsData as any)?.applications || mockRecentApplications
+  const interviews = (interviewsData as any)?.data || []
+  const stats = calculateStats(applications, interviews)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -311,7 +324,7 @@ export default function InternDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm font-medium">Total Applications</p>
-                  <p className="text-3xl font-bold">{mockStats.totalApplications}</p>
+                  <p className="text-3xl font-bold">{stats.totalApplications}</p>
                   <p className="text-blue-100 text-xs">+3 this week</p>
                 </div>
                 <FileText className="h-12 w-12 text-blue-200" />
@@ -324,7 +337,7 @@ export default function InternDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-100 text-sm font-medium">Interviews</p>
-                  <p className="text-3xl font-bold">{mockStats.interviews}</p>
+                  <p className="text-3xl font-bold">{stats.interviews}</p>
                   <p className="text-green-100 text-xs">+2 this week</p>
                 </div>
                 <Users className="h-12 w-12 text-green-200" />
@@ -337,7 +350,7 @@ export default function InternDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-sm font-medium">Job Offers</p>
-                  <p className="text-3xl font-bold">{mockStats.offers}</p>
+                  <p className="text-3xl font-bold">{stats.offers}</p>
                   <p className="text-purple-100 text-xs">+1 this week</p>
                 </div>
                 <Award className="h-12 w-12 text-purple-200" />
@@ -350,7 +363,7 @@ export default function InternDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-orange-100 text-sm font-medium">Profile Views</p>
-                  <p className="text-3xl font-bold">{mockStats.profileViews}</p>
+                  <p className="text-3xl font-bold">{stats.profileViews}</p>
                   <p className="text-orange-100 text-xs">+45 this week</p>
                 </div>
                 <Eye className="h-12 w-12 text-orange-200" />
@@ -458,39 +471,39 @@ export default function InternDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {mockUpcomingInterviews.map((interview) => (
+                  {interviews.filter((interview: any) => interview.status === 'scheduled').slice(0, 2).map((interview: any) => (
                     <div key={interview.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow bg-gradient-to-r from-green-50 to-blue-50">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3 flex-1">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={interview.avatar} alt={interview.interviewer} />
+                            <AvatarImage src={interview.interviewer?.avatar} alt={interview.interviewer?.name} />
                             <AvatarFallback className="bg-green-100 text-green-700">
-                              {interview.interviewer.split(' ').map(n => n[0]).join('')}
+                              {interview.interviewer?.name?.split(' ').map((n: string) => n[0]).join('') || 'I'}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
-                            <p className="font-medium text-gray-900">{interview.position}</p>
-                            <p className="text-sm text-gray-600">{interview.company}</p>
+                            <p className="font-medium text-gray-900">{interview.job?.title || 'Position'}</p>
+                            <p className="text-sm text-gray-600">{interview.company?.name || 'Company'}</p>
                             <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
-                                {interview.time}
+                                {new Date(interview.scheduledDate).toLocaleTimeString()}
                               </span>
                               <span className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
-                                {interview.date}
+                                {new Date(interview.scheduledDate).toLocaleDateString()}
                               </span>
                               <span className="flex items-center gap-1">
                                 <User className="h-3 w-3" />
-                                {interview.interviewer}
+                                {interview.interviewer?.name || 'Interviewer'}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 mt-2">
                               <Badge variant="outline" className="text-xs">
-                                {interview.type}
+                                {interview.type?.charAt(0).toUpperCase() + interview.type?.slice(1) || 'Interview'}
                               </Badge>
                               <Badge className="bg-green-100 text-green-700 text-xs">
-                                {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
+                                {interview.status?.charAt(0).toUpperCase() + interview.status?.slice(1) || 'Scheduled'}
                               </Badge>
                             </div>
                           </div>

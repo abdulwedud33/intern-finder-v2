@@ -2,6 +2,8 @@ const asyncHandler = require('../middleware/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 const Company = require('../models/Company');
 const User = require('../models/User');
+const path = require('path');
+const fs = require('fs');
 
 /**
  * @desc    Get company profile
@@ -212,5 +214,66 @@ exports.getCompanies = asyncHandler(async (req, res, next) => {
     count: companies.length,
     pagination,
     data: companies
+  });
+});
+
+/**
+ * @desc    Upload company logo
+ * @route   PUT /api/v1/companies/me/logo
+ * @access  Private (Company)
+ */
+exports.uploadCompanyLogo = asyncHandler(async (req, res, next) => {
+  if (req.user.role !== 'company') {
+    return next(new ErrorResponse('Not authorized to upload company logo', 403));
+  }
+
+  if (!req.files) {
+    return next(new ErrorResponse('Please upload a file', 400));
+  }
+
+  const file = req.files.file;
+
+  // Make sure the image is a photo
+  if (!file.mimetype.startsWith('image')) {
+    return next(new ErrorResponse('Please upload an image file', 400));
+  }
+
+  // Check file size
+  const maxSize = process.env.MAX_FILE_UPLOAD || 5000000; // 5MB default
+  if (file.size > maxSize) {
+    return next(
+      new ErrorResponse(`Please upload an image less than ${maxSize} bytes`, 400)
+    );
+  }
+
+  // Create custom filename
+  file.name = `logo_${req.user.id}${path.parse(file.name).ext}`;
+
+  // Create uploads directory if it doesn't exist
+  const uploadPath = process.env.FILE_UPLOAD_PATH || './public/uploads';
+  if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+  }
+
+  // Upload file
+  file.mv(`${uploadPath}/${file.name}`, async err => {
+    if (err) {
+      console.error(err);
+      return next(new ErrorResponse('Problem with file upload', 500));
+    }
+
+    // Update company logo
+    const company = await Company.findByIdAndUpdate(
+      req.user.id,
+      { logo: file.name },
+      { new: true, runValidators: true }
+    )
+      .select('-password -resetPasswordToken -resetPasswordExpire')
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: company
+    });
   });
 });

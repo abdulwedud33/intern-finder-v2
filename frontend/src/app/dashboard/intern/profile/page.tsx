@@ -31,6 +31,8 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
+import { useUploadProfilePhoto, useUploadResume } from "@/hooks/useFileUpload"
+import { FileUpload } from "@/components/ui/file-upload"
 import { LoadingPage } from "@/components/ui/loading-spinner"
 import { ErrorPage } from "@/components/ui/error-boundary"
 import { toast } from "sonner"
@@ -44,10 +46,21 @@ import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 
 export default function ProfilePage() {
-  const { user, loading, error } = useAuth()
+  const { user, loading } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [isAddingExperience, setIsAddingExperience] = useState(false)
   const [activeTab, setActiveTab] = useState("overview")
+  
+  const uploadProfilePhotoMutation = useUploadProfilePhoto()
+  const uploadResumeMutation = useUploadResume()
+
+  const handleProfilePhotoUpload = (file: File) => {
+    uploadProfilePhotoMutation.mutate(file)
+  }
+
+  const handleResumeUpload = (file: File) => {
+    uploadResumeMutation.mutate(file)
+  }
   
   // Mock data for demonstration - replace with real data from hooks
   const profileData = {
@@ -56,7 +69,7 @@ export default function ProfilePage() {
     title: "Frontend Developer",
     location: "San Francisco, CA",
     bio: "Passionate frontend developer with 3+ years of experience building modern web applications. I love creating beautiful, responsive interfaces that provide exceptional user experiences.",
-    profilePicture: user?.profilePicture || "/placeholder-user.jpg",
+    profilePicture: user?.avatar || "/placeholder-user.jpg",
     coverImage: "/images/hero-section-bg.jpg",
     skills: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Node.js", "Python", "Figma", "Git"],
     experiences: [
@@ -119,7 +132,6 @@ export default function ProfilePage() {
   }
 
   if (loading) return <LoadingPage />
-  if (error) return <ErrorPage error={{ message: error.toString() }} />
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -151,12 +163,33 @@ export default function ProfilePage() {
                     {profileData.name.split(' ').map(n => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
+              <Dialog>
+                <DialogTrigger asChild>
               <Button
                 size="sm"
-                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-white shadow-lg hover:shadow-xl transition-all"
+                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-white shadow-lg hover:shadow-xl transition-all"
               >
-                  <Camera className="h-4 w-4 text-gray-600" />
+                    <Camera className="h-4 w-4 text-gray-600" />
               </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Update Profile Photo</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <FileUpload
+                      onFileSelect={handleProfilePhotoUpload}
+                      fileType="image"
+                      maxSize={5}
+                      accept="image/*"
+                      disabled={uploadProfilePhotoMutation.isPending}
+                    />
+                    <p className="text-sm text-gray-500">
+                      Upload a professional photo. Max size: 5MB. Supported formats: JPG, PNG, GIF
+                    </p>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
 
               {/* Profile Details */}
@@ -435,20 +468,36 @@ export default function ProfilePage() {
           <Card>
                 <CardHeader>
                   <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button className="w-full" variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Resume
-                  </Button>
-                  <Button className="w-full" variant="outline">
-                    <Heart className="h-4 w-4 mr-2" />
-                    Save Profile
-                  </Button>
-                  <Button className="w-full" variant="outline">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share Profile
-              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Resume</h4>
+                    <FileUpload
+                      onFileSelect={handleResumeUpload}
+                      fileType="document"
+                      maxSize={10}
+                      accept=".pdf,.doc,.docx"
+                      disabled={uploadResumeMutation.isPending}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Upload your latest resume. Max size: 10MB
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Button className="w-full" variant="outline">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Resume
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <Heart className="h-4 w-4 mr-2" />
+                      Save Profile
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share Profile
+                    </Button>
+                </div>
             </CardContent>
           </Card>
             </div>

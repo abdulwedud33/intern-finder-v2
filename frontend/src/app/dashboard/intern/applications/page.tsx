@@ -8,44 +8,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Calendar, Search, Filter, MoreHorizontal, Clock, MapPin, Video, Phone, User, AlertCircle, CheckCircle, XCircle } from "lucide-react"
 import { useMyApplications } from "@/hooks/useApplications"
+import { useMyInterviews } from "@/hooks/useInterviews"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
 
 
 export default function ApplicationsPage() {
   const { data, isLoading, error } = useMyApplications()
+  const { data: interviewsData, isLoading: interviewsLoading } = useMyInterviews()
+  
   // Handle different possible response structures from the backend
   const applications = (data as any)?.data || (data as any)?.applications || data || []
-  
-  // Mock interview data - replace with real API call
-  const mockInterviews = [
-    {
-      id: 1,
-      applicationId: "app1",
-      company: "TechCorp Inc.",
-      position: "Frontend Developer",
-      interviewer: "Sarah Johnson",
-      date: "2024-01-20",
-      time: "10:00 AM - 11:00 AM",
-      type: "Video Call",
-      location: "Zoom Meeting",
-      status: "scheduled",
-      meetingLink: "https://zoom.us/j/123456789"
-    },
-    {
-      id: 2,
-      applicationId: "app2", 
-      company: "StartupXYZ",
-      position: "React Developer",
-      interviewer: "Mike Chen",
-      date: "2024-01-22",
-      time: "2:00 PM - 3:00 PM",
-      type: "Phone Call",
-      location: "Phone Interview",
-      status: "scheduled",
-      meetingLink: null
-    }
-  ]
+  const interviews = (interviewsData as any)?.data || []
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -79,7 +53,7 @@ export default function ApplicationsPage() {
       </div>
 
       {/* Upcoming Interviews */}
-      {mockInterviews.length > 0 && (
+      {interviews.length > 0 && (
         <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-blue-800">
@@ -89,27 +63,27 @@ export default function ApplicationsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockInterviews.map((interview) => (
+              {interviews.filter((interview: any) => interview.status === 'scheduled').map((interview: any) => (
                 <div key={interview.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-200">
                   <div className="flex items-center space-x-4">
                     <div className="p-2 bg-blue-100 rounded-full">
                       <Calendar className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">{interview.position}</h4>
-                      <p className="text-sm text-gray-600">{interview.company}</p>
+                      <h4 className="font-semibold text-gray-900">{interview.job?.title || 'Position'}</h4>
+                      <p className="text-sm text-gray-600">{interview.company?.name || 'Company'}</p>
                       <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {interview.date} at {interview.time}
+                          {new Date(interview.scheduledDate).toLocaleDateString()} at {new Date(interview.scheduledDate).toLocaleTimeString()}
                         </span>
                         <span className="flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          {interview.interviewer}
+                          {interview.interviewer?.name || 'Interviewer'}
                         </span>
                         <span className="flex items-center gap-1">
-                          {interview.type === 'Video Call' ? <Video className="h-3 w-3" /> : <Phone className="h-3 w-3" />}
-                          {interview.type}
+                          {interview.type === 'video' ? <Video className="h-3 w-3" /> : <Phone className="h-3 w-3" />}
+                          {interview.type?.charAt(0).toUpperCase() + interview.type?.slice(1) || 'Interview'}
                         </span>
                       </div>
                     </div>
@@ -171,8 +145,9 @@ export default function ApplicationsPage() {
                   const status = app.status || "applied"
                   
                   // Check if there's an interview for this application
-                  const relatedInterview = mockInterviews.find(interview => 
-                    interview.company === companyName && interview.position === jobTitle
+                  const relatedInterview = interviews.find((interview: any) => 
+                    interview.applicationId === app._id || 
+                    (interview.job?.title === jobTitle && interview.company?.name === companyName)
                   )
                   
                   // Status styling and icons
@@ -282,18 +257,18 @@ export default function ApplicationsPage() {
                                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                                     <div className="flex items-center space-x-1">
                                       <Clock className="h-3 w-3 text-gray-500" />
-                                      <span>{relatedInterview.date} at {relatedInterview.time}</span>
+                                      <span>{new Date(relatedInterview.scheduledDate).toLocaleDateString()} at {new Date(relatedInterview.scheduledDate).toLocaleTimeString()}</span>
                                     </div>
                                     <div className="flex items-center space-x-1">
                                       <User className="h-3 w-3 text-gray-500" />
-                                      <span>{relatedInterview.interviewer}</span>
+                                      <span>{relatedInterview.interviewer?.name || 'Interviewer'}</span>
                                     </div>
                                     <div className="flex items-center space-x-1">
-                                      {relatedInterview.type === 'Video Call' ? 
+                                      {relatedInterview.type === 'video' ? 
                                         <Video className="h-3 w-3 text-gray-500" /> : 
                                         <Phone className="h-3 w-3 text-gray-500" />
                                       }
-                                      <span>{relatedInterview.type}</span>
+                                      <span>{relatedInterview.type?.charAt(0).toUpperCase() + relatedInterview.type?.slice(1) || 'Interview'}</span>
                                     </div>
                                   </div>
                                   {relatedInterview.meetingLink && (

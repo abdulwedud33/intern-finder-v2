@@ -673,20 +673,20 @@ export default function RegisterPage() {
                     <div>
                       <Label htmlFor="name">Full Name</Label>
                       <Input id="name" placeholder="John Doe" {...register("name")} />
-                      {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
+                      {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message as string}</p>}
                     </div>
 
                     <div>
                       <Label htmlFor="email">Email Address</Label>
                       <Input id="email" type="email" placeholder="john@example.com" {...register("email")} />
-                      {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
+                      {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message as string}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="password">Password</Label>
                         <Input id="password" type="password" placeholder="Create password" {...register("password")} />
-                        {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password.message}</p>}
+                        {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password.message as string}</p>}
                       </div>
                       <div>
                         <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -697,7 +697,7 @@ export default function RegisterPage() {
                           {...register("confirmPassword")}
                         />
                         {errors.confirmPassword && (
-                          <p className="text-sm text-red-500 mt-1">{errors.confirmPassword.message}</p>
+                          <p className="text-sm text-red-500 mt-1">{errors.confirmPassword.message as string}</p>
                         )}
                       </div>
                     </div>
@@ -705,7 +705,7 @@ export default function RegisterPage() {
                     <div>
                       <Label htmlFor="phone">Phone Number</Label>
                       <Input id="phone" placeholder="+1 (555) 123-4567" {...register("phone")} />
-                      {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone.message}</p>}
+                      {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone.message as string}</p>}
                     </div>
 
                     <div>
@@ -727,7 +727,7 @@ export default function RegisterPage() {
                           </Select>
                         )}
                       />
-                      {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location.message}</p>}
+                      {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location.message as string}</p>}
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -747,7 +747,7 @@ export default function RegisterPage() {
                         </Link>
                       </label>
                     </div>
-                    {errors.agreeToTerms && <p className="text-sm text-red-500">{errors.agreeToTerms.message}</p>}
+                    {errors.agreeToTerms && <p className="text-sm text-red-500">{errors.agreeToTerms.message as string}</p>}
                   </div>
                 )}
 
@@ -796,7 +796,7 @@ export default function RegisterPage() {
                         max={new Date().toISOString().split('T')[0]}
                       />
                       {errors.dateOfBirth && (
-                        <p className="text-sm text-red-500 mt-1">{errors.dateOfBirth.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.dateOfBirth.message as string}</p>
                       )}
                     </div>
 
@@ -820,7 +820,7 @@ export default function RegisterPage() {
                         )}
                       />
                       {errors.gender && (
-                        <p className="text-sm text-red-500 mt-1">{errors.gender.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.gender.message as string}</p>
                       )}
                     </div>
 
@@ -849,7 +849,7 @@ export default function RegisterPage() {
                         </Button>
                       </div>
                       
-                      {watch("education")?.map((edu, index) => (
+                      {watch("education")?.map((edu: any, index: number) => (
                         <div key={index} className="mt-4 p-4 border rounded-lg space-y-3">
                           <div>
                             <Label>Institution</Label>
@@ -857,9 +857,9 @@ export default function RegisterPage() {
                               {...register(`education.${index}.institution`)}
                               placeholder="e.g., University of California, Berkeley"
                             />
-                            {errors.education?.[index]?.institution && (
+                            {(errors.education as any)?.[index]?.institution && (
                               <p className="text-sm text-red-500">
-                                {errors.education[index]?.institution?.message}
+                                {(errors.education as any)?.[index]?.institution?.message as string}
                               </p>
                             )}
                           </div>
@@ -871,9 +871,9 @@ export default function RegisterPage() {
                                 {...register(`education.${index}.degree`)}
                                 placeholder="e.g., Bachelor's"
                               />
-                              {errors.education?.[index]?.degree && (
+                              {(errors.education as any)?.[index]?.degree && (
                                 <p className="text-sm text-red-500">
-                                  {errors.education[index]?.degree?.message}
+                                  {(errors.education as any)?.[index]?.degree?.message as string}
                                 </p>
                               )}
                             </div>
@@ -883,9 +883,9 @@ export default function RegisterPage() {
                                 {...register(`education.${index}.fieldOfStudy`)}
                                 placeholder="e.g., Computer Science"
                               />
-                              {errors.education?.[index]?.fieldOfStudy && (
+                              {(errors.education as any)?.[index]?.fieldOfStudy && (
                                 <p className="text-sm text-red-500">
-                                  {errors.education[index]?.fieldOfStudy?.message}
+                                  {(errors.education as any)?.[index]?.fieldOfStudy?.message as string}
                                 </p>
                               )}
                             </div>
@@ -898,9 +898,9 @@ export default function RegisterPage() {
                                 type="date"
                                 {...register(`education.${index}.startDate`)}
                               />
-                              {errors.education?.[index]?.startDate && (
+                              {(errors.education as any)?.[index]?.startDate && (
                                 <p className="text-sm text-red-500">
-                                  {errors.education[index]?.startDate?.message}
+                                  {(errors.education as any)?.[index]?.startDate?.message as string}
                                 </p>
                               )}
                             </div>
@@ -942,9 +942,9 @@ export default function RegisterPage() {
                               {...register(`education.${index}.gpa`)}
                               placeholder="e.g., 3.5"
                             />
-                            {errors.education?.[index]?.gpa && (
+                            {(errors.education as any)?.[index]?.gpa && (
                               <p className="text-sm text-red-500">
-                                {errors.education[index]?.gpa?.message}
+                                {(errors.education as any)?.[index]?.gpa?.message as string}
                               </p>
                             )}
                           </div>
@@ -967,7 +967,7 @@ export default function RegisterPage() {
                               const currentEducation = watch("education") || [];
                               setValue(
                                 "education",
-                                currentEducation.filter((_, i) => i !== index)
+                                currentEducation.filter((_: any, i: number) => i !== index)
                               );
                             }}
                           >
@@ -977,7 +977,7 @@ export default function RegisterPage() {
                       ))}
                       
                       {errors.education && !Array.isArray(errors.education) && (
-                        <p className="text-sm text-red-500 mt-1">{errors.education.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.education.message as string}</p>
                       )}
                     </div>
 
@@ -990,7 +990,7 @@ export default function RegisterPage() {
                         render={({ field }) => (
                           <div>
                             <div className="flex flex-wrap gap-2 mb-2">
-                              {field.value?.map((skill, index) => (
+                              {field.value?.map((skill: any, index: number) => (
                                 <div
                                   key={index}
                                   className="bg-gray-100 px-3 py-1 rounded-full text-sm flex items-center"
@@ -1031,7 +1031,7 @@ export default function RegisterPage() {
                         )}
                       />
                       {errors.skills && (
-                        <p className="text-sm text-red-500 mt-1">{errors.skills.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.skills.message as string}</p>
                       )}
                     </div>
 
@@ -1074,7 +1074,7 @@ export default function RegisterPage() {
                         )}
                       />
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {watch("preferredIndustries")?.map((industry, index) => (
+                        {watch("preferredIndustries")?.map((industry: any, index: number) => (
                           <div
                             key={index}
                             className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm flex items-center"
@@ -1087,7 +1087,7 @@ export default function RegisterPage() {
                                 const current = watch("preferredIndustries") || [];
                                 setValue(
                                   "preferredIndustries",
-                                  current.filter((_, i) => i !== index)
+                                  current.filter((_: any, i: number) => i !== index)
                                 );
                               }}
                             >
@@ -1098,7 +1098,7 @@ export default function RegisterPage() {
                       </div>
                       {errors.preferredIndustries && (
                         <p className="text-sm text-red-500 mt-1">
-                          {errors.preferredIndustries.message}
+                          {errors.preferredIndustries.message as string}
                         </p>
                       )}
                     </div>
@@ -1112,7 +1112,7 @@ export default function RegisterPage() {
                       />
                       {errors.location && (
                         <p className="text-sm text-red-500 mt-1">
-                          {errors.location.message}
+                          {errors.location.message as string}
                         </p>
                       )}
                     </div>
@@ -1139,7 +1139,7 @@ export default function RegisterPage() {
                       />
                       {errors.workAuthorization && (
                         <p className="text-sm text-red-500 mt-1">
-                          {errors.workAuthorization.message}
+                          {errors.workAuthorization.message as string}
                         </p>
                       )}
                     </div>
@@ -1165,7 +1165,7 @@ export default function RegisterPage() {
                         )}
                       />
                       {errors.availability && (
-                        <p className="text-sm text-red-500 mt-1">{errors.availability.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.availability.message as string}</p>
                       )}
                     </div>
 
@@ -1201,7 +1201,7 @@ export default function RegisterPage() {
                         {...register("linkedinUrl")}
                       />
                       {"linkedinUrl" in errors && errors.linkedinUrl && (
-                        <p className="text-sm text-red-500 mt-1">{errors.linkedinUrl.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.linkedinUrl.message as string}</p>
                       )}
                     </div>
 
@@ -1213,7 +1213,7 @@ export default function RegisterPage() {
                         {...register("website")}
                       />
                       {"website" in errors && errors.website && (
-                        <p className="text-sm text-red-500 mt-1">{errors.website.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.website.message as string}</p>
                       )}
                     </div>
 
@@ -1226,7 +1226,7 @@ export default function RegisterPage() {
                         className="flex h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                       {"about" in errors && errors.about && (
-                        <p className="text-sm text-red-500 mt-1">{errors.about.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.about.message as string}</p>
                       )}
                     </div>
 
@@ -1256,7 +1256,7 @@ export default function RegisterPage() {
                       <Label htmlFor="name">Company Name</Label>
                       <Input id="name" placeholder="Acme Inc." {...register("name")} />
                       {errors.name && (
-                        <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.name.message as string}</p>
                       )}
                     </div>
 
@@ -1269,7 +1269,7 @@ export default function RegisterPage() {
                         {...register("email")}
                       />
                       {errors.email && (
-                        <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.email.message as string}</p>
                       )}
                     </div>
 
@@ -1277,7 +1277,7 @@ export default function RegisterPage() {
                       <div>
                         <Label htmlFor="password">Password</Label>
                         <Input id="password" type="password" placeholder="Create password" {...register("password")} />
-                        {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password.message}</p>}
+                        {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password.message as string}</p>}
                       </div>
                       <div>
                         <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -1288,7 +1288,7 @@ export default function RegisterPage() {
                           {...register("confirmPassword")}
                         />
                         {errors.confirmPassword && (
-                          <p className="text-sm text-red-500 mt-1">{errors.confirmPassword.message}</p>
+                          <p className="text-sm text-red-500 mt-1">{errors.confirmPassword.message as string}</p>
                         )}
                       </div>
                     </div>
@@ -1312,7 +1312,7 @@ export default function RegisterPage() {
                           </Select>
                         )}
                       />
-                      {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location.message}</p>}
+                      {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location.message as string}</p>}
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -1332,7 +1332,7 @@ export default function RegisterPage() {
                         </Link>
                       </label>
                     </div>
-                    {errors.agreeToTerms && <p className="text-sm text-red-500">{errors.agreeToTerms.message}</p>}
+                    {errors.agreeToTerms && <p className="text-sm text-red-500">{errors.agreeToTerms.message as string}</p>}
                   </div>
                 )}
 
@@ -1396,7 +1396,7 @@ export default function RegisterPage() {
                         )}
                       />
                       {"companyType" in errors && errors.companyType && (
-                        <p className="text-sm text-red-500 mt-1">{errors.companyType.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.companyType.message as string}</p>
                       )}
                     </div>
 
@@ -1408,7 +1408,7 @@ export default function RegisterPage() {
                         {...register("industry")}
                       />
                       {"industry" in errors && errors.industry && (
-                        <p className="text-sm text-red-500 mt-1">{errors.industry.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.industry.message as string}</p>
                       )}
                     </div>
 
@@ -1420,7 +1420,7 @@ export default function RegisterPage() {
                         {...register("industry")}
                       />
                       {"industry" in errors && errors.industry && (
-                        <p className="text-sm text-red-500 mt-1">{errors.industry.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.industry.message as string}</p>
                       )}
                     </div>
 
@@ -1428,7 +1428,7 @@ export default function RegisterPage() {
                       <Label htmlFor="website">Website</Label>
                       <Input id="website" placeholder="https://www.acme.com" {...register("website")} />
                       {"website" in errors && errors.website && (
-                        <p className="text-sm text-red-500 mt-1">{errors.website.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.website.message as string}</p>
                       )}
                     </div>
 
@@ -1436,7 +1436,7 @@ export default function RegisterPage() {
                       <Label htmlFor="contactName">Contact Person</Label>
                       <Input id="contactName" placeholder="Jane Smith" {...register("name")} />
                       {"name" in errors && errors.name && (
-                        <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.name.message as string}</p>
                       )}
                     </div>
 
@@ -1444,7 +1444,7 @@ export default function RegisterPage() {
                       <Label htmlFor="jobTitle">Job Title</Label>
                       <Input id="jobTitle" placeholder="HR Manager" {...register("about")} />
                       {"about" in errors && errors.about && (
-                        <p className="text-sm text-red-500 mt-1">{errors.about.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.about.message as string}</p>
                       )}
                     </div>
 
@@ -1452,7 +1452,7 @@ export default function RegisterPage() {
                       <Label htmlFor="contactEmail">Contact Email</Label>
                       <Input id="contactEmail" type="email" placeholder="jane@acme.com" {...register("contactEmail")} />
                       {"contactEmail" in errors && errors.contactEmail && (
-                        <p className="text-sm text-red-500 mt-1">{errors.contactEmail.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.contactEmail.message as string}</p>
                       )}
                     </div>
 
@@ -1460,7 +1460,7 @@ export default function RegisterPage() {
                       <Label htmlFor="contactPhone">Contact Phone</Label>
                       <Input id="contactPhone" placeholder="+1 (555) 123-4567" {...register("contactPhone")} />
                       {"contactPhone" in errors && errors.contactPhone && (
-                        <p className="text-sm text-red-500 mt-1">{errors.contactPhone.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.contactPhone.message as string}</p>
                       )}
                     </div>
                   </div>
@@ -1481,7 +1481,7 @@ export default function RegisterPage() {
                         {...register("location")}
                       />
                       {"location" in errors && errors.location && (
-                        <p className="text-sm text-red-500 mt-1">{errors.location.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.location.message as string}</p>
                       )}
                     </div>
 
@@ -1493,7 +1493,7 @@ export default function RegisterPage() {
                         {...register("location")}
                       />
                       {"location" in errors && errors.location && (
-                        <p className="text-sm text-red-500 mt-1">{errors.location.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.location.message as string}</p>
                       )}
                     </div>
 
@@ -1506,7 +1506,7 @@ export default function RegisterPage() {
                         className="flex h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                       {"description" in errors && errors.description && (
-                        <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.description.message as string}</p>
                       )}
                     </div>
 
@@ -1534,7 +1534,7 @@ export default function RegisterPage() {
                         )}
                       />
                       {"companySize" in errors && errors.companySize && (
-                        <p className="text-sm text-red-500 mt-1">{errors.companySize.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.companySize.message as string}</p>
                       )}
                     </div>
 
@@ -1546,7 +1546,7 @@ export default function RegisterPage() {
                         {...register("description")}
                       />
                       {"description" in errors && errors.description && (
-                        <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.description.message as string}</p>
                       )}
                     </div>
 
@@ -1570,7 +1570,7 @@ export default function RegisterPage() {
                         )}
                       />
                       {"internshipDuration" in errors && errors.internshipDuration && (
-                        <p className="text-sm text-red-500 mt-1">{errors.internshipDuration.message}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.internshipDuration.message as string}</p>
                       )}
                     </div>
 

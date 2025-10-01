@@ -12,6 +12,8 @@ import { Check } from 'lucide-react';
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCreateJob } from "@/hooks/useJobManagement"
+import { useUploadJobPhoto } from "@/hooks/useFileUpload"
+import { FileUpload } from "@/components/ui/file-upload"
 import { useToast } from "@/components/ui/use-toast"
 import type { CreateJobRequest } from "@/services/jobManagementService"
 
@@ -35,10 +37,18 @@ export default function NewJobPage() {
     capacity: 0,
     qualifications: "",
     niceToHaves: "",
+    photoFile: null as File | null,
   })
   const router = useRouter()
   const createJobMutation = useCreateJob()
+  const uploadJobPhotoMutation = useUploadJobPhoto()
   const { toast } = useToast()
+
+  const handleJobPhotoUpload = (file: File) => {
+    // For new jobs, we'll upload the photo after job creation
+    // For now, just store the file for later upload
+    setFormData(prev => ({ ...prev, photoFile: file }))
+  }
 
   const steps = [
     { number: 1, title: "Job Information", icon: "📋" },
@@ -122,6 +132,25 @@ export default function NewJobPage() {
         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
         className="w-full"
       />
+    </div>
+  </div>
+  <div className="w-full h-px bg-gray-200 my-4" />
+
+  {/* Job Photo */}
+  <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+    <div className="space-y-1">
+      <Label className="text-sm font-medium leading-none">Job Photo</Label>
+      <p className="text-xs text-gray-500">Optional: Add a photo for this job posting</p>
+    </div>
+    <div className="flex flex-col space-y-1">
+      <FileUpload
+        onFileSelect={handleJobPhotoUpload}
+        fileType="image"
+        maxSize={5}
+        accept="image/*"
+        disabled={uploadJobPhotoMutation.isPending}
+      />
+      <p className="text-xs text-gray-500">Max size: 5MB. Supported formats: JPG, PNG, GIF</p>
     </div>
   </div>
   <div className="w-full h-px bg-gray-200 my-4" />
