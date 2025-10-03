@@ -409,6 +409,15 @@ export default function RegisterPage() {
     reset({
       role: activeTab,
       agreeToTerms: false,
+      education: activeTab === "intern" ? [{
+        institution: "",
+        degree: "",
+        fieldOfStudy: "",
+        startDate: "",
+        isCurrent: false,
+      }] : [],
+      skills: activeTab === "intern" ? [] : [],
+      preferredIndustries: [],
     } as any)
     setCurrentStep(1)
   }, [activeTab, reset])
@@ -449,9 +458,60 @@ export default function RegisterPage() {
 
   // Removed unused appendNestedFormData helper after switching to JSON submission
 
+  // Handle step progression with validation
+  const handleNextStep = async () => {
+    // Validate current step fields before proceeding
+    const fieldsToValidate = getFieldsForCurrentStep();
+    const isValid = await trigger(fieldsToValidate);
+    
+    if (!isValid) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields for this step.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setCurrentStep(Math.min(maxSteps, currentStep + 1));
+  };
+
+  // Get fields to validate for current step
+  const getFieldsForCurrentStep = () => {
+    if (activeTab === "intern") {
+      switch (currentStep) {
+        case 1:
+          return ["name", "email", "password", "confirmPassword", "phone", "location", "agreeToTerms"];
+        case 2:
+          return ["dateOfBirth", "gender", "education", "skills", "workAuthorization"];
+        case 3:
+          return ["linkedinUrl", "website", "about"];
+        default:
+          return [];
+      }
+    } else {
+      switch (currentStep) {
+        case 1:
+          return ["name", "email", "password", "confirmPassword", "location", "agreeToTerms"];
+        case 2:
+          return ["industry", "description", "contactEmail", "contactPhone"];
+        case 3:
+          return ["companySize", "description"];
+        default:
+          return [];
+      }
+    }
+  };
+
   // Handle form submission
   const onSubmit: SubmitHandler<any> = async (data) => {
     console.log('Form submission started');
+    
+    // Only submit on the final step
+    if (currentStep !== maxSteps) {
+      console.log('Not on final step, skipping submission');
+      return;
+    }
     
     // Trigger validation for all fields
     const isValid = await trigger();
@@ -663,6 +723,7 @@ export default function RegisterPage() {
                   // Prevent premature form submit on Enter for steps < maxSteps
                   if (currentStep < maxSteps) {
                     e.preventDefault();
+                    handleNextStep();
                   }
                 }
               }}
@@ -826,7 +887,7 @@ export default function RegisterPage() {
 
                     <div>
                       <div className="flex justify-between items-center">
-                        <Label>Education</Label>
+                        <Label>Experience</Label>
                         <Button
                           type="button"
                           variant="ghost"
@@ -845,7 +906,7 @@ export default function RegisterPage() {
                             ]);
                           }}
                         >
-                          <Plus className="w-4 h-4 mr-1" /> Add Education
+                          <Plus className="w-4 h-4 mr-1" /> Add Experience
                         </Button>
                       </div>
                       
@@ -971,7 +1032,7 @@ export default function RegisterPage() {
                               );
                             }}
                           >
-                            Remove Education
+                            Remove Experience
                           </Button>
                         </div>
                       ))}
@@ -1593,7 +1654,7 @@ export default function RegisterPage() {
                 {currentStep < maxSteps ? (
                   <Button
                     type="button"
-                    onClick={() => setCurrentStep(Math.min(maxSteps, currentStep + 1))}
+                    onClick={handleNextStep}
                     className="bg-teal-600 hover:bg-teal-700"
                   >
                     Next
