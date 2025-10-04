@@ -35,7 +35,7 @@ const link2= [
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 left-4 z-50 md:hidden bg-teal-500 text-white p-3 rounded-lg shadow-lg hover:bg-teal-600 transition-colors border-2 border-white"
+        className="fixed top-10 left-4 z-50 md:hidden bg-teal-500 text-white p-3 rounded-lg shadow-lg hover:bg-teal-600 transition-colors border-2 border-white"
         aria-label="Open Sidebar"
       >
         <ChevronRight className="h-5 w-5" />
@@ -44,7 +44,7 @@ const link2= [
       {/* Mobile Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          className="fixed inset-0 z-40 md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}

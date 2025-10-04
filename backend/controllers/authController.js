@@ -70,7 +70,7 @@ exports.registerCompany = (req, res, next) => {
  * @access  Public
  */
 const loginUser = asyncHandler(async (req, res, next) => {
-  const { email, password, role } = req.body;
+  const { email, password, role, userType } = req.body;
 
   // 1. Validate email & password
   if (!email || !password) {
@@ -90,35 +90,36 @@ const loginUser = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Invalid credentials', 401));
   }
 
-  // 4. Check role if specified
+  // 4. Check role if specified (for backward compatibility with specific endpoints)
   if (role && user.role !== role) {
     return next(
       new ErrorResponse(`Not authorized to access this route as ${role}`, 403)
     );
   }
 
-  sendTokenResponse(user, 200, res);
+  // 5. For unified endpoint, include userType in response
+  const responseData = {
+    success: true,
+    token: user.getSignedJwtToken(),
+    userType: user.role, // Return the actual user role
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }
+  };
+
+  res.status(200).json(responseData);
 });
 
-/**
- * @desc    Login intern
- * @route   POST /api/auth/login/intern
- * @access  Public
- */
-exports.loginIntern = (req, res, next) => {
-  req.body.role = 'intern';
-  loginUser(req, res, next);
-};
 
 /**
- * @desc    Login company
- * @route   POST /api/auth/login/company
+ * @desc    Login user (unified endpoint for both intern and company)
+ * @route   POST /api/auth/login
  * @access  Public
  */
-exports.loginCompany = (req, res, next) => {
-  req.body.role = 'company';
-  loginUser(req, res, next);
-};
+exports.login = loginUser;
 
 /**
  * @desc    Logout / clear cookie

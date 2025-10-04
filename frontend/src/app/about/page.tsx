@@ -2,33 +2,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Users, Target, Award, Globe } from "lucide-react"
 import Image from "next/image"
 
-const teamMembers = [
-  {
-    name: "Sarah Johnson",
-    role: "CEO & Founder",
-    image: "/placeholder.svg?height=200&width=200&text=SJ",
-    bio: "Former VP at Google with 15+ years in tech recruitment",
-  },
-  {
-    name: "Michael Chen",
-    role: "CTO",
-    image: "/placeholder.svg?height=200&width=200&text=MC",
-    bio: "Ex-Facebook engineer passionate about connecting talent",
-  },
-  {
-    name: "Emily Rodriguez",
-    role: "Head of Operations",
-    image: "/placeholder.svg?height=200&width=200&text=ER",
-    bio: "Operations expert with background in scaling startups",
-  },
-  {
-    name: "David Kim",
-    role: "Head of Product",
-    image: "/placeholder.svg?height=200&width=200&text=DK",
-    bio: "Product leader focused on user experience and innovation",
-  },
-]
-
 const values = [
   {
     icon: Users,
@@ -159,33 +132,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Meet Our Team</h2>
-            <p className="text-gray-600">The passionate people behind InternFinder</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {teamMembers.map((member, index) => (
-              <Card key={index} className="text-center">
-                <CardContent className="p-6">
-                  <Image
-                    src={member.image || "/placeholder.svg"}
-                    alt={member.name}
-                    width={200}
-                    height={200}
-                    className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
-                  />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-1">{member.name}</h3>
-                  <p className="text-teal-600 font-medium mb-3">{member.role}</p>
-                  <p className="text-gray-600 text-sm">{member.bio}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Story */}
       <section className="py-16 bg-gray-50">

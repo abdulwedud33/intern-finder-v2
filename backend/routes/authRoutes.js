@@ -2,8 +2,7 @@ const express = require('express');
 const {
   registerIntern,
   registerCompany,
-  loginIntern,
-  loginCompany,
+  login,
   getMe,
   updateDetails,
   updatePassword,
@@ -17,14 +16,13 @@ const router = express.Router();
 router.post('/register/intern', registerIntern);
 router.post('/register/company', registerCompany);
 // --- LOGIN ROUTES ---
-router.post('/login/intern', loginIntern);
-router.post('/login/company', loginCompany);
+router.post('/login', login); // Unified login endpoint for both intern and company
 // --- PASSWORD RESET ROUTES ---
 router.post('/forgotpassword', forgotPassword);
 router.put('/resetpassword/:resettoken', resetPassword);
 // --- PROTECTED ROUTES ---
 router.get('/me', protect, getMe);
 router.get('/logout', protect, logout);
-router.put('/updatedetails', protect, updateDetails);
-router.put('/updatepassword', protect, updatePassword);
+router.put('/updatedetails', updateDetails);
+router.put('/updatepassword', updatePassword);
 module.exports = router;

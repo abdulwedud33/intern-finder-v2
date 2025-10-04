@@ -131,11 +131,11 @@ const generateChartData = (dashboardStats: any, applicationStats: any, jobs: Job
   })
 
   // Generate job types data from actual jobs
-  const jobTypeCounts = jobs.reduce((acc: any, job: JobData) => {
+  const jobTypeCounts = Array.isArray(jobs) ? jobs.reduce((acc: any, job: JobData) => {
     const type = job.type || 'Full-time'
     acc[type] = (acc[type] || 0) + 1
     return acc
-  }, {})
+  }, {}) : {}
 
   const jobTypes = Object.entries(jobTypeCounts).map(([name, value], index) => ({
     name,
@@ -215,8 +215,8 @@ export default function ClientDashboard() {
   
   const { data: applicationStatusChart, isLoading: applicationStatusLoading } = useApplicationStatusChart()
 
-  const jobs = jobsData?.data || []
-  const applications = applicationsData?.data || []
+  const jobs = Array.isArray(jobsData?.data) ? jobsData.data : []
+  const applications = Array.isArray(applicationsData?.data) ? applicationsData.data : []
   const dashboardStats = dashboardStatsData?.data
   const chartData = generateChartData(dashboardStats, applicationStats?.data, jobs)
 

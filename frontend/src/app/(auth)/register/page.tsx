@@ -13,7 +13,7 @@ import { Users, Building, Plus, FileText, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { useForm, Controller, type SubmitHandler } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -358,7 +358,7 @@ const companySchema = baseUserSchema.extend({
   rating: z.number()
     .min(1, "Rating must be at least 1")
     .max(5, "Rating cannot be more than 5")
-    .default(0),
+    .default(1),
     
   reviewCount: z.number().default(0),
   
@@ -377,11 +377,11 @@ type CompanyFormData = z.infer<typeof companySchema>;
 type RegisterFormData = InternFormData | CompanyFormData
 
 export default function RegisterPage() {
-  const { toast } = useToast()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<"intern" | "company">("intern")
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
   const [profilePicture, setProfilePicture] = useState<File | null>(null)
   const [cv, setCv] = useState<File | null>(null)
   const [logo, setLogo] = useState<File | null>(null)
@@ -430,19 +430,15 @@ export default function RegisterPage() {
     const maxSize = 5 * 1024 * 1024 // 5MB
 
     if (!validTypes.includes(file.type)) {
-      toast({
-        title: "Invalid file type",
+      toast.error("Invalid file type", {
         description: "Please upload a JPEG, PNG, or PDF file",
-        variant: "destructive",
       })
       return
     }
 
     if (file.size > maxSize) {
-      toast({
-        title: "File too large",
+      toast.error("File too large", {
         description: "Please upload a file smaller than 5MB",
-        variant: "destructive",
       })
       return
     }
@@ -459,21 +455,86 @@ export default function RegisterPage() {
   // Removed unused appendNestedFormData helper after switching to JSON submission
 
   // Handle step progression with validation
-  const handleNextStep = async () => {
+  const handleNextStep = async (e?: React.MouseEvent | React.KeyboardEvent) => {
+    // Prevent form submission
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    setIsNavigating(true);
+    
     // Validate current step fields before proceeding
     const fieldsToValidate = getFieldsForCurrentStep();
     const isValid = await trigger(fieldsToValidate);
     
     if (!isValid) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields for this step.",
-        variant: "destructive",
+      // Get specific error messages for empty required fields
+      const formValues = watch();
+      const emptyFields = getEmptyRequiredFields(formValues, currentStep, activeTab);
+      
+      toast.error("Registration Failed", {
+        description: `Please fill in the following required fields: ${emptyFields.join(', ')}`,
       });
+      setIsNavigating(false);
       return;
     }
     
     setCurrentStep(Math.min(maxSteps, currentStep + 1));
+    setIsNavigating(false);
+  };
+
+  // Get empty required fields for current step or all steps
+  const getEmptyRequiredFields = (formValues: any, step: number, tab: string, checkAllSteps: boolean = false) => {
+    const emptyFields: string[] = [];
+    
+    if (tab === "intern") {
+      // Always check step 1 fields
+      if (checkAllSteps || step === 1) {
+        if (!formValues.name?.trim()) emptyFields.push("Full Name");
+        if (!formValues.email?.trim()) emptyFields.push("Email Address");
+        if (!formValues.password?.trim()) emptyFields.push("Password");
+        if (!formValues.confirmPassword?.trim()) emptyFields.push("Confirm Password");
+        if (!formValues.phone?.trim()) emptyFields.push("Phone Number");
+        if (!formValues.location?.trim()) emptyFields.push("Location");
+        if (!formValues.agreeToTerms) emptyFields.push("Terms Agreement");
+      }
+      
+      // Always check step 2 fields
+      if (checkAllSteps || step === 2) {
+        if (!formValues.dateOfBirth?.trim()) emptyFields.push("Date of Birth");
+        if (!formValues.gender?.trim()) emptyFields.push("Gender");
+        if (!formValues.education || formValues.education.length === 0 || 
+            !formValues.education[0]?.institution?.trim()) emptyFields.push("Education Institution");
+        if (!formValues.skills || formValues.skills.length === 0) emptyFields.push("Skills");
+        if (!formValues.workAuthorization?.trim()) emptyFields.push("Work Authorization");
+      }
+      
+      // Step 3 fields are optional for intern
+    } else {
+      // Always check step 1 fields
+      if (checkAllSteps || step === 1) {
+        if (!formValues.name?.trim()) emptyFields.push("Company Name");
+        if (!formValues.email?.trim()) emptyFields.push("Company Email");
+        if (!formValues.password?.trim()) emptyFields.push("Password");
+        if (!formValues.confirmPassword?.trim()) emptyFields.push("Confirm Password");
+        if (!formValues.phone?.trim()) emptyFields.push("Phone Number");
+        if (!formValues.location?.trim()) emptyFields.push("Location");
+        if (!formValues.agreeToTerms) emptyFields.push("Terms Agreement");
+      }
+      
+      // Always check step 2 fields
+      if (checkAllSteps || step === 2) {
+        if (!formValues.industry?.trim()) emptyFields.push("Industry");
+        if (!formValues.description?.trim()) emptyFields.push("Company Description");
+        if (!formValues.contactEmail?.trim()) emptyFields.push("Contact Email");
+        if (!formValues.contactPhone?.trim()) emptyFields.push("Contact Phone");
+      }
+      
+      // Step 3 fields are optional for company
+    }
+    
+    return emptyFields;
   };
 
   // Get fields to validate for current step
@@ -492,7 +553,7 @@ export default function RegisterPage() {
     } else {
       switch (currentStep) {
         case 1:
-          return ["name", "email", "password", "confirmPassword", "location", "agreeToTerms"];
+          return ["name", "email", "password", "confirmPassword", "phone", "location", "agreeToTerms"];
         case 2:
           return ["industry", "description", "contactEmail", "contactPhone"];
         case 3:
@@ -505,22 +566,36 @@ export default function RegisterPage() {
 
   // Handle form submission
   const onSubmit: SubmitHandler<any> = async (data) => {
-    console.log('Form submission started');
+    console.log('Form submission started, current step:', currentStep, 'isNavigating:', isNavigating);
     
-    // Only submit on the final step
-    if (currentStep !== maxSteps) {
-      console.log('Not on final step, skipping submission');
+    // Only submit on the final step and when not navigating
+    if (currentStep !== maxSteps || isNavigating) {
+      console.log('Not on final step or currently navigating, skipping submission');
       return;
     }
     
     // Trigger validation for all fields
     const isValid = await trigger();
     if (!isValid) {
-      console.error('Form validation failed');
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields correctly.",
-        variant: "destructive",
+      console.error('Form validation failed - preventing submission');
+      
+      // Get specific error messages for empty required fields
+      const formValues = watch();
+      const emptyFields = getEmptyRequiredFields(formValues, currentStep, activeTab);
+      
+      toast.error("Registration Failed", {
+        description: `Please fill in the following required fields: ${emptyFields.join(', ')}`,
+      });
+      return;
+    }
+
+    // Additional validation check - ensure no required fields are empty from ALL steps
+    const formValues = watch();
+    const emptyFields = getEmptyRequiredFields(formValues, currentStep, activeTab, true);
+    if (emptyFields.length > 0) {
+      console.error('Required fields are empty - preventing submission');
+      toast.error("Registration Failed", {
+        description: `Please fill in the following required fields: ${emptyFields.join(', ')}`,
       });
       return;
     }
@@ -529,7 +604,7 @@ export default function RegisterPage() {
       setIsSubmitting(true);
       
       // Log the form data for debugging (omit files)
-      console.log('Submitting register data for role:', data.role);
+      console.log('✅ All validations passed - submitting register data for role:', data.role);
       
       // Build minimal payloads the backend expects (JSON)
       const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -569,6 +644,7 @@ export default function RegisterPage() {
             website: (data as any).website,
             contactEmail: (data as any).contactEmail,
             contactPhone: (data as any).contactPhone,
+            rating: 1, // Default rating for new companies
           };
 
       const res = await fetch(`${baseUrl}${endpoint}`, {
@@ -580,12 +656,16 @@ export default function RegisterPage() {
       
       const resData = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(resData?.message || 'Registration failed');
+        // Create error object with response data for better error handling
+        const error = new Error(resData?.message || 'Registration failed');
+        (error as any).response = { data: resData };
+        (error as any).status = res.status;
+        throw error;
       }
         
-        toast({
-        title: 'Registration Successful!',
-        description: `Your ${data.role} account has been created successfully. Redirecting to login...`,
+        toast.success('Registration Successful! 🎉', {
+        description: `Your ${data.role} account has been created successfully. You can now log in with your credentials.`,
+        duration: 5000,
       });
 
       // Backend sets an auth cookie on register; clear it so header doesn't show logged-in
@@ -599,20 +679,52 @@ export default function RegisterPage() {
       console.error("Registration error:", error);
       
       let errorMessage = "An unexpected error occurred during registration. Please try again.";
+      let isDuplicateEmail = false;
       
       if (error.name === 'NetworkError') {
         errorMessage = "Unable to connect to the server. Please check your internet connection.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
+        // Check if it's a duplicate email error
+        if (errorMessage.toLowerCase().includes('email') && 
+            (errorMessage.toLowerCase().includes('already') || 
+             errorMessage.toLowerCase().includes('exists') ||
+             errorMessage.toLowerCase().includes('duplicate'))) {
+          isDuplicateEmail = true;
+        }
       } else if (error.message) {
         errorMessage = error.message;
+        // Check if it's a duplicate email error
+        if (errorMessage.toLowerCase().includes('email') && 
+            (errorMessage.toLowerCase().includes('already') || 
+             errorMessage.toLowerCase().includes('exists') ||
+             errorMessage.toLowerCase().includes('duplicate'))) {
+          isDuplicateEmail = true;
+        }
       }
       
-      toast({
-        title: "Registration Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      // Also check for common HTTP status codes that indicate duplicate entries
+      if (error.status === 409 || error.status === 422) {
+        isDuplicateEmail = true;
+        errorMessage = "An account with this email already exists. Please log in instead.";
+      }
+      
+      if (isDuplicateEmail) {
+        toast.error("Email Already Exists", {
+          description: "An account with this email already exists. Redirecting to login...",
+          duration: 5000,
+        });
+        
+        // Redirect to login page after a short delay
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
+      } else {
+        toast.error("Registration Failed", {
+          description: errorMessage,
+          duration: 5000,
+        });
+      }
       
     } finally {
       setIsSubmitting(false);
@@ -718,27 +830,18 @@ export default function RegisterPage() {
             <form
               onSubmit={handleSubmit(onSubmit)}
               noValidate
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  // Prevent premature form submit on Enter for steps < maxSteps
-                  if (currentStep < maxSteps) {
-                    e.preventDefault();
-                    handleNextStep();
-                  }
-                }
-              }}
             >
               <TabsContent value="intern">
                 {currentStep === 1 && (
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="name">Full Name</Label>
+                      <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
                       <Input id="name" placeholder="John Doe" {...register("name")} />
                       {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message as string}</p>}
                     </div>
 
                     <div>
-                      <Label htmlFor="email">Email Address</Label>
+                      <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
                       <Input id="email" type="email" placeholder="john@example.com" {...register("email")} />
                       {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message as string}</p>}
                     </div>
@@ -855,6 +958,11 @@ export default function RegisterPage() {
                         type="date"
                         {...register("dateOfBirth")}
                         max={new Date().toISOString().split('T')[0]}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                          }
+                        }}
                       />
                       {errors.dateOfBirth && (
                         <p className="text-sm text-red-500 mt-1">{errors.dateOfBirth.message as string}</p>
@@ -1170,6 +1278,11 @@ export default function RegisterPage() {
                         id="location"
                         placeholder="e.g., New York, Remote"
                         {...register("location")}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                          }
+                        }}
                       />
                       {errors.location && (
                         <p className="text-sm text-red-500 mt-1">
@@ -1355,6 +1468,12 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
+                      <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
+                      <Input id="phone" placeholder="+1 (555) 123-4567" {...register("phone")} />
+                      {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone.message as string}</p>}
+                    </div>
+
+                    <div>
                       <Label htmlFor="location">Location</Label>
                       <Controller
                         name="location"
@@ -1406,7 +1525,7 @@ export default function RegisterPage() {
 
                     {/* Company Logo Upload */}
                     <div className="flex flex-col items-center space-y-4">
-                      <div className="relative w-24 h-24 rounded-full border-2 border-gray-300 flex items-center justify-center overflow-hidden">
+                      <div className="relative w-24 h-24 rounded-full border-2 border-gray-300 flex items-center justify-center">
                         {logo ? (
                           <Image
                             src={URL.createObjectURL(logo) || "/placeholder.svg"}
@@ -1473,17 +1592,6 @@ export default function RegisterPage() {
                       )}
                     </div>
 
-                    <div>
-                      <Label htmlFor="industry">Industry</Label>
-                      <Input
-                        id="industry"
-                        placeholder="e.g., Technology, Healthcare, Finance"
-                        {...register("industry")}
-                      />
-                      {"industry" in errors && errors.industry && (
-                        <p className="text-sm text-red-500 mt-1">{errors.industry.message as string}</p>
-                      )}
-                    </div>
 
                     <div>
                       <Label htmlFor="website">Website</Label>
@@ -1654,10 +1762,17 @@ export default function RegisterPage() {
                 {currentStep < maxSteps ? (
                   <Button
                     type="button"
-                    onClick={handleNextStep}
+                    onClick={(e) => handleNextStep(e)}
+                    disabled={isNavigating}
                     className="bg-teal-600 hover:bg-teal-700"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleNextStep();
+                      }
+                    }}
                   >
-                    Next
+                    {isNavigating ? "Validating..." : "Next"}
                   </Button>
                 ) : (
                   <Button type="submit" disabled={isSubmitting} className="bg-teal-600 hover:bg-teal-700">
