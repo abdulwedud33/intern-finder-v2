@@ -606,51 +606,62 @@ export default function RegisterPage() {
       // Log the form data for debugging (omit files)
       console.log('✅ All validations passed - submitting register data for role:', data.role);
       
-      // Build minimal payloads the backend expects (JSON)
+      // Build FormData payload for file upload
       const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const endpoint = `/api/auth/register/${data.role === 'intern' ? 'intern' : 'company'}`;
-      const payload = data.role === 'intern'
-        ? {
-            role: 'intern',
-            name: (data as any).name,
-            email: (data as any).email,
-            password: (data as any).password,
-            phone: (data as any).phone,
-            dateOfBirth: (data as any).dateOfBirth,
-            gender: (data as any).gender,
-            education: (data as any).education?.map((e: any) => ({
-              institution: e.institution,
-              degree: e.degree,
-              fieldOfStudy: e.fieldOfStudy,
-              startDate: e.startDate,
-              endDate: e.endDate || undefined,
-              isCurrent: Boolean(e.isCurrent),
-            })),
-            skills: (data as any).skills?.map((s: any) => (typeof s === 'string' ? { name: s } : { name: s.name })),
-            location: (data as any).location,
-            about: (data as any).about,
-            website: (data as any).website,
-            linkedinUrl: (data as any).linkedinUrl,
-          }
-        : {
-            role: 'company',
-            name: (data as any).name,
-            email: (data as any).email,
-            password: (data as any).password,
-            phone: (data as any).phone,
-            industry: (data as any).industry,
-            description: (data as any).description,
-            location: (data as any).location,
-            website: (data as any).website,
-            contactEmail: (data as any).contactEmail,
-            contactPhone: (data as any).contactPhone,
-            rating: 1, // Default rating for new companies
-          };
+      
+      const formData = new FormData();
+      
+      // Add common fields
+      formData.append('role', data.role);
+      formData.append('name', (data as any).name);
+      formData.append('email', (data as any).email);
+      formData.append('password', (data as any).password);
+      formData.append('phone', (data as any).phone);
+      
+      // Add avatar file
+      if (data.role === 'intern' && profilePicture) {
+        formData.append('avatar', profilePicture);
+      } else if (data.role === 'company' && logo) {
+        formData.append('logo', logo);
+      }
+      
+      // Add role-specific fields
+      if (data.role === 'intern') {
+        formData.append('dateOfBirth', (data as any).dateOfBirth);
+        formData.append('gender', (data as any).gender);
+        formData.append('location', (data as any).location);
+        formData.append('about', (data as any).about || '');
+        formData.append('website', (data as any).website || '');
+        formData.append('linkedinUrl', (data as any).linkedinUrl || '');
+        
+        // Add education array
+        const education = (data as any).education?.map((e: any) => ({
+          institution: e.institution,
+          degree: e.degree,
+          fieldOfStudy: e.fieldOfStudy,
+          startDate: e.startDate,
+          endDate: e.endDate || undefined,
+          isCurrent: Boolean(e.isCurrent),
+        }));
+        formData.append('education', JSON.stringify(education));
+        
+        // Add skills array
+        const skills = (data as any).skills?.map((s: any) => (typeof s === 'string' ? { name: s } : { name: s.name }));
+        formData.append('skills', JSON.stringify(skills));
+      } else {
+        formData.append('industry', (data as any).industry);
+        formData.append('description', (data as any).description);
+        formData.append('location', (data as any).location);
+        formData.append('website', (data as any).website || '');
+        formData.append('contactEmail', (data as any).contactEmail || '');
+        formData.append('contactPhone', (data as any).contactPhone || '');
+        formData.append('rating', '1'); // Default rating for new companies
+      }
 
       const res = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: formData,
         credentials: 'include',
       });
       

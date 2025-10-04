@@ -11,10 +11,11 @@ const {
   logout
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+const { uploadSingle } = require('../middleware/upload');
 const router = express.Router();
 // --- REGISTRATION ROUTES ---
-router.post('/register/intern', registerIntern);
-router.post('/register/company', registerCompany);
+router.post('/register/intern', uploadSingle('avatar'), registerIntern);
+router.post('/register/company', uploadSingle('logo'), registerCompany);
 // --- LOGIN ROUTES ---
 router.post('/login', login); // Unified login endpoint for both intern and company
 // --- PASSWORD RESET ROUTES ---

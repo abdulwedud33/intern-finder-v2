@@ -17,7 +17,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('User already exists with this email', 400));
   }
 
-  // 2. Create user based on role
+  // 2. Handle file upload
+  let avatarPath = '';
+  if (req.file) {
+    avatarPath = `/uploads/${req.file.filename}`;
+  }
+
+  // 3. Create user based on role
   let user;
   
   if (role === 'intern') {
@@ -27,6 +33,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
       password,
       phone,
       role,
+      avatar: avatarPath,
       ...profileData
     });
   } else if (role === 'company') {
@@ -36,6 +43,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
       password,
       phone,
       role,
+      logo: avatarPath, // For companies, store as logo
       ...profileData
     });
   } else {

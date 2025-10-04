@@ -75,13 +75,19 @@ const corsOptions = {
     // In production, restrict to specific origins
     const allowedOrigins = [
       'http://localhost:3000',
-      process.env.CLIENT_URL
+      'https://localhost:3000',
+      process.env.CLIENT_URL,
+      process.env.NEXT_PUBLIC_APP_URL,
+      // Add your Vercel deployment URL here
+      'https://your-app-name.vercel.app'
     ].filter(Boolean);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     
+    // Log the origin for debugging
+    console.log('CORS blocked origin:', origin);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -111,21 +117,7 @@ const corsOptions = {
 };
 
 // Enable CORS with options
-app.use((req, res, next) => {
-  // Set CORS headers
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Auth-Token, Accept, Content-Length, Origin, X-Forwarded-For, Set-Cookie, Cookie');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Expose-Headers', 'Content-Range, X-Total-Count, Set-Cookie, Authorization, X-Auth-Token');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
+app.use(cors(corsOptions));
 
 // Dev logging middleware
 if (process.env.NODE_ENV === 'development') {
@@ -145,6 +137,9 @@ app.use('/api/company-interns', companyInternRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/intern-companies', internCompanyRoutes);
 app.use('/api/users', userRoutes);
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 // Mount other routes as needed
 // app.use('/api/stats', statsRoutes);
 

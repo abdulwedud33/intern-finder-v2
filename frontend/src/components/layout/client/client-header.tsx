@@ -17,7 +17,7 @@ export function ClientHeader() {
         <Link href="/">
         <div className="flex items-center space-x-2">
           <User className="w-5 h-5 text-teal-800" />
-          <span className="text-xl font-semibold">INTERN FINDER</span>
+          <span className="text-md font-semibold">INTERN FINDER</span>
         </div>
         </Link>
 
@@ -50,7 +50,7 @@ export function ClientHeader() {
               <Button variant="ghost" className="text-white hover:bg-gray-800 p-2 flex items-center space-x-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage 
-                    src={user.role === 'company' ? '/placeholder-logo.svg' : user.avatar} 
+                    src={user.role === 'company' ? (user as any).logo : undefined} 
                     alt={user.name} 
                   />
                   <AvatarFallback className="bg-teal-500 text-white text-sm">

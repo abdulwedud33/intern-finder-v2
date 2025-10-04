@@ -26,7 +26,7 @@ export function InternHeader() {
         {/* Logo and Brand */}
         <div className="flex items-center space-x-2">
           <User className="w-6 h-6 text-teal-800" />
-          <span className="text-xl font-semibold">Intern Finder</span>
+          <span className="text-md font-semibold">INTERN FINDER</span>
         </div>
 
         {/* Desktop Navigation */}

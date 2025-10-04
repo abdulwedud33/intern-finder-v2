@@ -34,7 +34,7 @@ const link2= [
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-10 left-4 z-50 md:hidden bg-teal-500 text-white p-3 rounded-lg shadow-lg hover:bg-teal-600 transition-colors border-2 border-white"
+        className="fixed top-22 left-2 z-50 md:hidden bg-teal-500 text-white p-2 rounded-lg shadow-lg hover:bg-teal-600 transition-colors border-2 border-white"
         aria-label="Open Sidebar"
       >
         <ChevronRight className="h-5 w-5" />
@@ -50,13 +50,13 @@ const link2= [
 
       {/* Sidebar */}
       <aside className={cn(
-        "w-64 bg-[#EBF5F4] border-r border-gray-200 min-h-screen fixed md:relative z-50 transition-transform duration-300 ease-in-out",
+        "w-64 bg-[#EBF5F4] border-r border-gray-200 min-h-screen pt-3 fixed md:relative z-50 transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         {/* Mobile Close Button */}
         <button
           onClick={() => setIsOpen(false)}
-          className="md:hidden absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          className="md:hidden absolute top-0 right-0 p-1 bg-white text-black hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           aria-label="Close Sidebar"
         >
           <X className="h-5 w-5" />
@@ -135,11 +135,11 @@ const link2= [
         >
           <Avatar className="w-12 h-12">
             <AvatarImage 
-              src={user?.role === 'company' ? '/placeholder-logo.svg' : user?.avatar} 
+              src={user?.role === 'company' ? (user as any).logo || '/placeholder-logo.svg' : '/placeholder-logo.svg'} 
               alt={user?.name} 
             />
             <AvatarFallback className="bg-teal-500 text-white">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'CF'}
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'C'}
             </AvatarFallback>
           </Avatar>
           <div>
