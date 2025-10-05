@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Upload, MapPin, Clock, DollarSign, Users } from "lucide-react"
+import { ArrowLeft, Upload, MapPin, Clock, DollarSign, Users, FileText, X } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -26,6 +26,7 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     coverLetter: "",
+    resume: null as File | null,
   })
 
   const { job, loading: jobLoading, error: jobError } = useJobById(listingId)
@@ -37,37 +38,82 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
         throw new Error("Job not found")
       }
 
+      // Validate required fields
+      if (!formData.coverLetter.trim()) {
+        throw new Error("Cover letter is required")
+      }
+
+      // Create FormData for file upload
+      const formDataToSend = new FormData()
+      formDataToSend.append('jobId', listingId)
+      formDataToSend.append('coverLetter', formData.coverLetter)
+      
+      if (formData.resume) {
+        formDataToSend.append('resume', formData.resume)
+      }
+
       return await createApplicationMutation.mutateAsync({
         jobId: listingId,
         coverLetter: formData.coverLetter,
+        resume: formData.resume || undefined,
       })
     },
     onSuccess: () => {
+      console.log("Application submitted successfully");
       toast({
-        title: "Application submitted successfully!",
-        description: `Your application for ${job?.title} at ${job?.company?.name} has been submitted. You'll hear back from the company soon.`,
-        duration: 5000,
+        title: "🎉 Application Submitted Successfully!",
+        description: `Your application for "${job?.title}" at ${job?.company?.name} has been submitted. You'll hear back from the company soon.`,
+        duration: 6000,
       })
       queryClient.invalidateQueries({ queryKey: ["myApplications"] })
       // Delay redirect to allow user to see the success message
       setTimeout(() => {
         router.push(`/jobs/${listingId}`)
-      }, 2000)
+      }, 2500)
     },
     onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: unknown } } }
-      const message =
-        typeof err?.response?.data?.message === "string" ? err.response.data.message : "Failed to submit application"
-      toast({ title: "Could not apply", description: String(message), variant: "destructive" })
+      console.error("Application submission error:", error);
+      
+      let errorTitle = "❌ Application Failed";
+      let errorMessage = "Failed to submit application. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message === "Cover letter is required") {
+          errorTitle = "⚠️ Missing Required Information";
+          errorMessage = "Please write a cover letter before submitting your application.";
+        } else {
+          errorMessage = error.message;
+        }
+      } else {
+        const err = error as { response?: { data?: { message?: string } } }
+        if (err?.response?.data?.message) {
+          errorMessage = err.response.data.message;
+        }
+      }
+      
+      toast({ 
+        title: errorTitle, 
+        description: errorMessage, 
+        variant: "destructive",
+        duration: 7000,
+      })
     },
   })
 
   // Handle redirection for non-intern users
   useEffect(() => {
     if (user && user.role !== "intern") {
-      router.push(`/jobs/${listingId}`)
+      toast({
+        title: "🚫 Access Denied",
+        description: "Only interns can apply to jobs. Please log in with an intern account.",
+        variant: "destructive",
+        duration: 5000,
+      });
+      setTimeout(() => {
+        router.push(`/jobs/${listingId}`)
+      }, 2000);
     }
-  }, [user, router, listingId])
+  }, [user, router, listingId, toast])
 
   // Don't render anything if user is not an intern
   if (user?.role !== "intern") {
@@ -115,8 +161,59 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const handleResumeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Validate file type
+      if (file.type !== 'application/pdf' && !file.type.includes('document')) {
+        toast({
+          title: "⚠️ Invalid File Type",
+          description: "Please upload a PDF or Word document for your resume.",
+          variant: "destructive",
+          duration: 5000,
+        })
+        return
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "⚠️ File Too Large",
+          description: "Please upload a resume file smaller than 5MB.",
+          variant: "destructive",
+          duration: 5000,
+        })
+        return
+      }
+      
+      setFormData((prev) => ({ ...prev, resume: file }))
+      toast({
+        title: "✅ Resume Uploaded",
+        description: `${file.name} has been selected for upload.`,
+        duration: 3000,
+      })
+    }
+  }
+
+  const removeResume = () => {
+    setFormData((prev) => ({ ...prev, resume: null }))
+    toast({
+      title: "🗑️ Resume Removed",
+      description: "Resume has been removed from your application.",
+      duration: 2000,
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Show loading toast
+    toast({
+      title: "🔄 Submitting Application...",
+      description: "Please wait while we process your application.",
+      duration: 2000,
+    });
+    
     setIsSubmitting(true)
     try {
       await mutation.mutateAsync()
@@ -254,7 +351,7 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
 
                       <div className="space-y-2">
                         <Label htmlFor="coverLetter" className="text-sm font-medium">
-                          Cover Letter
+                          Cover Letter *
                         </Label>
                         <Textarea
                           id="coverLetter"
@@ -264,6 +361,69 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
                           rows={6}
                           className="resize-none"
                         />
+                        <p className="text-xs text-gray-500">
+                          {formData.coverLetter.length}/2000 characters
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="resume" className="text-sm font-medium">
+                          Resume (Optional)
+                        </Label>
+                        <div className="space-y-3">
+                          {!formData.resume ? (
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-teal-500 transition-colors">
+                              <input
+                                type="file"
+                                id="resume"
+                                accept=".pdf,.doc,.docx"
+                                onChange={handleResumeUpload}
+                                className="hidden"
+                              />
+                              <label
+                                htmlFor="resume"
+                                className="cursor-pointer flex flex-col items-center space-y-2"
+                              >
+                                <Upload className="h-8 w-8 text-gray-400" />
+                                <div className="text-sm text-gray-600">
+                                  <span className="font-medium text-teal-600 hover:text-teal-700">
+                                    Click to upload
+                                  </span>{" "}
+                                  or drag and drop
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                  PDF, DOC, DOCX up to 5MB
+                                </p>
+                              </label>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between p-3 bg-teal-50 border border-teal-200 rounded-lg">
+                              <div className="flex items-center space-x-3">
+                                <FileText className="h-5 w-5 text-teal-600" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {formData.resume.name}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {(formData.resume.size / 1024 / 1024).toFixed(2)} MB
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={removeResume}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Upload your resume to make your application stand out. PDF format preferred.
+                        </p>
                       </div>
                     </div>
 
@@ -271,10 +431,17 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
                     <div className="space-y-6 pt-6 border-t">
                       <Button
                         type="submit"
-                        className="w-full bg-teal-600 hover:bg-teal-700 text-white py-4 text-base font-medium rounded-lg transition-colors"
+                        className="w-full bg-teal-600 hover:bg-teal-700 text-white py-4 text-base font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={isSubmitting || !formData.coverLetter.trim()}
                       >
-                        {isSubmitting ? "Submitting Application..." : "Submit Application"}
+                        {isSubmitting ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Submitting Application...
+                          </>
+                        ) : (
+                          "Submit Application"
+                        )}
                       </Button>
 
                       <p className="text-sm text-gray-500 text-center leading-relaxed">

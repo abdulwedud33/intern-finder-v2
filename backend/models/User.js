@@ -53,7 +53,7 @@ const userSchema = new mongoose.Schema(
     },
     social: {
       linkedin: { type: String, default: '' },
-      twitter: { type: String, default: '' },
+      portfolio: { type: String, default: '' },
       github: { type: String, default: '' }
     },
     isActive: {

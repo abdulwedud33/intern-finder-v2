@@ -25,8 +25,8 @@ exports.createApplication = asyncHandler(async (req, res, next) => {
 
   // Check if already applied
   const existingApplication = await Application.findOne({
-    user: req.user.id,
-    job: jobId
+    internId: req.user.id,
+    jobId: jobId
   });
 
   if (existingApplication) {
@@ -35,19 +35,26 @@ exports.createApplication = asyncHandler(async (req, res, next) => {
     );
   }
 
+  // Handle resume file upload
+  let resumePath = '';
+  if (req.file) {
+    resumePath = `/uploads/${req.file.filename}`;
+  }
+
   // Create the application
   const application = await Application.create({
-    job: jobId,
-    user: req.user.id,
-    company: job.company,
+    jobId: jobId,
+    companyId: job.companyId,
+    internId: req.user.id,
     coverLetter: coverLetter || '',
-    status: 'applied'
+    resume: resumePath,
+    status: 'under_review'
   });
 
-  // Populate the user and job details
+  // Populate the intern and job details
   await application.populate([
-    { path: 'user', select: 'name email' },
-    { path: 'job', select: 'title description' }
+    { path: 'internId', select: 'name email avatar' },
+    { path: 'jobId', select: 'title description' }
   ]);
 
   res.status(201).json({

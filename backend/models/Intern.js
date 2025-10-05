@@ -84,23 +84,26 @@ const internSchema = new mongoose.Schema({
   
   // Documents
   resume: String,
+  coverLetter: String,
   portfolioUrl: String,
   githubUrl: String,
   linkedinUrl: String,
   
   // Preferences
   jobPreferences: {
-    jobTypes: [{
-      type: String,
-      enum: ['full-time', 'part-time', 'contract', 'freelance', 'internship']
-    }],
+    jobTypes: [String],
     locations: [String],
     remote: {
       type: Boolean,
       default: false
     },
+    remoteOnly: {
+      type: Boolean,
+      default: false
+    },
     salaryExpectations: {
       min: Number,
+      max: Number,
       currency: {
         type: String,
         default: 'USD'
@@ -110,6 +113,13 @@ const internSchema = new mongoose.Schema({
         enum: ['hourly', 'monthly', 'yearly'],
         default: 'yearly'
       }
+    },
+    industries: [String],
+    companySizes: [String],
+    workAuthorizations: [String],
+    relocation: {
+      type: Boolean,
+      default: false
     }
   },
   
@@ -123,6 +133,10 @@ const internSchema = new mongoose.Schema({
     trim: true
   },
   preferredIndustries: [String],
+  relocation: {
+    type: Boolean,
+    default: false
+  },
   
   // Application Status
   profileCompletion: {
@@ -130,6 +144,10 @@ const internSchema = new mongoose.Schema({
     default: 0,
     min: 0,
     max: 100
+  },
+  isProfileComplete: {
+    type: Boolean,
+    default: false
   },
   
   // Additional Info

@@ -12,8 +12,6 @@ import { Check } from 'lucide-react';
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCreateJob } from "@/hooks/useJobManagement"
-import { useUploadJobPhoto } from "@/hooks/useFileUpload"
-import { EnhancedFileUpload } from "@/components/ui/enhanced-file-upload"
 import { useToast } from "@/components/ui/use-toast"
 import type { CreateJobRequest } from "@/services/jobManagementService"
 
@@ -21,64 +19,76 @@ export default function NewJobPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
     jobTitle: "",
-    employmentType: {
-      fullTime: false,
-      partTime: false,
-      remote: false,
-    },
-    categories: [] as string[],
-    salaryRangeMin: 0,
-    salaryRangeMax: 0,
+    jobType: "remote", // remote, onsite, hybrid
+    location: "",
+    salary: "",
+    duration: "",
     jobDescription: "",
     responsibilities: "",
-    professionalSkills: "",
-    location: "",
-    dueDate: "",
-    capacity: 0,
-    qualifications: "",
-    niceToHaves: "",
-    photoFile: null as File | null,
+    requirements: "",
+    benefits: "",
+    deadline: "",
+    startDate: "",
+    status: "draft" as "draft" | "published" | "closed",
   })
   const router = useRouter()
   const createJobMutation = useCreateJob()
-  const uploadJobPhotoMutation = useUploadJobPhoto()
   const { toast } = useToast()
 
-  const handleJobPhotoUpload = (file: File) => {
-    // For new jobs, we'll upload the photo after job creation
-    // For now, just store the file for later upload
-    setFormData(prev => ({ ...prev, photoFile: file }))
-  }
+  // Job photos will use company logo instead
 
   const steps = [
-    { number: 1, title: "Job Information", icon: "📋" },
-    { number: 2, title: "Job Description", icon: "📝" },
-    { number: 3, title: "Job Review", icon: "👁️" },
+    { number: 1, title: "Basic Information", icon: "📋" },
+    { number: 2, title: "Job Details", icon: "📝" },
+    { number: 3, title: "Review & Publish", icon: "👁️" },
   ]
 
   const handleNext = () => {
     if (currentStep < 3) {
-      setCurrentStep(currentStep + 1)
+      // Validate current step before proceeding
+      if (currentStep === 1) {
+        if (!formData.jobTitle || !formData.location || !formData.salary || !formData.duration) {
+          toast({
+            title: "⚠️ Complete Required Fields",
+            description: "Please fill in all required fields before proceeding.",
+            variant: "destructive",
+            duration: 4000,
+          });
+          return;
+        }
+      } else if (currentStep === 2) {
+        if (!formData.jobDescription || !formData.responsibilities || !formData.requirements) {
+          toast({
+            title: "⚠️ Complete Required Fields",
+            description: "Please fill in job description, responsibilities, and requirements.",
+            variant: "destructive",
+            duration: 4000,
+          });
+          return;
+        }
+      }
+      
+      setCurrentStep(currentStep + 1);
+      toast({
+        title: "✅ Step Completed",
+        description: `Moving to step ${currentStep + 1} of 3`,
+        duration: 2000,
+      });
     }
   }
 
   const handleBack = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
+      toast({
+        title: "← Previous Step",
+        description: `Back to step ${currentStep - 1} of 3`,
+        duration: 1500,
+      });
     }
   }
 
-  type EmploymentTypeKey = 'fullTime' | 'partTime' | 'remote';
-
-  const handleCheckboxChange = (type: EmploymentTypeKey) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      employmentType: {
-        ...prevData.employmentType,
-        [type]: !prevData.employmentType[type],
-      },
-    }))
-  }
+  // Removed unused employment type handling
 
   const CheckListItem = ({ text }: { text: string }) => (
   <div className="flex items-start gap-2 text-gray-700">
@@ -91,224 +101,224 @@ export default function NewJobPage() {
     switch (currentStep) {
       case 1:
         return (
-          <div className="max-w-4xl mx-auto p-8 bg-white rounded-lg shadow-md">
-  {/* Basic Information Section */}
-  <div className="space-y-1">
-    <h2 className="text-xl font-semibold">Basic Information</h2>
-    <p className="text-sm text-gray-500">This information will be displayed publicly</p>
-  </div>
-  <div className="w-full h-px bg-gray-200 my-4" />
+          <div className="max-w-4xl mx-auto p-8 bg-white rounded-lg shadow-md space-y-6">
+            {/* Basic Information Section */}
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold">Basic Information</h2>
+              <p className="text-sm text-gray-500">This information will be displayed publicly</p>
+            </div>
 
-  {/* Job Title */}
-  <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
-    <div className="space-y-1">
-      <Label htmlFor="jobTitle" className="text-sm font-medium leading-none">Job Title</Label>
-      <p className="text-xs text-gray-500">Must be describe one interns</p>
-    </div>
-    <div className="flex flex-col space-y-1">
-      <Input
-        id="jobTitle"
-        placeholder="e.g. Software Engineer"
-        value={formData.jobTitle}
-        onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-        className="w-full"
-      />
-      <p className="text-xs text-gray-500 text-right">At least 80 characters</p>
-    </div>
-  </div>
-  <div className="w-full h-px bg-gray-200 my-4" />
+            {/* Job Title */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+              <div className="space-y-1">
+                <Label htmlFor="jobTitle" className="text-sm font-medium leading-none">Job Title *</Label>
+                <p className="text-xs text-gray-500">Enter the job title (max 100 characters)</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Input
+                  id="jobTitle"
+                  placeholder="e.g. Software Engineer Intern"
+                  value={formData.jobTitle}
+                  onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                  className="w-full"
+                  maxLength={100}
+                />
+                <p className="text-xs text-gray-500 text-right">{formData.jobTitle.length}/100</p>
+              </div>
+            </div>
 
-  {/* Location */}
-  <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
-    <div className="space-y-1">
-      <Label htmlFor="location" className="text-sm font-medium leading-none">Location</Label>
-      <p className="text-xs text-gray-500">City, Country (e.g., Paris, France)</p>
-    </div>
-    <div className="flex flex-col space-y-1">
-      <Input
-        id="location"
-        placeholder="e.g. Paris, France"
-        value={formData.location}
-        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-        className="w-full"
-      />
-    </div>
-  </div>
-  <div className="w-full h-px bg-gray-200 my-4" />
+            {/* Job Type */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+              <div className="space-y-1">
+                <Label className="text-sm font-medium leading-none">Job Type *</Label>
+                <p className="text-xs text-gray-500">Select the work arrangement</p>
+              </div>
+              <div className="flex flex-col space-y-2">
+                <Select value={formData.jobType} onValueChange={(value) => setFormData({ ...formData, jobType: value })}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select job type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="remote">Remote</SelectItem>
+                    <SelectItem value="onsite">On-site</SelectItem>
+                    <SelectItem value="hybrid">Hybrid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-  {/* Job Photo */}
-  <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
-    <div className="space-y-1">
-      <Label className="text-sm font-medium leading-none">Job Photo</Label>
-      <p className="text-xs text-gray-500">Optional: Add a photo for this job posting</p>
-    </div>
-    <div className="flex flex-col space-y-1">
-      <EnhancedFileUpload
-        onFileUploaded={(fileUrl, filename) => {
-          // File is stored for upload after job creation
-          toast({
-            title: "Job photo selected!",
-            description: "It will be uploaded when you create the job."
-          })
-        }}
-        currentFile={formData.photoFile ? URL.createObjectURL(formData.photoFile) : null}
-        fileType="job-photo"
-        maxSize={5}
-        showPreview={true}
-        showDownload={false}
-        showDelete={true}
-      />
-      <p className="text-xs text-gray-500">Max size: 5MB. Supported formats: JPG, PNG, GIF</p>
-    </div>
-  </div>
-  <div className="w-full h-px bg-gray-200 my-4" />
+            {/* Location */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+              <div className="space-y-1">
+                <Label htmlFor="location" className="text-sm font-medium leading-none">Location *</Label>
+                <p className="text-xs text-gray-500">City, Country (e.g., New York, USA)</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Input
+                  id="location"
+                  placeholder="e.g. New York, USA"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+            </div>
 
-  {/* Type of Employment */}
-  <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
-    <div className="space-y-1">
-      <Label className="text-sm font-medium leading-none">Type of Employment</Label>
-      <p className="text-xs text-gray-500">You can select multiple type of interns</p>
-    </div>
-    <div className="space-y-2">
-      {(['fullTime', 'partTime', 'remote'] as EmploymentTypeKey[]).map((type) => (
-        <div key={type} className="flex items-center space-x-2">
-          <Checkbox
-            id={type}
-            checked={formData.employmentType[type]}
-            onCheckedChange={() => handleCheckboxChange(type)}
-          />
-          <Label htmlFor={type} className="text-sm">
-            {type.charAt(0).toUpperCase() + type.slice(1).replace(/([A-Z])/g, ' $1')}
-          </Label>
-        </div>
-      ))}
-    </div>
-  </div>
-  <div className="w-full h-px bg-gray-200 my-4" />
+            {/* Salary */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+              <div className="space-y-1">
+                <Label htmlFor="salary" className="text-sm font-medium leading-none">Salary *</Label>
+                <p className="text-xs text-gray-500">Enter salary information (e.g., $15-20/hour, $3000/month)</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Input
+                  id="salary"
+                  placeholder="e.g. $15-20/hour"
+                  value={formData.salary}
+                  onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+            </div>
 
-  {/* Categories */}
-  <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
-    <div className="space-y-1">
-      <Label htmlFor="category" className="text-sm font-medium leading-none">Categories</Label>
-      <p className="text-xs text-gray-500">You can select multiple internship categories</p>
-    </div>
-    <Select onValueChange={(value) => setFormData({ ...formData, categories: [value] })}>
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder="Select Job Categories" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="design">Design</SelectItem>
-        <SelectItem value="development">Development</SelectItem>
-        <SelectItem value="marketing">Marketing</SelectItem>
-        <SelectItem value="sales">Sales</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-  <div className="w-full h-px bg-gray-200 my-4" />
+            {/* Duration */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+              <div className="space-y-1">
+                <Label htmlFor="duration" className="text-sm font-medium leading-none">Duration *</Label>
+                <p className="text-xs text-gray-500">How long is this position? (e.g., 3 months, 6 months, 1 year)</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Input
+                  id="duration"
+                  placeholder="e.g. 3 months"
+                  value={formData.duration}
+                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+            </div>
 
-  {/* Salary */}
-  <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
-    <div className="space-y-1">
-      <Label className="text-sm font-medium leading-none">Salary</Label>
-      <p className="text-xs text-gray-500">
-        Please specify the estimated salary range for the role. You can leave this blank
-      </p>
-    </div>
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-2 w-1/4">
-        <span className="text-gray-500">$</span>
-        <Input
-          type="number"
-          value={formData.salaryRangeMin}
-          onChange={(e) => setFormData({ ...formData, salaryRangeMin: Number(e.target.value) })}
-          className="text-center"
-        />
-      </div>
-      <span className="text-gray-500">to</span>
-      <div className="flex items-center gap-2 w-1/4">
-        <span className="text-gray-500">$</span>
-        <Input
-          type="number"
-          value={formData.salaryRangeMax}
-          onChange={(e) => setFormData({ ...formData, salaryRangeMax: Number(e.target.value) })}
-          className="text-center"
-        />
-      </div>
-      <Button variant="outline" className="w-1/4 text-teal-600 border-teal-600 hover:bg-green-50">Free</Button>
-    </div>
-  </div>
-  <div className="w-full h-px bg-gray-200 my-4" />
-</div>
+            {/* Start Date */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+              <div className="space-y-1">
+                <Label htmlFor="startDate" className="text-sm font-medium leading-none">Start Date</Label>
+                <p className="text-xs text-gray-500">When does this position start? (optional)</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            {/* Deadline */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+              <div className="space-y-1">
+                <Label htmlFor="deadline" className="text-sm font-medium leading-none">Application Deadline</Label>
+                <p className="text-xs text-gray-500">When should applications be submitted by? (optional)</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Input
+                  id="deadline"
+                  type="date"
+                  value={formData.deadline}
+                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
         )
 
       case 2:
         return (
-          <div className="max-w-4xl mx-auto p-8 bg-white">
-  {/* Header Section */}
-  <div>
-    <h2 className="text-xl font-semibold mb-2">Details</h2>
-    <p className="text-gray-600 mb-6">
-      Add the description of the job, responsibilities, and professional skills
-    </p>
-  </div>
+          <div className="max-w-4xl mx-auto p-8 bg-white rounded-lg shadow-md space-y-6">
+            {/* Header Section */}
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold">Job Details</h2>
+              <p className="text-sm text-gray-500">Describe the role, responsibilities, and requirements</p>
+            </div>
 
-  <div className="w-full h-px bg-gray-200 my-4" />
+            {/* Job Description */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+              <div className="space-y-1">
+                <Label htmlFor="jobDescription" className="text-sm font-medium leading-none">Job Description *</Label>
+                <p className="text-xs text-gray-500">Provide a detailed description of the role</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Textarea
+                  id="jobDescription"
+                  placeholder="Enter a comprehensive job description..."
+                  rows={6}
+                  value={formData.jobDescription}
+                  onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 text-right">{formData.jobDescription.length} characters</p>
+              </div>
+            </div>
 
-  <div className="space-y-6">
-    {/* Job Description */}
-    <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
-      <div className="space-y-1">
-        <Label htmlFor="jobDescription" className="text-sm font-medium leading-none">Job Descriptions</Label>
-        <p className="text-xs text-gray-500">Job titles must be describe the position</p>
-      </div>
-      <Textarea
-        id="jobDescription"
-        placeholder="Enter job description"
-        rows={6} // Increased rows for better visual balance
-        value={formData.jobDescription}
-        onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
-        className="w-full"
-      />
-    </div>
+            {/* Responsibilities */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+              <div className="space-y-1">
+                <Label htmlFor="responsibilities" className="text-sm font-medium leading-none">Responsibilities *</Label>
+                <p className="text-xs text-gray-500">List the key responsibilities and duties</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Textarea
+                  id="responsibilities"
+                  placeholder="• Develop and maintain web applications&#10;• Collaborate with team members&#10;• Write clean, maintainable code"
+                  rows={6}
+                  value={formData.responsibilities}
+                  onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 text-right">{formData.responsibilities.length} characters</p>
+              </div>
+            </div>
 
-    <div className="w-full h-px bg-gray-200 my-4" />
+            {/* Requirements */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+              <div className="space-y-1">
+                <Label htmlFor="requirements" className="text-sm font-medium leading-none">Requirements *</Label>
+                <p className="text-xs text-gray-500">Specify the skills, experience, and qualifications needed</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Textarea
+                  id="requirements"
+                  placeholder="• Bachelor's degree in Computer Science or related field&#10;• Experience with React, Node.js&#10;• Strong problem-solving skills"
+                  rows={6}
+                  value={formData.requirements}
+                  onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 text-right">{formData.requirements.length} characters</p>
+              </div>
+            </div>
 
-    {/* Responsibilities */}
-    <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
-      <div className="space-y-1">
-        <Label htmlFor="responsibilities" className="text-sm font-medium leading-none">Responsibilities</Label>
-        <p className="text-xs text-gray-500">Outline the core responsibilities of the position</p>
-      </div>
-      <Textarea
-        id="responsibilities"
-        placeholder="Enter the responsibilities"
-        rows={6} // Increased rows for better visual balance
-        value={formData.responsibilities}
-        onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })}
-        className="w-full"
-      />
-    </div>
-
-    <div className="w-full h-px bg-gray-200 my-4" />
-
-    {/* Professional Skills */}
-    <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
-      <div className="space-y-1">
-        <Label htmlFor="professionalSkills" className="text-sm font-medium leading-none">Professional Skills</Label>
-        <p className="text-xs text-gray-500">Add the skills you are looking for in the candidate</p>
-      </div>
-      <Textarea
-        id="professionalSkills"
-        placeholder="Enter professional skills"
-        rows={6} // Increased rows for better visual balance
-        value={formData.professionalSkills}
-        onChange={(e) => setFormData({ ...formData, professionalSkills: e.target.value })}
-        className="w-full"
-      />
-    </div>
-  </div>
-</div>
-
+            {/* Benefits */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-12 gap-y-4 items-start">
+              <div className="space-y-1">
+                <Label htmlFor="benefits" className="text-sm font-medium leading-none">Benefits</Label>
+                <p className="text-xs text-gray-500">What benefits and perks do you offer? (optional)</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Textarea
+                  id="benefits"
+                  placeholder="• Flexible working hours&#10;• Mentorship program&#10;• Learning and development opportunities"
+                  rows={4}
+                  value={formData.benefits}
+                  onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 text-right">{formData.benefits.length} characters</p>
+              </div>
+            </div>
+          </div>
         )
 
       case 3:
@@ -325,120 +335,80 @@ export default function NewJobPage() {
     {/* Overview */}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Position</h3>
+        <h3 className="text-lg font-semibold mb-2">Job Title</h3>
         <p className="text-gray-700">{formData.jobTitle || "—"}</p>
+      </div>
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Job Type</h3>
+        <p className="text-gray-700 capitalize">{formData.jobType || "—"}</p>
       </div>
       <div>
         <h3 className="text-lg font-semibold mb-2">Location</h3>
         <p className="text-gray-700">{formData.location || "—"}</p>
       </div>
       <div>
-        <h3 className="text-lg font-semibold mb-2">Categories</h3>
-        <p className="text-gray-700">{(formData.categories || []).join(", ") || "—"}</p>
+        <h3 className="text-lg font-semibold mb-2">Salary</h3>
+        <p className="text-gray-700">{formData.salary || "—"}</p>
       </div>
       <div>
-        <h3 className="text-lg font-semibold mb-2">Types of Employment</h3>
-        <p className="text-gray-700">
-          {[
-            formData.employmentType.fullTime ? "Full-Time" : null,
-            formData.employmentType.partTime ? "Part-Time" : null,
-            formData.employmentType.remote ? "Remote" : null,
-          ].filter(Boolean).join(", ") || "—"}
-        </p>
+        <h3 className="text-lg font-semibold mb-2">Duration</h3>
+        <p className="text-gray-700">{formData.duration || "—"}</p>
       </div>
       <div>
-        <h3 className="text-lg font-semibold mb-2">Salary Range</h3>
-        <p className="text-gray-700">
-          {formData.salaryRangeMin || formData.salaryRangeMax
-            ? `$${Number(formData.salaryRangeMin) || 0} - $${Number(formData.salaryRangeMax) || 0}`
-            : "—"}
-        </p>
+        <h3 className="text-lg font-semibold mb-2">Start Date</h3>
+        <p className="text-gray-700">{formData.startDate || "—"}</p>
       </div>
       <div>
-        <h3 className="text-lg font-semibold mb-2">Due Date</h3>
-        <p className="text-gray-700">{formData.dueDate || "—"}</p>
+        <h3 className="text-lg font-semibold mb-2">Application Deadline</h3>
+        <p className="text-gray-700">{formData.deadline || "—"}</p>
       </div>
       <div>
-        <h3 className="text-lg font-semibold mb-2">Capacity</h3>
-        <p className="text-gray-700">{formData.capacity || 0}</p>
+        <h3 className="text-lg font-semibold mb-2">Status</h3>
+        <p className="text-gray-700 capitalize">{formData.status || "—"}</p>
       </div>
     </div>
 
     {/* Description */}
     <div>
       <h3 className="text-lg font-semibold mb-2">Job Description</h3>
-      <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-        {formData.jobDescription || "—"}
-      </p>
-    </div>
-
-    {/* Key Responsibilities */}
-    <div>
-      <h3 className="text-lg font-semibold mb-2">Key Responsibilities</h3>
-      <div className="space-y-2">
-        {(formData.responsibilities || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-          .map((item, idx) => (
-            <CheckListItem key={idx} text={item} />
-          ))}
-        {!(formData.responsibilities || "").split(",").map((s)=>s.trim()).filter(Boolean).length && (
-          <p className="text-gray-500">—</p>
-        )}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+          {formData.jobDescription || "—"}
+        </p>
       </div>
     </div>
 
-    {/* Qualifications */}
+    {/* Responsibilities */}
     <div>
-      <h3 className="text-lg font-semibold mb-2">Qualifications</h3>
-      <div className="space-y-2">
-        {(formData.qualifications || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-          .map((item, idx) => (
-            <CheckListItem key={idx} text={item} />
-          ))}
-        {!(formData.qualifications || "").split(",").map((s)=>s.trim()).filter(Boolean).length && (
-          <p className="text-gray-500">—</p>
-        )}
+      <h3 className="text-lg font-semibold mb-2">Responsibilities</h3>
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+          {formData.responsibilities || "—"}
+        </p>
       </div>
     </div>
 
-    {/* Nice to Haves */}
+    {/* Requirements */}
     <div>
-      <h3 className="text-lg font-semibold mb-2">Nice to Haves</h3>
-      <div className="space-y-2">
-        {(formData.niceToHaves || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-          .map((item, idx) => (
-            <CheckListItem key={idx} text={item} />
-          ))}
-        {!(formData.niceToHaves || "").split(",").map((s)=>s.trim()).filter(Boolean).length && (
-          <p className="text-gray-500">—</p>
-        )}
+      <h3 className="text-lg font-semibold mb-2">Requirements</h3>
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+          {formData.requirements || "—"}
+        </p>
       </div>
     </div>
 
-    {/* Professional Skills */}
-    <div>
-      <h3 className="text-lg font-semibold mb-2">Professional Skills</h3>
-      <div className="space-y-2">
-        {(formData.professionalSkills || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-          .map((item, idx) => (
-            <CheckListItem key={idx} text={item} />
-          ))}
-        {!(formData.professionalSkills || "").split(",").map((s)=>s.trim()).filter(Boolean).length && (
-          <p className="text-gray-500">—</p>
-        )}
+    {/* Benefits */}
+    {formData.benefits && (
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Benefits</h3>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+            {formData.benefits}
+          </p>
+        </div>
       </div>
-    </div>
+    )}
   </div>
 </div>
 
@@ -509,56 +479,97 @@ export default function NewJobPage() {
             <Button
               className="bg-teal-500 hover:bg-teal-600"
               onClick={() => {
-                if (!formData.location || !formData.jobTitle) {
+                // Validate required fields
+                const missingFields = [];
+                if (!formData.jobTitle) missingFields.push("Job Title");
+                if (!formData.location) missingFields.push("Location");
+                if (!formData.salary) missingFields.push("Salary");
+                if (!formData.duration) missingFields.push("Duration");
+                if (!formData.jobDescription) missingFields.push("Job Description");
+                if (!formData.responsibilities) missingFields.push("Responsibilities");
+                if (!formData.requirements) missingFields.push("Requirements");
+
+                if (missingFields.length > 0) {
                   toast({
-                    title: "Missing required fields",
-                    description: "Please fill in Job Title and Location.",
+                    title: "⚠️ Missing Required Fields",
+                    description: `Please fill in: ${missingFields.join(", ")}`,
                     variant: "destructive",
+                    duration: 6000,
                   });
                   return
                 }
 
-                const employmentTypes = [
-                  formData.employmentType.fullTime ? "full-time" : undefined,
-                  formData.employmentType.partTime ? "part-time" : undefined,
-                  formData.employmentType.remote ? "remote" : undefined,
-                ].filter(Boolean) as Array<'full-time' | 'part-time' | 'internship' | 'contract'>
+                // Show loading toast
+                toast({
+                  title: "🔄 Creating Job...",
+                  description: "Please wait while we create your job listing.",
+                  duration: 2000,
+                });
 
+                // Create payload matching backend schema
                 const payload: CreateJobRequest = {
                   title: formData.jobTitle,
-                  description: formData.jobDescription || "",
+                  description: formData.jobDescription,
                   location: formData.location,
-                  type: employmentTypes[0] || "internship",
-                  level: "entry", // Default level
-                  requirements: formData.professionalSkills.split(",").map(s => s.trim()).filter(Boolean),
-                  responsibilities: formData.responsibilities.split(",").map(s => s.trim()).filter(Boolean),
-                  qualifications: formData.qualifications.split(",").map(s => s.trim()).filter(Boolean),
-                  applicationDeadline: formData.dueDate || undefined,
-                  isRemote: formData.employmentType.remote,
-                  status: "active",
-                  salary: formData.salaryRangeMin && formData.salaryRangeMax 
-                    ? {
-                        min: formData.salaryRangeMin,
-                        max: formData.salaryRangeMax,
-                        currency: "USD",
-                        period: "yearly"
-                      }
-                    : undefined,
+                  type: formData.jobType as 'remote' | 'onsite' | 'hybrid',
+                  salary: formData.salary, // String as expected by backend
+                  duration: formData.duration,
+                  responsibilities: formData.responsibilities, // String as expected by backend
+                  requirements: formData.requirements, // String as expected by backend
+                  benefits: formData.benefits || undefined,
+                  deadline: formData.deadline || undefined,
+                  startDate: formData.startDate || undefined,
+                  status: formData.status || "draft",
                 }
 
                 createJobMutation.mutate(payload, {
-                  onSuccess: () => {
+                  onSuccess: (data) => {
+                    console.log("Job created successfully:", data);
                     toast({
-                      title: "Job created successfully",
-                      description: "Your job listing has been posted.",
+                      title: "🎉 Job Created Successfully!",
+                      description: `"${formData.jobTitle}" has been posted and is now live.`,
+                      duration: 5000,
                     });
-                    router.push("/dashboard/client/jobListings")
+                    // Redirect after a short delay to show the success message
+                    setTimeout(() => {
+                      router.push("/dashboard/client/jobListings");
+                    }, 1500);
                   },
-                  onError: () => {
+                  onError: (error: any) => {
+                    console.error("Job creation error:", error);
+                    
+                    // Determine the error message based on the error type
+                    let errorMessage = "Please try again later.";
+                    let errorTitle = "Failed to Create Job";
+                    
+                    if (error?.response?.data?.message) {
+                      errorMessage = error.response.data.message;
+                    } else if (error?.response?.data?.error) {
+                      errorMessage = error.response.data.error;
+                    } else if (error?.message) {
+                      errorMessage = error.message;
+                    }
+                    
+                    // Check for specific error types
+                    if (error?.response?.status === 400) {
+                      errorTitle = "Validation Error";
+                      errorMessage = "Please check all required fields and try again.";
+                    } else if (error?.response?.status === 401) {
+                      errorTitle = "Authentication Error";
+                      errorMessage = "Please log in again to create a job.";
+                    } else if (error?.response?.status === 403) {
+                      errorTitle = "Permission Denied";
+                      errorMessage = "You don't have permission to create jobs.";
+                    } else if (error?.response?.status >= 500) {
+                      errorTitle = "Server Error";
+                      errorMessage = "Our servers are experiencing issues. Please try again later.";
+                    }
+                    
                     toast({
-                      title: "Failed to create job",
-                      description: "Please try again later.",
+                      title: `❌ ${errorTitle}`,
+                      description: errorMessage,
                       variant: "destructive",
+                      duration: 7000,
                     });
                   }
                 })

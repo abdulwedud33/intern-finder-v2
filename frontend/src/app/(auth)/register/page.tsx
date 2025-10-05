@@ -46,6 +46,11 @@ const baseUserSchema = z.object({
     .url("Please enter a valid URL")
     .or(z.literal(""))
     .optional(),
+  social: z.object({
+    linkedin: z.string().default(''),
+    portfolio: z.string().default(''),
+    github: z.string().default('')
+  }).optional().default(() => ({ linkedin: '', portfolio: '', github: '' })),
   
   // Terms agreement (not in model but needed for form)
   agreeToTerms: z.boolean().refine((val) => val === true, {
@@ -232,6 +237,12 @@ const internSchema = baseUserSchema.extend({
   profileCompletion: z.number().min(0).max(100).default(0),
   lastActive: z.date().optional(),
   emailVerified: z.boolean().default(false),
+  isActive: z.boolean().default(true),
+  lastLogin: z.date().optional(),
+  emailVerificationToken: z.string().optional(),
+  emailVerificationExpire: z.date().optional(),
+  resetPasswordToken: z.string().optional(),
+  resetPasswordExpire: z.date().optional(),
 });
 
 // Company-specific schema (extends base user schema)
@@ -295,11 +306,7 @@ const companySchema = baseUserSchema.extend({
     twitter: z.string().url("Please enter a valid URL").or(z.literal("")).optional(),
     facebook: z.string().url("Please enter a valid URL").or(z.literal("")).optional(),
     instagram: z.string().url("Please enter a valid URL").or(z.literal("")).optional(),
-    youtube: z.string().url("Please enter a valid URL").or(z.literal("")).optional(),
     github: z.string().url("Please enter a valid URL").or(z.literal("")).optional(),
-    glassdoor: z.string().url("Please enter a valid URL").or(z.literal("")).optional(),
-    crunchbase: z.string().url("Please enter a valid URL").or(z.literal("")).optional(),
-    angellist: z.string().url("Please enter a valid URL").or(z.literal("")).optional(),
   }).optional().default({}),
   
   // Company Culture
@@ -338,17 +345,6 @@ const companySchema = baseUserSchema.extend({
   
   // Media
   logo: z.any().optional(),
-  coverImage: z.any().optional(),
-  gallery: z.array(z.any())
-    .max(10, "Maximum 10 gallery images allowed")
-    .optional()
-    .default([]),
-    
-  video: z.string()
-    .url("Please enter a valid video URL")
-    .or(z.literal(""))
-    .optional()
-    .transform(val => val || undefined),
   
   // Verification & Status
   isVerified: z.boolean().default(false),
@@ -365,6 +361,8 @@ const companySchema = baseUserSchema.extend({
   // System Fields
   lastActive: z.date().optional(),
   emailVerified: z.boolean().default(false),
+  isActive: z.boolean().default(true),
+  lastLogin: z.date().optional(),
   emailVerificationToken: z.string().optional(),
   emailVerificationExpire: z.date().optional(),
   resetPasswordToken: z.string().optional(),
@@ -637,19 +635,73 @@ export default function RegisterPage() {
         
         // Add education array
         const education = (data as any).education?.map((e: any) => ({
-          institution: e.institution,
-          degree: e.degree,
-          fieldOfStudy: e.fieldOfStudy,
-          startDate: e.startDate,
-          endDate: e.endDate || undefined,
-          isCurrent: Boolean(e.isCurrent),
+              institution: e.institution,
+              degree: e.degree,
+              fieldOfStudy: e.fieldOfStudy,
+              startDate: e.startDate,
+              endDate: e.endDate || undefined,
+              isCurrent: Boolean(e.isCurrent),
         }));
         formData.append('education', JSON.stringify(education));
         
         // Add skills array
         const skills = (data as any).skills?.map((s: any) => (typeof s === 'string' ? { name: s } : { name: s.name }));
         formData.append('skills', JSON.stringify(skills));
+        
+        // Add experience array (if present)
+        if ((data as any).experience) {
+          formData.append('experience', JSON.stringify((data as any).experience));
+        }
+        
+        // Add languages array (if present)
+        if ((data as any).languages) {
+          formData.append('languages', JSON.stringify((data as any).languages));
+        }
+        
+        // Add CV file if present
+        if (cv) {
+          formData.append('resume', cv);
+        }
+        
+        // Add cover letter if present (though not currently collected in form)
+        if ((data as any).coverLetter) {
+          formData.append('coverLetter', (data as any).coverLetter);
+        }
+        
+        // Add work authorization
+        if ((data as any).workAuthorization) {
+          formData.append('workAuthorization', (data as any).workAuthorization);
+        }
+        
+        // Add availability
+        if ((data as any).availability) {
+          formData.append('availability', (data as any).availability);
+        }
+        
+        // Add preferred industries
+        if ((data as any).preferredIndustries) {
+          formData.append('preferredIndustries', JSON.stringify((data as any).preferredIndustries));
+        }
+        
+        // Add relocation preference
+        if ((data as any).relocation !== undefined) {
+          formData.append('relocation', String((data as any).relocation));
+        }
+        
+        // Add job preferences
+        if ((data as any).jobPreferences) {
+          formData.append('jobPreferences', JSON.stringify((data as any).jobPreferences));
+        }
+
+        // Add social object (map from separate social fields)
+        const socialData = {
+          linkedin: (data as any).linkedinUrl || '',
+          portfolio: (data as any).portfolioUrl || '',
+          github: (data as any).githubUrl || ''
+        };
+        formData.append('social', JSON.stringify(socialData));
       } else {
+        // Company registration fields
         formData.append('industry', (data as any).industry);
         formData.append('description', (data as any).description);
         formData.append('location', (data as any).location);
@@ -657,6 +709,75 @@ export default function RegisterPage() {
         formData.append('contactEmail', (data as any).contactEmail || '');
         formData.append('contactPhone', (data as any).contactPhone || '');
         formData.append('rating', '1'); // Default rating for new companies
+        
+        // Company size
+        if ((data as any).companySize) {
+          formData.append('companySize', (data as any).companySize);
+        }
+        
+        // Founded year
+        if ((data as any).foundedYear) {
+          formData.append('foundedYear', String((data as any).foundedYear));
+        }
+        
+        // Company type
+        if ((data as any).companyType) {
+          formData.append('companyType', (data as any).companyType);
+        }
+        
+        // Headquarters
+        if ((data as any).headquarters) {
+          formData.append('headquarters', JSON.stringify((data as any).headquarters));
+        }
+        
+        // Social media
+        if ((data as any).socialMedia) {
+          formData.append('socialMedia', JSON.stringify((data as any).socialMedia));
+        }
+        
+        // Company culture
+        if ((data as any).values) {
+          formData.append('values', JSON.stringify((data as any).values));
+        }
+        if ((data as any).mission) {
+          formData.append('mission', (data as any).mission);
+        }
+        if ((data as any).vision) {
+          formData.append('vision', (data as any).vision);
+        }
+        if ((data as any).culture) {
+          formData.append('culture', (data as any).culture);
+        }
+        
+        // Additional info
+        if ((data as any).specialties) {
+          formData.append('specialties', JSON.stringify((data as any).specialties));
+        }
+        if ((data as any).benefits) {
+          formData.append('benefits', JSON.stringify((data as any).benefits));
+        }
+        if ((data as any).technologies) {
+          formData.append('technologies', JSON.stringify((data as any).technologies));
+        }
+        
+        
+        // Verification status
+        formData.append('isVerified', 'false');
+        formData.append('isFeatured', 'false');
+        formData.append('reviewCount', '0');
+        
+        // Add social object (map from socialMedia object)
+        if ((data as any).socialMedia) {
+          formData.append('social', JSON.stringify((data as any).socialMedia));
+        } else {
+          // Default social object
+          formData.append('social', JSON.stringify({
+            linkedin: '',
+            portfolio: '',
+            github: ''
+          }));
+        }
+
       }
 
       const res = await fetch(`${baseUrl}${endpoint}`, {
@@ -732,9 +853,9 @@ export default function RegisterPage() {
         }, 2000);
       } else {
         toast.error("Registration Failed", {
-          description: errorMessage,
+        description: errorMessage,
           duration: 5000,
-        });
+      });
       }
       
     } finally {
@@ -797,42 +918,75 @@ export default function RegisterPage() {
   const maxSteps = 3
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-blue-50 flex">
       {/* Left Panel - Form */}
       <div className="w-full md:w-1/2 p-8 overflow-y-auto">
-        <div className="max-w-md mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create an Account</h1>
-            <p className="text-gray-600">
+        <div className="max-w-lg mx-auto">
+          <div className="mb-10">
+            <div className="text-center mb-8">
+              {activeTab === "intern" ? (
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-teal-400 rounded-2xl mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              ) : (
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-teal-400 rounded-2xl mb-4">
+                 <Building className="w-8 h-8 text-white" />
+                </div>
+              )}
+              <h1 className="text-4xl font-bold bg-teal-500 bg-clip-text text-transparent mb-3">Create an Account</h1>
+              <p className="text-gray-600 text-lg">
               {activeTab === "intern"
                 ? "Join as an intern and find your dream opportunity"
                 : "Register your company and find talented interns"}
             </p>
+            </div>
           </div>
 
           {/* Progress indicator */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-700">
                 Step {currentStep} of {maxSteps}
               </span>
-              <span className="text-sm text-gray-600">{Math.round((currentStep / maxSteps) * 100)}%</span>
+              <span className="text-sm font-medium text-teal-600">{Math.round((currentStep / maxSteps) * 100)}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-teal-600 h-2 rounded-full transition-all duration-300"
+                className="bg-teal-400 h-3 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${(currentStep / maxSteps) * 100}%` }}
               />
+            </div>
+            <div className="flex justify-between mt-2">
+              {[1, 2, 3].map((step) => (
+                <div
+                  key={step}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+                    step <= currentStep
+                      ? 'bg-teal-400 text-white shadow-lg'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  {step}
+                </div>
+              ))}
             </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="intern">
+            <TabsList className="grid w-full grid-cols-2 mb-10 bg-gray-100 p-1 rounded-xl">
+              <TabsTrigger 
+                value="intern" 
+                className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-teal-600 transition-all duration-200 rounded-lg"
+              >
                 <Users className="w-4 h-4 mr-2" />
                 Intern
               </TabsTrigger>
-              <TabsTrigger value="company">
+              <TabsTrigger 
+                value="company"
+                className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-teal-600 transition-all duration-200 rounded-lg"
+              >
                 <Building className="w-4 h-4 mr-2" />
                 Company
               </TabsTrigger>
@@ -844,32 +998,58 @@ export default function RegisterPage() {
             >
               <TabsContent value="intern">
                 {currentStep === 1 && (
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-teal-50 to-blue-50 p-6 rounded-2xl border border-teal-100">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                        <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
+                          <span className="text-white text-sm font-bold">1</span>
+                        </div>
+                        Basic Information
+                      </h3>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
-                      <Input id="name" placeholder="John Doe" {...register("name")} />
+                          <Label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name <span className="text-red-500">*</span></Label>
+                          <Input 
+                            id="name" 
+                            placeholder="John Doe" 
+                            {...register("name")} 
+                            className="mt-1 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"
+                          />
                       {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message as string}</p>}
                     </div>
 
                     <div>
-                      <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
-                      <Input id="email" type="email" placeholder="john@example.com" {...register("email")} />
+                          <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email Address <span className="text-red-500">*</span></Label>
+                          <Input 
+                            id="email" 
+                            type="email" 
+                            placeholder="john@example.com" 
+                            {...register("email")} 
+                            className="mt-1 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"
+                          />
                       {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message as string}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="password">Password</Label>
-                        <Input id="password" type="password" placeholder="Create password" {...register("password")} />
+                            <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password <span className="text-red-500">*</span></Label>
+                            <Input 
+                              id="password" 
+                              type="password" 
+                              placeholder="Create password" 
+                              {...register("password")} 
+                              className="mt-1 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"
+                            />
                         {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password.message as string}</p>}
                       </div>
                       <div>
-                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                            <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">Confirm Password <span className="text-red-500">*</span></Label>
                         <Input
                           id="confirmPassword"
                           type="password"
                           placeholder="Confirm password"
                           {...register("confirmPassword")}
+                              className="mt-1 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"
                         />
                         {errors.confirmPassword && (
                           <p className="text-sm text-red-500 mt-1">{errors.confirmPassword.message as string}</p>
@@ -878,19 +1058,24 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" placeholder="+1 (555) 123-4567" {...register("phone")} />
+                          <Label htmlFor="phone" className="text-sm font-medium text-gray-700">Phone Number <span className="text-red-500">*</span></Label>
+                          <Input 
+                            id="phone" 
+                            placeholder="+1 (555) 123-4567" 
+                            {...register("phone")} 
+                            className="mt-1 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"
+                          />
                       {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone.message as string}</p>}
                     </div>
 
                     <div>
-                      <Label htmlFor="location">Location</Label>
+                          <Label htmlFor="location" className="text-sm font-medium text-gray-700">Location <span className="text-red-500">*</span></Label>
                       <Controller
                         name="location"
                         control={control}
                         render={({ field }) => (
                           <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger>
+                                <SelectTrigger className="mt-1 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg">
                               <SelectValue placeholder="Select location" />
                             </SelectTrigger>
                             <SelectContent>
@@ -905,32 +1090,45 @@ export default function RegisterPage() {
                       {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location.message as string}</p>}
                     </div>
 
-                    <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 pt-2">
                       <Controller
                         name="agreeToTerms"
                         control={control}
-                        render={({ field }) => <Checkbox checked={field.value} onCheckedChange={field.onChange} />}
+                            render={({ field }) => (
+                              <Checkbox 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange}
+                                className="border-gray-300 data-[state=checked]:bg-teal-500 data-[state=checked]:border-teal-500"
+                              />
+                            )}
                       />
                       <label className="text-sm text-gray-600">
                         I agree to the{" "}
-                        <Link href="/terms" className="text-teal-600 underline">
+                            <Link href="/terms" className="text-teal-600 underline hover:text-teal-700">
                           Terms
                         </Link>{" "}
                         and{" "}
-                        <Link href="/privacy" className="text-teal-600 underline">
+                            <Link href="/privacy" className="text-teal-600 underline hover:text-teal-700">
                           Privacy Policy
                         </Link>
                       </label>
                     </div>
                     {errors.agreeToTerms && <p className="text-sm text-red-500">{errors.agreeToTerms.message as string}</p>}
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {currentStep === 2 && (
-                  <div className="space-y-4">
-                    <div className="text-center mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900">Share your skills and interests</h3>
-                      <p className="text-gray-600">Help us find your perfect internship match</p>
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2 flex items-center">
+                        <div className="w-8 h-8 bg-teal-400 rounded-lg flex items-center justify-center mr-3">
+                          <span className="text-white text-sm font-bold">2</span>
+                        </div>
+                        Share your skills and interests
+                      </h3>
+                      <p className="text-gray-600 ml-11">Help us find your perfect internship match</p>
                     </div>
 
                     {/* Profile Picture Upload */}
@@ -1006,7 +1204,7 @@ export default function RegisterPage() {
 
                     <div>
                       <div className="flex justify-between items-center">
-                        <Label>Experience</Label>
+                        <Label>Education</Label>
                         <Button
                           type="button"
                           variant="ghost"
@@ -1025,7 +1223,7 @@ export default function RegisterPage() {
                             ]);
                           }}
                         >
-                          <Plus className="w-4 h-4 mr-1" /> Add Experience
+                          <Plus className="w-4 h-4 mr-1" /> Add Education
                         </Button>
                       </div>
                       
@@ -1151,7 +1349,7 @@ export default function RegisterPage() {
                               );
                             }}
                           >
-                            Remove Experience
+                            Remove Education
                           </Button>
                         </div>
                       ))}
@@ -1368,14 +1566,203 @@ export default function RegisterPage() {
                       />
                       <Label htmlFor="relocation">Willing to relocate for the right opportunity</Label>
                     </div>
+
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <Label>Work Experience</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const currentExperience = watch("experience") || [];
+                            setValue("experience", [
+                              ...currentExperience,
+                              {
+                                title: "",
+                                company: "",
+                                location: "",
+                                startDate: "",
+                                isCurrent: false,
+                              },
+                            ]);
+                          }}
+                        >
+                          <Plus className="w-4 h-4 mr-1" /> Add Experience
+                        </Button>
+                      </div>
+                      
+                      {watch("experience")?.map((exp: any, index: number) => (
+                        <div key={index} className="mt-4 p-4 border rounded-lg space-y-3">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Job Title</Label>
+                              <Input
+                                {...register(`experience.${index}.title`)}
+                                placeholder="e.g., Software Developer Intern"
+                              />
+                            </div>
+                            <div>
+                              <Label>Company</Label>
+                              <Input
+                                {...register(`experience.${index}.company`)}
+                                placeholder="e.g., Google"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <Label>Location</Label>
+                            <Input
+                              {...register(`experience.${index}.location`)}
+                              placeholder="e.g., San Francisco, CA"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Start Date</Label>
+                              <Input
+                                type="date"
+                                {...register(`experience.${index}.startDate`)}
+                              />
+                            </div>
+                            <div>
+                              <Label>End Date</Label>
+                              <Input
+                                type="date"
+                                {...register(`experience.${index}.endDate`)}
+                                disabled={watch(`experience.${index}.isCurrent`)}
+                              />
+                              <div className="flex items-center space-x-2 mt-2">
+                                <Checkbox
+                                  id={`current-exp-${index}`}
+                                  checked={watch(`experience.${index}.isCurrent`)}
+                                  onCheckedChange={(checked) => {
+                                    setValue(`experience.${index}.isCurrent`, Boolean(checked));
+                                    if (checked) {
+                                      setValue(`experience.${index}.endDate`, "");
+                                    }
+                                  }}
+                                />
+                                <label
+                                  htmlFor={`current-exp-${index}`}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
+                                  Currently working here
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label>Description (optional)</Label>
+                            <textarea
+                              {...register(`experience.${index}.description`)}
+                              className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              placeholder="Describe your responsibilities and achievements"
+                            />
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full mt-2"
+                            onClick={() => {
+                              const currentExperience = watch("experience") || [];
+                              setValue(
+                                "experience",
+                                currentExperience.filter((_: any, i: number) => i !== index)
+                              );
+                            }}
+                          >
+                            Remove Experience
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div>
+                      <Label>Languages</Label>
+                      <Controller
+                        name="languages"
+                        control={control}
+                        render={({ field }) => (
+                          <div>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {field.value?.map((language: any, index: number) => (
+                                <div
+                                  key={index}
+                                  className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center"
+                                >
+                                  {language.name} ({language.proficiency})
+                                  <button
+                                    type="button"
+                                    className="ml-2 text-green-600 hover:text-green-900"
+                                    onClick={() => {
+                                      const newLanguages = [...field.value];
+                                      newLanguages.splice(index, 1);
+                                      field.onChange(newLanguages);
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              <Input
+                                type="text"
+                                placeholder="Language name"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                    e.preventDefault();
+                                    const languageName = e.currentTarget.value.trim();
+                                    e.currentTarget.value = '';
+                                    
+                                    // Find proficiency input
+                                    const proficiencyInput = e.currentTarget.parentElement?.querySelector('select') as HTMLSelectElement;
+                                    const proficiency = proficiencyInput?.value || 'intermediate';
+                                    
+                                    field.onChange([
+                                      ...(field.value || []),
+                                      { name: languageName, proficiency }
+                                    ]);
+                                    proficiencyInput.value = 'intermediate';
+                                  }
+                                }}
+                                className="flex-1"
+                              />
+                              <Select defaultValue="intermediate">
+                                <SelectTrigger className="w-32">
+                                  <SelectValue placeholder="Level" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="beginner">Beginner</SelectItem>
+                                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                                  <SelectItem value="advanced">Advanced</SelectItem>
+                                  <SelectItem value="native">Native</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        )}
+                      />
+                    </div>
                   </div>
                 )}
 
                 {currentStep === 3 && (
-                  <div className="space-y-4">
-                    <div className="text-center mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900">Complete your profile</h3>
-                      <p className="text-gray-600">Add the finishing touches to stand out</p>
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2 flex items-center">
+                        <div className="w-8 h-8 bg-teal-400 rounded-lg flex items-center justify-center mr-3">
+                          <span className="text-white text-sm font-bold">3</span>
+                        </div>
+                        Complete your profile
+                      </h3>
+                      <p className="text-gray-600 ml-11">Add the finishing touches to stand out</p>
                     </div>
 
                     <div>
@@ -1430,16 +1817,169 @@ export default function RegisterPage() {
                         />
                       </label>
                     </div>
+
+                    <div>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Preferred Job Types</Label>
+                          <Controller
+                            name="jobPreferences.jobTypes"
+                            control={control}
+                            render={({ field }) => (
+                              <div>
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {field.value?.map((type: any, index: number) => (
+                                    <div
+                                      key={index}
+                                      className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm flex items-center"
+                                    >
+                                      {type}
+                                      <button
+                                        type="button"
+                                        className="ml-2 text-indigo-600 hover:text-indigo-900"
+                                        onClick={() => {
+                                          const newTypes = [...field.value];
+                                          newTypes.splice(index, 1);
+                                          field.onChange(newTypes);
+                                        }}
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="flex">
+                                  <Select
+                                    onValueChange={(value) => {
+                                      if (!field.value) {
+                                        field.onChange([value]);
+                                      } else if (!field.value.includes(value)) {
+                                        field.onChange([...field.value, value]);
+                                      }
+                                    }}
+                                    value=""
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select job types" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {['full-time', 'part-time', 'contract', 'freelance', 'internship'].map((type) => (
+                                        <SelectItem key={type} value={type}>
+                                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            )}
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Preferred Locations</Label>
+                          <Controller
+                            name="jobPreferences.locations"
+                            control={control}
+                            render={({ field }) => (
+                              <div>
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {field.value?.map((location: any, index: number) => (
+                                    <div
+                                      key={index}
+                                      className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm flex items-center"
+                                    >
+                                      {location}
+                                      <button
+                                        type="button"
+                                        className="ml-2 text-orange-600 hover:text-orange-900"
+                                        onClick={() => {
+                                          const newLocations = [...field.value];
+                                          newLocations.splice(index, 1);
+                                          field.onChange(newLocations);
+                                        }}
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="flex">
+                                  <Input
+                                    type="text"
+                                    placeholder="Add a location and press Enter"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                        e.preventDefault();
+                                        field.onChange([
+                                          ...(field.value || []),
+                                          e.currentTarget.value.trim(),
+                                        ]);
+                                        e.currentTarget.value = '';
+                                      }
+                                    }}
+                                    className="flex-1"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          />
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Controller
+                            name="jobPreferences.remote"
+                            control={control}
+                            render={({ field }) => (
+                              <Checkbox
+                                id="remote"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            )}
+                          />
+                          <Label htmlFor="remote">Open to remote work</Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Controller
+                            name="jobPreferences.remoteOnly"
+                            control={control}
+                            render={({ field }) => (
+                              <Checkbox
+                                id="remoteOnly"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            )}
+                          />
+                          <Label htmlFor="remoteOnly">Remote work only</Label>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </TabsContent>
 
               <TabsContent value="company">
                 {currentStep === 1 && (
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-teal-50 to-blue-50 p-6 rounded-2xl border border-teal-100">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                        <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
+                          <span className="text-white text-sm font-bold">1</span>
+                        </div>
+                        Company Information
+                      </h3>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="name">Company Name</Label>
-                      <Input id="name" placeholder="Acme Inc." {...register("name")} />
+                          <Label htmlFor="name" className="text-sm font-medium text-gray-700">Company Name <span className="text-red-500">*</span></Label>
+                          <Input 
+                            id="name" 
+                            placeholder="Acme Inc." 
+                            {...register("name")} 
+                            className="mt-1 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"
+                          />
                       {errors.name && (
                         <p className="text-sm text-red-500 mt-1">{errors.name.message as string}</p>
                       )}
@@ -1524,14 +2064,21 @@ export default function RegisterPage() {
                       </label>
                     </div>
                     {errors.agreeToTerms && <p className="text-sm text-red-500">{errors.agreeToTerms.message as string}</p>}
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {currentStep === 2 && (
-                  <div className="space-y-4">
-                    <div className="text-center mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900">Tell us about your company</h3>
-                      <p className="text-gray-600">Help interns understand what makes you unique</p>
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2 flex items-center">
+                        <div className="w-8 h-8 bg-teal-400 rounded-lg flex items-center justify-center mr-3">
+                          <span className="text-white text-sm font-bold">2</span>
+                        </div>
+                        Tell us about your company
+                      </h3>
+                      <p className="text-gray-600 ml-11">Help interns understand what makes you unique</p>
                     </div>
 
                     {/* Company Logo Upload */}
@@ -1643,14 +2190,65 @@ export default function RegisterPage() {
                         <p className="text-sm text-red-500 mt-1">{errors.contactPhone.message as string}</p>
                       )}
                     </div>
+
+                    <div>
+                      <Label>Social Media Links</Label>
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="socialMedia.linkedin">LinkedIn</Label>
+                          <Input
+                            id="socialMedia.linkedin"
+                            placeholder="https://linkedin.com/company/yourcompany"
+                            {...register("socialMedia.linkedin")}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="socialMedia.twitter">Twitter</Label>
+                          <Input
+                            id="socialMedia.twitter"
+                            placeholder="https://twitter.com/yourcompany"
+                            {...register("socialMedia.twitter")}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="socialMedia.github">GitHub</Label>
+                          <Input
+                            id="socialMedia.github"
+                            placeholder="https://github.com/yourcompany"
+                            {...register("socialMedia.github")}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="socialMedia.facebook">Facebook</Label>
+                          <Input
+                            id="socialMedia.facebook"
+                            placeholder="https://facebook.com/yourcompany"
+                            {...register("socialMedia.facebook")}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="socialMedia.instagram">Instagram</Label>
+                          <Input
+                            id="socialMedia.instagram"
+                            placeholder="https://instagram.com/yourcompany"
+                            {...register("socialMedia.instagram")}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {currentStep === 3 && (
-                  <div className="space-y-4">
-                    <div className="text-center mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900">Final details</h3>
-                      <p className="text-gray-600">Complete your company profile</p>
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2 flex items-center">
+                        <div className="w-8 h-8 bg-teal-400 rounded-lg flex items-center justify-center mr-3">
+                          <span className="text-white text-sm font-bold">3</span>
+                        </div>
+                        Final details
+                      </h3>
+                      <p className="text-gray-600 ml-11">Complete your company profile</p>
                     </div>
 
                     <div>
@@ -1719,14 +2317,286 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="openPositions">Open Positions</Label>
+                      <Label htmlFor="foundedYear">Founded Year</Label>
                       <Input
-                        id="openPositions"
-                        placeholder="e.g., Software Engineer Intern, Marketing Intern"
-                        {...register("description")}
+                        id="foundedYear"
+                        type="number"
+                        min="1800"
+                        max={new Date().getFullYear()}
+                        placeholder="e.g., 2020"
+                        {...register("foundedYear")}
                       />
-                      {"description" in errors && errors.description && (
-                        <p className="text-sm text-red-500 mt-1">{errors.description.message as string}</p>
+                      {"foundedYear" in errors && errors.foundedYear && (
+                        <p className="text-sm text-red-500 mt-1">{errors.foundedYear.message as string}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label>Company Headquarters</Label>
+                      <div className="space-y-3">
+                        <Input
+                          placeholder="Street Address"
+                          {...register("headquarters.address")}
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <Input
+                            placeholder="City"
+                            {...register("headquarters.city")}
+                          />
+                          <Input
+                            placeholder="State/Province"
+                            {...register("headquarters.state")}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Input
+                            placeholder="Country"
+                            {...register("headquarters.country")}
+                          />
+                          <Input
+                            placeholder="Postal Code"
+                            {...register("headquarters.postalCode")}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="mission">Mission Statement</Label>
+                      <textarea
+                        id="mission"
+                        placeholder="What is your company's mission?"
+                        {...register("mission")}
+                        className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                      {"mission" in errors && errors.mission && (
+                        <p className="text-sm text-red-500 mt-1">{errors.mission.message as string}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="vision">Vision Statement</Label>
+                      <textarea
+                        id="vision"
+                        placeholder="What is your company's vision for the future?"
+                        {...register("vision")}
+                        className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                      {"vision" in errors && errors.vision && (
+                        <p className="text-sm text-red-500 mt-1">{errors.vision.message as string}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label>Company Values</Label>
+                      <Controller
+                        name="values"
+                        control={control}
+                        render={({ field }) => (
+                          <div>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {field.value?.map((value: any, index: number) => (
+                                <div
+                                  key={index}
+                                  className="bg-gray-100 px-3 py-1 rounded-full text-sm flex items-center"
+                                >
+                                  {value}
+                                  <button
+                                    type="button"
+                                    className="ml-2 text-gray-500 hover:text-red-500"
+                                    onClick={() => {
+                                      const newValues = [...field.value];
+                                      newValues.splice(index, 1);
+                                      field.onChange(newValues);
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex">
+                              <Input
+                                type="text"
+                                placeholder="Add a company value and press Enter"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                    e.preventDefault();
+                                    field.onChange([
+                                      ...(field.value || []),
+                                      e.currentTarget.value.trim(),
+                                    ]);
+                                    e.currentTarget.value = '';
+                                  }
+                                }}
+                                className="flex-1"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Company Specialties</Label>
+                      <Controller
+                        name="specialties"
+                        control={control}
+                        render={({ field }) => (
+                          <div>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {field.value?.map((specialty: any, index: number) => (
+                                <div
+                                  key={index}
+                                  className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm flex items-center"
+                                >
+                                  {specialty}
+                                  <button
+                                    type="button"
+                                    className="ml-2 text-teal-600 hover:text-teal-900"
+                                    onClick={() => {
+                                      const newSpecialties = [...field.value];
+                                      newSpecialties.splice(index, 1);
+                                      field.onChange(newSpecialties);
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex">
+                              <Input
+                                type="text"
+                                placeholder="Add a specialty and press Enter"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                    e.preventDefault();
+                                    field.onChange([
+                                      ...(field.value || []),
+                                      e.currentTarget.value.trim(),
+                                    ]);
+                                    e.currentTarget.value = '';
+                                  }
+                                }}
+                                className="flex-1"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Technologies Used</Label>
+                      <Controller
+                        name="technologies"
+                        control={control}
+                        render={({ field }) => (
+                          <div>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {field.value?.map((tech: any, index: number) => (
+                                <div
+                                  key={index}
+                                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
+                                >
+                                  {tech}
+                                  <button
+                                    type="button"
+                                    className="ml-2 text-blue-600 hover:text-blue-900"
+                                    onClick={() => {
+                                      const newTechs = [...field.value];
+                                      newTechs.splice(index, 1);
+                                      field.onChange(newTechs);
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex">
+                              <Input
+                                type="text"
+                                placeholder="Add a technology and press Enter"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                    e.preventDefault();
+                                    field.onChange([
+                                      ...(field.value || []),
+                                      e.currentTarget.value.trim(),
+                                    ]);
+                                    e.currentTarget.value = '';
+                                  }
+                                }}
+                                className="flex-1"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Employee Benefits</Label>
+                      <Controller
+                        name="benefits"
+                        control={control}
+                        render={({ field }) => (
+                          <div>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {field.value?.map((benefit: any, index: number) => (
+                                <div
+                                  key={index}
+                                  className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm flex items-center"
+                                >
+                                  {benefit}
+                                  <button
+                                    type="button"
+                                    className="ml-2 text-purple-600 hover:text-purple-900"
+                                    onClick={() => {
+                                      const newBenefits = [...field.value];
+                                      newBenefits.splice(index, 1);
+                                      field.onChange(newBenefits);
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex">
+                              <Input
+                                type="text"
+                                placeholder="Add a benefit and press Enter"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                    e.preventDefault();
+                                    field.onChange([
+                                      ...(field.value || []),
+                                      e.currentTarget.value.trim(),
+                                    ]);
+                                    e.currentTarget.value = '';
+                                  }
+                                }}
+                                className="flex-1"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="culture">Company Culture</Label>
+                      <textarea
+                        id="culture"
+                        placeholder="Describe your company culture, work environment, and team dynamics..."
+                        {...register("culture")}
+                        className="flex h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                      {"culture" in errors && errors.culture && (
+                        <p className="text-sm text-red-500 mt-1">{errors.culture.message as string}</p>
                       )}
                     </div>
 
@@ -1760,13 +2630,17 @@ export default function RegisterPage() {
               </TabsContent>
 
               {/* Form Navigation */}
-              <div className="mt-8 flex justify-between">
+              <div className="mt-10 flex justify-between">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
                   disabled={currentStep === 1}
+                  className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
                   Back
                 </Button>
 
@@ -1775,7 +2649,7 @@ export default function RegisterPage() {
                     type="button"
                     onClick={(e) => handleNextStep(e)}
                     disabled={isNavigating}
-                    className="bg-teal-600 hover:bg-teal-700"
+                    className="bg-teal-400 hover:from-teal-600 hover:to-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -1783,22 +2657,56 @@ export default function RegisterPage() {
                       }
                     }}
                   >
-                    {isNavigating ? "Validating..." : "Next"}
+                    {isNavigating ? (
+                      <>
+                        <svg className="animate-spin bg-teal-400 -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Validating...
+                      </>
+                    ) : (
+                      <>
+                        Next
+                        <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </>
+                    )}
                   </Button>
                 ) : (
-                  <Button type="submit" disabled={isSubmitting} className="bg-teal-600 hover:bg-teal-700">
-                    {isSubmitting ? "Registering..." : "Register"}
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting} 
+                    className="bg-teal-400 hover:bg-teal-600 active:bg-teal-700 text-white px-8 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Registering...
+                      </>
+                    ) : (
+                      <>
+                        Register
+                        <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
             </form>
           </Tabs>
 
-          <div className="text-center mt-6 pt-6 border-t">
+          <div className="text-center mt-8 pt-6 border-t border-gray-200">
             <p className="text-gray-600">
               Already have an account?{" "}
-              <Link href="/login" className="text-teal-600 font-medium underline">
-                Sign in here
+              <Link href="/login" className="text-teal-600 font-medium underline hover:text-teal-700 transition-colors">
+                Login here
               </Link>
             </p>
           </div>

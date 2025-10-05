@@ -125,13 +125,25 @@ export const reviewService = {
 
   // Create or update a company review (intern reviewing company)
   createCompanyReview: async (companyId: string, data: { rating: number; feedback: string }): Promise<Review> => {
-    const response = await api.post(`/reviews/company-reviews/${companyId}`, data)
+    // Map feedback to content for backend
+    const backendData = {
+      rating: data.rating,
+      content: data.feedback,
+      feedback: data.feedback
+    };
+    const response = await api.post(`/reviews/company-reviews/${companyId}`, backendData)
     return response.data.data
   },
 
   // Create or update an intern review (company reviewing intern)
   createInternReview: async (internId: string, jobId: string, data: { rating: number; feedback: string }): Promise<Review> => {
-    const response = await api.post(`/reviews/intern-reviews/${internId}/${jobId}`, data)
+    // Map feedback to content for backend
+    const backendData = {
+      rating: data.rating,
+      content: data.feedback,
+      feedback: data.feedback
+    };
+    const response = await api.post(`/reviews/intern-reviews/${internId}/${jobId}`, backendData)
     return response.data.data
   },
 

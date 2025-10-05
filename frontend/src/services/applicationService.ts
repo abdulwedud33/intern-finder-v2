@@ -9,7 +9,8 @@ const api = axios.create({
 
 export interface CreateApplicationRequest {
   jobId: string;
-  coverLetter?: string;
+  coverLetter: string;
+  resume?: File;
 }
 
 export interface ApplicationResponse {
@@ -44,7 +45,20 @@ export interface Application {
 export const applicationService = {
   // Create an application
   async createApplication(applicationData: CreateApplicationRequest): Promise<ApplicationResponse> {
-    const response = await api.post('/applications', applicationData);
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('jobId', applicationData.jobId);
+    formData.append('coverLetter', applicationData.coverLetter);
+    
+    if (applicationData.resume) {
+      formData.append('resume', applicationData.resume);
+    }
+
+    const response = await api.post('/applications', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 

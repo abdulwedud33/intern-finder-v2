@@ -38,6 +38,11 @@ const ReviewSchema = new mongoose.Schema({
     required: [true, 'Please provide review content'],
     maxlength: [2000, 'Review cannot be more than 2000 characters']
   },
+  // Additional feedback (optional)
+  feedback: {
+    type: String,
+    maxlength: [1000, 'Feedback cannot be more than 1000 characters']
+  },
   // Whether the review is from a company to an intern or vice versa
   direction: {
     type: String,

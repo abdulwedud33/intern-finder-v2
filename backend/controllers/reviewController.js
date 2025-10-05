@@ -183,7 +183,13 @@ exports.createReview = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const review = await Review.create(req.body);
+  // Ensure feedback field is handled properly
+  const reviewData = {
+    ...req.body,
+    feedback: req.body.feedback || undefined
+  };
+  
+  const review = await Review.create(reviewData);
 
   // Populate the response
   const populatedReview = await Review.findById(review._id)

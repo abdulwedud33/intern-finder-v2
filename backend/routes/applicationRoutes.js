@@ -12,6 +12,7 @@ const {
   preCheckJob
 } = require('../controllers/applicationController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { uploadSingle } = require('../middleware/upload');
 
 const router = express.Router({ mergeParams: true });
 
@@ -19,7 +20,7 @@ const router = express.Router({ mergeParams: true });
 router.use(protect);
 
 // Application submission
-router.post('/', authorize('intern'), createApplication);
+router.post('/', authorize('intern'), uploadSingle('resume'), createApplication);
 
 // Company routes
 router.get('/company', authorize('company'), getCompanyApplications);

@@ -23,7 +23,149 @@ const registerUser = asyncHandler(async (req, res, next) => {
     avatarPath = `/uploads/${req.file.filename}`;
   }
 
-  // 3. Create user based on role
+  // 3. Parse JSON fields from FormData
+  if (role === 'intern') {
+    // Parse education and skills arrays from JSON strings
+    if (profileData.education && typeof profileData.education === 'string') {
+      try {
+        profileData.education = JSON.parse(profileData.education);
+      } catch (error) {
+        console.error('Error parsing education:', error);
+        profileData.education = [];
+      }
+    }
+    
+    if (profileData.skills && typeof profileData.skills === 'string') {
+      try {
+        profileData.skills = JSON.parse(profileData.skills);
+      } catch (error) {
+        console.error('Error parsing skills:', error);
+        profileData.skills = [];
+      }
+    }
+    
+    // Parse experience array if present
+    if (profileData.experience && typeof profileData.experience === 'string') {
+      try {
+        profileData.experience = JSON.parse(profileData.experience);
+      } catch (error) {
+        console.error('Error parsing experience:', error);
+        profileData.experience = [];
+      }
+    }
+    
+    // Parse languages array if present
+    if (profileData.languages && typeof profileData.languages === 'string') {
+      try {
+        profileData.languages = JSON.parse(profileData.languages);
+      } catch (error) {
+        console.error('Error parsing languages:', error);
+        profileData.languages = [];
+      }
+    }
+    
+    // Parse preferredIndustries array if present
+    if (profileData.preferredIndustries && typeof profileData.preferredIndustries === 'string') {
+      try {
+        profileData.preferredIndustries = JSON.parse(profileData.preferredIndustries);
+      } catch (error) {
+        console.error('Error parsing preferredIndustries:', error);
+        profileData.preferredIndustries = [];
+      }
+    }
+    
+    // Parse relocation boolean if present
+    if (profileData.relocation && typeof profileData.relocation === 'string') {
+      profileData.relocation = profileData.relocation === 'true';
+    }
+    
+    // Parse isProfileComplete boolean if present
+    if (profileData.isProfileComplete && typeof profileData.isProfileComplete === 'string') {
+      profileData.isProfileComplete = profileData.isProfileComplete === 'true';
+    }
+    
+    // Parse jobPreferences object if present
+    if (profileData.jobPreferences && typeof profileData.jobPreferences === 'string') {
+      try {
+        profileData.jobPreferences = JSON.parse(profileData.jobPreferences);
+      } catch (error) {
+        console.error('Error parsing jobPreferences:', error);
+        profileData.jobPreferences = {};
+      }
+    }
+    
+    // Parse social object if present
+    if (profileData.social && typeof profileData.social === 'string') {
+      try {
+        profileData.social = JSON.parse(profileData.social);
+      } catch (error) {
+        console.error('Error parsing social:', error);
+        profileData.social = { linkedin: '', portfolio: '', github: '' };
+      }
+    }
+  } else if (role === 'company') {
+    // Parse company-specific arrays from JSON strings
+    const arrayFields = ['values', 'specialties', 'benefits', 'technologies'];
+    arrayFields.forEach(field => {
+      if (profileData[field] && typeof profileData[field] === 'string') {
+        try {
+          profileData[field] = JSON.parse(profileData[field]);
+        } catch (error) {
+          console.error(`Error parsing ${field}:`, error);
+          profileData[field] = [];
+        }
+      }
+    });
+    
+    // Parse headquarters object if present
+    if (profileData.headquarters && typeof profileData.headquarters === 'string') {
+      try {
+        profileData.headquarters = JSON.parse(profileData.headquarters);
+      } catch (error) {
+        console.error('Error parsing headquarters:', error);
+        profileData.headquarters = {};
+      }
+    }
+    
+    // Parse socialMedia object if present
+    if (profileData.socialMedia && typeof profileData.socialMedia === 'string') {
+      try {
+        profileData.socialMedia = JSON.parse(profileData.socialMedia);
+      } catch (error) {
+        console.error('Error parsing socialMedia:', error);
+        profileData.socialMedia = {};
+      }
+    }
+    
+    // Parse boolean fields
+    if (profileData.isVerified && typeof profileData.isVerified === 'string') {
+      profileData.isVerified = profileData.isVerified === 'true';
+    }
+    if (profileData.isFeatured && typeof profileData.isFeatured === 'string') {
+      profileData.isFeatured = profileData.isFeatured === 'true';
+    }
+    if (profileData.reviewCount && typeof profileData.reviewCount === 'string') {
+      profileData.reviewCount = parseInt(profileData.reviewCount) || 0;
+    }
+    if (profileData.rating && typeof profileData.rating === 'string') {
+      profileData.rating = parseInt(profileData.rating) || 1;
+    }
+    if (profileData.isProfileComplete && typeof profileData.isProfileComplete === 'string') {
+      profileData.isProfileComplete = profileData.isProfileComplete === 'true';
+    }
+    
+    // Parse social object if present
+    if (profileData.social && typeof profileData.social === 'string') {
+      try {
+        profileData.social = JSON.parse(profileData.social);
+      } catch (error) {
+        console.error('Error parsing social:', error);
+        profileData.social = { linkedin: '', portfolio: '', github: '' };
+      }
+    }
+  }
+
+  // 4. Create user based on role
   let user;
   
   if (role === 'intern') {

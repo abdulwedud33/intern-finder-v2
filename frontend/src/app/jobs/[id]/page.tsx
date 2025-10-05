@@ -61,17 +61,29 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
   const relatedJobs = getRelatedJobs()
 
   const handleApply = () => {
-    if (!isIntern) {
-      // Redirect to login or show signup modal
+    if (!user) {
+      toast({
+        title: "🔐 Login Required",
+        description: "Please log in to apply for this job.",
+        variant: "destructive",
+        duration: 5000,
+      });
       router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
       return
     }
     
-    // TODO: Implement application submission
-    toast({
-      title: 'Apply for job',
-      description: 'Application functionality will be implemented in the next step.',
-    })
+    if (!isIntern) {
+      toast({
+        title: "🚫 Access Denied",
+        description: "Only interns can apply to jobs. Please log in with an intern account.",
+        variant: "destructive",
+        duration: 5000,
+      });
+      return
+    }
+    
+    // Navigate to application page
+    router.push(`/jobs/${params.id}/apply`)
   }
 
   if (loading) return <LoadingPage />
@@ -184,11 +196,11 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                       <Share2 className="w-5 h-5" />
                     </Button>
                     <Button 
-                      className="bg-[#19C0A8] hover:bg-[#15a894] text-white" 
+                      className="bg-[#19C0A8] hover:bg-[#15a894] text-white disabled:bg-gray-400 disabled:cursor-not-allowed" 
                       onClick={handleApply}
                       disabled={!isIntern}
                     >
-                      {isIntern ? 'Apply Now' : 'Login as Intern to Apply'}
+                      {!user ? 'Login to Apply' : isIntern ? 'Apply Now' : 'Intern Access Only'}
                     </Button>
                   </div>
                 </div>
@@ -210,7 +222,15 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
           <div className="space-y-6">
             <Card>
               <CardContent className="p-6">
-                {isIntern ? (
+                {!user ? (
+                  <Button 
+                    size="lg" 
+                    className="w-full bg-teal-600 hover:bg-teal-700 mb-4" 
+                    onClick={handleApply}
+                  >
+                    Login to Apply
+                  </Button>
+                ) : isIntern ? (
                   <Button size="lg" className="w-full bg-teal-600 hover:bg-teal-700 mb-4" asChild>
                     <Link href={`/jobs/${params.id}/apply`}>Apply Now</Link>
                   </Button>

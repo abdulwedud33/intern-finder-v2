@@ -80,16 +80,18 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
   }
 
   const interview = await Interview.create({
-    application: applicationId,
-    company: application.job.company._id,
-    intern: application.intern._id,
-    job: application.job._id,
-    scheduledBy: userId,
+    applicationId: applicationId,
+    companyId: application.job.company._id,
+    internId: application.intern._id,
+    jobId: application.job._id,
+    interviewer: userId,
     date,
+    scheduledDate: date, // Sync with frontend
     time,
     location,
-    notes,
-    interviewType,
+    notes: notes || note, // Handle both field names
+    note: notes || note, // Handle both field names
+    type: interviewType,
     status: 'scheduled'
   });
 

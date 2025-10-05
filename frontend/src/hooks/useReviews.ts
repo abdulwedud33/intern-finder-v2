@@ -1,185 +1,128 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { reviewService, Review, CreateReviewRequest, UpdateReviewRequest } from '@/services/reviewService'
-import { useToast } from '@/components/ui/use-toast'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { reviewService, CreateReviewRequest, UpdateReviewRequest } from '@/services/reviewService';
 
-export const useReviewsAboutMe = () => {
+// Hook for getting all reviews with pagination and filtering
+export function useReviews(params?: {
+  page?: number;
+  limit?: number;
+  sort?: string;
+  target?: string;
+  reviewer?: string;
+  rating?: number;
+  status?: string;
+}) {
   return useQuery({
-    queryKey: ['reviews', 'about-me'],
-    queryFn: reviewService.getReviewsAboutMe,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-}
-
-export const useMyReviews = () => {
-  return useQuery({
-    queryKey: ['reviews', 'my-reviews'],
-    queryFn: reviewService.getMyReviews,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-}
-
-export const useReviewsForTarget = (targetId: string, type: 'all' | 'company' | 'intern' = 'all') => {
-  return useQuery({
-    queryKey: ['reviews', 'target', targetId, type],
-    queryFn: () => reviewService.getReviewsForTarget(targetId, type),
-    enabled: !!targetId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-}
-
-export const useCreateCompanyReview = () => {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
-
-  return useMutation({
-    mutationFn: ({ companyId, data }: { companyId: string; data: { rating: number; feedback: string } }) =>
-      reviewService.createCompanyReview(companyId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reviews'] })
-      toast({
-        title: "Review submitted",
-        description: "Your review has been submitted successfully.",
-      })
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to submit review",
-        variant: "destructive",
-      })
-    },
-  })
-}
-
-export const useCreateInternReview = () => {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
-
-  return useMutation({
-    mutationFn: ({ internId, jobId, data }: { internId: string; jobId: string; data: { rating: number; feedback: string } }) =>
-      reviewService.createInternReview(internId, jobId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reviews'] })
-      toast({
-        title: "Review submitted",
-        description: "Your review has been submitted successfully.",
-      })
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to submit review",
-        variant: "destructive",
-      })
-    },
-  })
-}
-
-// Get all reviews with filtering
-export const useReviews = (params?: {
-  page?: number
-  limit?: number
-  sort?: string
-  target?: string
-  reviewer?: string
-  rating?: number
-  status?: string
-}) => {
-  return useQuery({
-    queryKey: ['reviews', 'all', params],
+    queryKey: ['reviews', params],
     queryFn: () => reviewService.getReviews(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
-  })
+  });
 }
 
-// Get a single review
-export const useReview = (reviewId: string) => {
+// Hook for getting reviews about the current user (for interns)
+export function useReviewsAboutMe() {
   return useQuery({
-    queryKey: ['reviews', 'single', reviewId],
-    queryFn: () => reviewService.getReview(reviewId),
-    enabled: !!reviewId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
+    queryKey: ['reviewsAboutMe'],
+    queryFn: () => reviewService.getReviewsAboutMe(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
 }
 
-// Create a new review
-export const useCreateReview = () => {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
+// Hook for getting reviews by the current user (reviews they wrote)
+export function useMyReviews() {
+  return useQuery({
+    queryKey: ['myReviews'],
+    queryFn: () => reviewService.getMyReviews(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+}
 
+// Hook for getting reviews for a specific target user
+export function useReviewsForTarget(targetId: string, type: 'all' | 'company' | 'intern' = 'all') {
+  return useQuery({
+    queryKey: ['reviewsForTarget', targetId, type],
+    queryFn: () => reviewService.getReviewsForTarget(targetId, type),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// Hook for creating a review
+export function useCreateReview() {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: (data: CreateReviewRequest) => reviewService.createReview(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reviews'] })
-      toast({
-        title: "Review created",
-        description: "Your review has been created successfully.",
-      })
+      queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['reviewsAboutMe'] });
+      queryClient.invalidateQueries({ queryKey: ['myReviews'] });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to create review",
-        variant: "destructive",
-      })
-    },
-  })
+  });
 }
 
-// Update a review
-export const useUpdateReview = () => {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
-
+// Hook for updating a review
+export function useUpdateReview() {
+  const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: ({ reviewId, data }: { reviewId: string; data: UpdateReviewRequest }) =>
+    mutationFn: ({ reviewId, data }: { reviewId: string; data: UpdateReviewRequest }) => 
       reviewService.updateReview(reviewId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reviews'] })
-      toast({
-        title: "Review updated",
-        description: "Your review has been updated successfully.",
-      })
+      queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['reviewsAboutMe'] });
+      queryClient.invalidateQueries({ queryKey: ['myReviews'] });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to update review",
-        variant: "destructive",
-      })
-    },
-  })
+  });
 }
 
-// Delete a review
-export const useDeleteReview = () => {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
-
+// Hook for deleting a review
+export function useDeleteReview() {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: (reviewId: string) => reviewService.deleteReview(reviewId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reviews'] })
-      toast({
-        title: "Review deleted",
-        description: "Your review has been deleted successfully.",
-      })
+      queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['reviewsAboutMe'] });
+      queryClient.invalidateQueries({ queryKey: ['myReviews'] });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to delete review",
-        variant: "destructive",
-      })
-    },
-  })
+  });
 }
 
-// Get company's intern reviews
-export const useCompanyInternReviews = () => {
+// Hook for creating a company review (intern reviewing company)
+export function useCreateCompanyReview() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ companyId, data }: { companyId: string; data: { rating: number; feedback: string } }) => 
+      reviewService.createCompanyReview(companyId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['reviewsAboutMe'] });
+      queryClient.invalidateQueries({ queryKey: ['myReviews'] });
+    },
+  });
+}
+
+// Hook for creating an intern review (company reviewing intern)
+export function useCreateInternReview() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ internId, jobId, data }: { internId: string; jobId: string; data: { rating: number; feedback: string } }) => 
+      reviewService.createInternReview(internId, jobId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['reviewsAboutMe'] });
+      queryClient.invalidateQueries({ queryKey: ['myReviews'] });
+    },
+  });
+}
+
+// Hook for getting company's intern reviews
+export function useCompanyInternReviews() {
   return useQuery({
-    queryKey: ['reviews', 'company-intern'],
-    queryFn: reviewService.getCompanyInternReviews,
+    queryKey: ['companyInternReviews'],
+    queryFn: () => reviewService.getCompanyInternReviews(),
     staleTime: 5 * 60 * 1000, // 5 minutes
-  })
+  });
 }

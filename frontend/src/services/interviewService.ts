@@ -13,18 +13,24 @@ export interface Interview {
     role: string;
     avatar?: string;
   };
-  scheduledDate: string;
+  date: string; // Backend field
+  scheduledDate: string; // Frontend field
   duration: number; // in minutes
-  type: 'phone' | 'video' | 'in-person';
+  type: 'phone' | 'video' | 'onsite' | 'other';
   location?: string;
-  meetingLink?: string;
+  link?: string; // Backend field
+  meetingLink?: string; // Frontend field
   status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
-  notes?: string;
+  note?: string; // Backend field
+  notes?: string; // Frontend field
+  confirmed: boolean;
   feedback?: {
     rating: number;
     comments: string;
     strengths: string[];
     improvements: string[];
+    submittedBy?: string;
+    submittedAt?: string;
   };
   outcome?: 'passed' | 'failed' | 'pending';
   createdAt: string;
@@ -35,19 +41,23 @@ export interface CreateInterviewRequest {
   applicationId: string;
   scheduledDate: string;
   duration: number;
-  type: 'phone' | 'video' | 'in-person';
+  type: 'phone' | 'video' | 'onsite' | 'other';
   location?: string;
-  meetingLink?: string;
-  notes?: string;
+  link?: string; // Backend field
+  meetingLink?: string; // Frontend field
+  note?: string; // Backend field
+  notes?: string; // Frontend field
 }
 
 export interface UpdateInterviewRequest {
   scheduledDate?: string;
   duration?: number;
-  type?: 'phone' | 'video' | 'in-person';
+  type?: 'phone' | 'video' | 'onsite' | 'other';
   location?: string;
-  meetingLink?: string;
-  notes?: string;
+  link?: string; // Backend field
+  meetingLink?: string; // Frontend field
+  note?: string; // Backend field
+  notes?: string; // Frontend field
   status?: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
 }
 
@@ -84,13 +94,34 @@ export const interviewService = {
 
   // Create a new interview
   async createInterview(interviewData: CreateInterviewRequest): Promise<InterviewResponse> {
-    const response = await api.post('/interviews', interviewData);
+    // Map frontend fields to backend fields
+    const backendData = {
+      applicationId: interviewData.applicationId,
+      date: interviewData.scheduledDate,
+      scheduledDate: interviewData.scheduledDate,
+      duration: interviewData.duration,
+      type: interviewData.type,
+      location: interviewData.location,
+      link: interviewData.link || interviewData.meetingLink,
+      note: interviewData.note || interviewData.notes,
+      notes: interviewData.notes || interviewData.note,
+    };
+    
+    const response = await api.post('/interviews', backendData);
     return response.data;
   },
 
   // Update an interview
   async updateInterview(interviewId: string, updateData: UpdateInterviewRequest): Promise<InterviewResponse> {
-    const response = await api.put(`/interviews/${interviewId}`, updateData);
+    // Map frontend fields to backend fields
+    const backendData = {
+      ...updateData,
+      date: updateData.scheduledDate,
+      link: updateData.link || updateData.meetingLink,
+      note: updateData.note || updateData.notes,
+    };
+    
+    const response = await api.put(`/interviews/${interviewId}`, backendData);
     return response.data;
   },
 

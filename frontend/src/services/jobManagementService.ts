@@ -11,20 +11,15 @@ export interface CreateJobRequest {
   title: string;
   description: string;
   location: string;
-  type: string;
-  level?: string;
-  salary?: {
-    min: number;
-    max: number;
-    currency: string;
-    period: string;
-  };
-  requirements?: string[];
-  responsibilities?: string[];
-  qualifications?: string[];
-  applicationDeadline?: string;
-  isRemote?: boolean;
-  status?: 'active' | 'draft' | 'closed';
+  type: 'remote' | 'onsite' | 'hybrid';
+  salary: string;
+  duration: string;
+  responsibilities: string;
+  requirements: string;
+  benefits?: string;
+  deadline?: string;
+  startDate?: string;
+  status?: 'draft' | 'published' | 'closed' | 'filled';
 }
 
 export interface UpdateJobRequest extends Partial<CreateJobRequest> {

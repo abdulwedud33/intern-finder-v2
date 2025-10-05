@@ -1,68 +1,53 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { interviewService, CreateInterviewRequest, UpdateInterviewRequest } from '@/services/interviewService';
-import { useToast } from '@/components/ui/use-toast';
 
-// Hook for getting my interviews
+// Hook for getting all interviews for current user (intern or company)
 export function useMyInterviews() {
   return useQuery({
-    queryKey: ['interviews', 'me'],
+    queryKey: ['myInterviews'],
     queryFn: () => interviewService.getMyInterviews(),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
-// Hook for getting company interviews
+// Hook for getting interviews for a specific company
 export function useCompanyInterviews(companyId: string) {
   return useQuery({
-    queryKey: ['interviews', 'company', companyId],
+    queryKey: ['companyInterviews', companyId],
     queryFn: () => interviewService.getCompanyInterviews(companyId),
-    enabled: !!companyId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
-// Hook for getting application interviews
+// Hook for getting interviews for a specific application
 export function useApplicationInterviews(applicationId: string) {
   return useQuery({
-    queryKey: ['interviews', 'application', applicationId],
+    queryKey: ['applicationInterviews', applicationId],
     queryFn: () => interviewService.getApplicationInterviews(applicationId),
-    enabled: !!applicationId,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
-// Hook for getting interview by ID
+// Hook for getting a single interview by ID
 export function useInterview(interviewId: string) {
   return useQuery({
-    queryKey: ['interviews', interviewId],
+    queryKey: ['interview', interviewId],
     queryFn: () => interviewService.getInterview(interviewId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!interviewId,
-    staleTime: 2 * 60 * 1000,
   });
 }
 
 // Hook for creating an interview
 export function useCreateInterview() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
-    mutationFn: (interviewData: CreateInterviewRequest) => 
-      interviewService.createInterview(interviewData),
+    mutationFn: (data: CreateInterviewRequest) => interviewService.createInterview(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interviews'] });
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      toast({
-        title: "Interview scheduled",
-        description: "The interview has been successfully scheduled.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to schedule interview",
-        description: error.response?.data?.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      queryClient.invalidateQueries({ queryKey: ['myInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['companyInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['applicationInterviews'] });
     },
   });
 }
@@ -70,24 +55,15 @@ export function useCreateInterview() {
 // Hook for updating an interview
 export function useUpdateInterview() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
-    mutationFn: ({ interviewId, updateData }: { interviewId: string; updateData: UpdateInterviewRequest }) => 
-      interviewService.updateInterview(interviewId, updateData),
+    mutationFn: ({ interviewId, data }: { interviewId: string; data: UpdateInterviewRequest }) => 
+      interviewService.updateInterview(interviewId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interviews'] });
-      toast({
-        title: "Interview updated",
-        description: "The interview has been successfully updated.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to update interview",
-        description: error.response?.data?.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      queryClient.invalidateQueries({ queryKey: ['myInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['companyInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['applicationInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['interview'] });
     },
   });
 }
@@ -95,50 +71,29 @@ export function useUpdateInterview() {
 // Hook for deleting an interview
 export function useDeleteInterview() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: (interviewId: string) => interviewService.deleteInterview(interviewId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interviews'] });
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      toast({
-        title: "Interview deleted",
-        description: "The interview has been successfully deleted.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to delete interview",
-        description: error.response?.data?.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      queryClient.invalidateQueries({ queryKey: ['myInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['companyInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['applicationInterviews'] });
     },
   });
 }
 
-// Hook for cancelling an interview
+// Hook for canceling an interview
 export function useCancelInterview() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: ({ interviewId, reason }: { interviewId: string; reason?: string }) => 
       interviewService.cancelInterview(interviewId, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interviews'] });
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      toast({
-        title: "Interview cancelled",
-        description: "The interview has been successfully cancelled.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to cancel interview",
-        description: error.response?.data?.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      queryClient.invalidateQueries({ queryKey: ['myInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['companyInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['applicationInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['interview'] });
     },
   });
 }
@@ -146,25 +101,15 @@ export function useCancelInterview() {
 // Hook for rescheduling an interview
 export function useRescheduleInterview() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: ({ interviewId, newDate, reason }: { interviewId: string; newDate: string; reason?: string }) => 
       interviewService.rescheduleInterview(interviewId, newDate, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interviews'] });
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      toast({
-        title: "Interview rescheduled",
-        description: "The interview has been successfully rescheduled.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to reschedule interview",
-        description: error.response?.data?.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      queryClient.invalidateQueries({ queryKey: ['myInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['companyInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['applicationInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['interview'] });
     },
   });
 }
@@ -172,7 +117,6 @@ export function useRescheduleInterview() {
 // Hook for submitting interview feedback
 export function useSubmitInterviewFeedback() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: ({ interviewId, feedback }: { 
@@ -186,19 +130,10 @@ export function useSubmitInterviewFeedback() {
       }
     }) => interviewService.submitFeedback(interviewId, feedback),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interviews'] });
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      toast({
-        title: "Feedback submitted",
-        description: "Your interview feedback has been successfully submitted.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to submit feedback",
-        description: error.response?.data?.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      queryClient.invalidateQueries({ queryKey: ['myInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['companyInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['applicationInterviews'] });
+      queryClient.invalidateQueries({ queryKey: ['interview'] });
     },
   });
 }
@@ -206,8 +141,8 @@ export function useSubmitInterviewFeedback() {
 // Hook for getting interview statistics
 export function useInterviewStats() {
   return useQuery({
-    queryKey: ['interviews', 'stats'],
+    queryKey: ['interviewStats'],
     queryFn: () => interviewService.getInterviewStats(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }

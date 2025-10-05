@@ -62,11 +62,7 @@ const companySchema = new mongoose.Schema({
     twitter: String,
     facebook: String,
     instagram: String,
-    youtube: String,
-    github: String,
-    glassdoor: String,
-    crunchbase: String,
-    angellist: String
+    github: String
   },
   
   // Company Culture
@@ -82,9 +78,6 @@ const companySchema = new mongoose.Schema({
   
   // Media
   logo: String,
-  coverImage: String,
-  gallery: [String],
-  video: String,
   
   // Verification & Status
   isVerified: {
@@ -117,7 +110,11 @@ const companySchema = new mongoose.Schema({
   emailVerificationToken: String,
   emailVerificationExpire: Date,
   resetPasswordToken: String,
-  resetPasswordExpire: Date
+  resetPasswordExpire: Date,
+  isProfileComplete: {
+    type: Boolean,
+    default: false
+  }
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import Link from "next/link"
-import { Loader2 } from "lucide-react"
+import { Loader2, ChevronRight } from "lucide-react"
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -212,21 +212,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
-      {/* Left - Form */}
-      <div className="flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-            <p className="text-gray-600">Login to your account</p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 via-white to-blue-50 p-4 sm:p-6 lg:p-8">
+      {/* Form Container */}
+      <div className="w-full max-w-md animate-in fade-in-50 slide-in-from-bottom-4 duration-700">
+        {/* Header Section */}
+        <div className="text-center mb-8 sm:mb-10">
+          
+          <h1 className="text-xl sm:text-4xl lg:text-5xl font-bold bg-teal-500 bg-clip-text text-transparent mb-2 sm:mb-3">
+            Welcome Back
+          </h1>
+          <p className="text-gray-600 text-base sm:text-lg lg:text-xl">
+            Login to your account
+          </p>
+                </div>
 
-          <Card>
-            <CardContent className="p-6">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Form Card */}
+        <Card className="shadow-2xl border-0 rounded-2xl sm:rounded-3xl bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-4 sm:p-6 lg:p-7">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6">
 
+              {/* Email Input */}
                 <div>
-                  <Label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2 sm:mb-3">
                     Email Address
                   </Label>
                   <Input
@@ -235,12 +242,14 @@ export default function LoginPage() {
                     placeholder="your.email@example.com"
                     {...register("email")}
                     disabled={isLoading}
+                  className="w-full h-9 sm:h-10 text-base sm:text-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg sm:rounded-xl transition-all duration-200 shadow-sm hover:shadow-md focus:shadow-lg"
                   />
-                  {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
+                {errors.email && <p className="text-sm text-red-500 mt-1 sm:mt-2">{errors.email.message}</p>}
                 </div>
 
+              {/* Password Input */}
                 <div>
-                  <Label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2 sm:mb-3">
                     Password
                   </Label>
                   <Input
@@ -249,57 +258,68 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     {...register("password")}
                     disabled={isLoading}
+                  className="w-full h-9 sm:h-10 text-base sm:text-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg sm:rounded-xl transition-all duration-200 shadow-sm hover:shadow-md focus:shadow-lg"
                   />
-                  {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password.message}</p>}
+                {errors.password && <p className="text-sm text-red-500 mt-1 sm:mt-2">{errors.password.message}</p>}
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
+              {/* Remember Me & Forgot Password */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+                <div className="flex items-center space-x-2 sm:space-x-3">
                     <Checkbox
                       id="rememberMe"
                       checked={watchedRememberMe}
-                      {...register("rememberMe")}
+                    {...register("rememberMe")}
+                    className="w-4 h-4 sm:w-5 sm:h-5 border-gray-300 data-[state=checked]:bg-teal-500 data-[state=checked]:border-teal-500"
                     />
-                    <Label htmlFor="rememberMe" className="text-sm text-gray-600">
+                  <Label htmlFor="rememberMe" className="text-sm sm:text-base text-gray-600 cursor-pointer">
                       Remember me
                     </Label>
                   </div>
-                  <Link href="/forgot-password" className="text-sm text-teal-600 hover:underline">
+                <Link 
+                  href="/forgot-password" 
+                  className="text-sm sm:text-base text-teal-600 hover:text-teal-700 hover:underline transition-colors text-center sm:text-right"
+                >
                     Forgot password?
                   </Link>
                 </div>
 
-                <Button type="submit" size="lg" className="w-full bg-teal-600 hover:bg-teal-700" disabled={isLoading}>
+              {/* Login Button */}
+              <Button 
+                type="submit" 
+                size="lg" 
+                className="w-full bg-teal-500 hover:bg-teal-700 active:bg-teal-800 text-white h-12 sm:h-14 text-base sm:text-lg rounded-lg sm:rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" 
+                disabled={isLoading}
+              >
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Logging in...
+                    <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                    <span className="hidden sm:inline">Logging in...</span>
+                    <span className="sm:hidden">Logging in...</span>
                     </>
                   ) : (
-                    "Login"
+                  <>
+                    <span>Login</span>
+                   <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
+                  </>
                   )}
                 </Button>
               </form>
 
-              <div className="text-center mt-6 pt-6 border-t">
-                <p className="text-gray-600">
+              {/* Footer */}
+              <div className="text-center mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
+                <p className="text-sm sm:text-base text-gray-600">
                   Don&apos;t have an account?{" "}
-                  <Link href="/register" className="text-teal-600 hover:underline font-medium">
+                  <Link 
+                    href="/register" 
+                    className="text-teal-600 hover:text-teal-700 hover:underline font-semibold transition-colors"
+                  >
                     Register here
                   </Link>
                 </p>
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
-
-      {/* Right - Quote */}
-      <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-teal-600 to-blue-700 text-white p-10">
-        <div className="text-center space-y-4 max-w-md">
-          <h2 className="text-2xl font-semibold leading-tight">"Creativity is intelligence having fun."</h2>
-          <p className="text-sm text-white/80">— Albert Einstein</p>
-        </div>
       </div>
     </div>
   )
