@@ -83,6 +83,13 @@ export default function LoginPage() {
       // Get user type from response
       const userType = responseData.userType || responseData.user?.role
 
+      // Update AuthContext with the logged-in user
+      // This will trigger a re-render of all components using useAuth
+      if (responseData.user) {
+        // Force AuthContext to re-check authentication
+        window.dispatchEvent(new Event('authStateChanged'))
+      }
+
       toast.success("Login Successful! 🎉", {
         description: `Welcome back! You have successfully logged in as ${userType}.`,
         duration: 3000,

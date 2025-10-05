@@ -1074,17 +1074,12 @@ export default function RegisterPage() {
                         name="location"
                         control={control}
                         render={({ field }) => (
-                          <Select onValueChange={field.onChange} value={field.value}>
-                                <SelectTrigger className="mt-1 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg">
-                              <SelectValue placeholder="Select location" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="new-york">New York</SelectItem>
-                              <SelectItem value="san-francisco">San Francisco</SelectItem>
-                              <SelectItem value="london">London</SelectItem>
-                              <SelectItem value="remote">Remote</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <Input
+                            {...field}
+                            id="location"
+                            placeholder="Enter your location (e.g., New York, NY or Remote)"
+                            className="mt-1 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"
+                          />
                         )}
                       />
                       {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location.message as string}</p>}
@@ -2030,17 +2025,12 @@ export default function RegisterPage() {
                         name="location"
                         control={control}
                         render={({ field }) => (
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select location" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="new-york">New York</SelectItem>
-                              <SelectItem value="san-francisco">San Francisco</SelectItem>
-                              <SelectItem value="london">London</SelectItem>
-                              <SelectItem value="remote">Remote</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <Input
+                            {...field}
+                            id="location"
+                            placeholder="Enter company location (e.g., New York, NY or Remote)"
+                            className="mt-1 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"
+                          />
                         )}
                       />
                       {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location.message as string}</p>}
@@ -2192,7 +2182,7 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                      <Label>Social Media Links</Label>
+                      <Label className="text-sm mb-1 font-medium text-gray-700">Social Media Links</Label>
                       <div className="space-y-3">
                         <div>
                           <Label htmlFor="socialMedia.linkedin">LinkedIn</Label>
@@ -2649,7 +2639,7 @@ export default function RegisterPage() {
                     type="button"
                     onClick={(e) => handleNextStep(e)}
                     disabled={isNavigating}
-                    className="bg-teal-400 hover:from-teal-600 hover:to-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="bg-teal-400 hover:bg-teal-600 active:bg-teal-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();

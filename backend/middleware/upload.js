@@ -1,10 +1,17 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = process.env.FILE_UPLOAD_PATH || './public/uploads';
+    
+    // Ensure the directory exists
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
@@ -39,11 +46,18 @@ const uploadSingle = (fieldName) => {
     const uploadSingleFile = upload.single(fieldName);
     uploadSingleFile(req, res, (err) => {
       if (err) {
+        console.error('Upload error:', err);
         return res.status(400).json({
           success: false,
           error: err.message
         });
       }
+      
+      // Log successful upload
+      if (req.file) {
+        console.log(`File uploaded successfully: ${req.file.filename} to ${req.file.path}`);
+      }
+      
       next();
     });
   };

@@ -80,6 +80,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [pathname, router, loading]);
 
+  // Listen for auth state changes from login page
+  useEffect(() => {
+    const handleAuthStateChange = async () => {
+      try {
+        const userData = await getCurrentUser();
+        if (isMounted.current) {
+          setUser(userData);
+        }
+      } catch (error) {
+        if (isMounted.current) {
+          setUser(null);
+        }
+      }
+    };
+
+    window.addEventListener('authStateChanged', handleAuthStateChange);
+    
+    return () => {
+      window.removeEventListener('authStateChanged', handleAuthStateChange);
+    };
+  }, []);
+
   const login = async (email: string, password: string) => {
     try {
       // Default to intern; pages perform their own login today, so this is fallback
