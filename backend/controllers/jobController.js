@@ -534,43 +534,55 @@ exports.getJobStats = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Get job statistics
-  const stats = await Job.aggregate([
-    {
-      $match: { company: new mongoose.Types.ObjectId(req.user.company) }
-    },
-    {
-      $group: {
-        _id: '$status',
-        count: { $sum: 1 }
+  // Check if user has a company ID
+  if (!req.user.company) {
+    return next(
+      new ErrorResponse('Company profile not found', 404)
+    );
+  }
+
+  try {
+    // Get job statistics
+    const stats = await Job.aggregate([
+      {
+        $match: { company: new mongoose.Types.ObjectId(req.user.company) }
+      },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
       }
-    }
-  ]);
+    ]);
 
-  // Format the stats
-  const formattedStats = {};
-  stats.forEach(stat => {
-    formattedStats[stat._id] = stat.count;
-  });
+    // Format the stats
+    const formattedStats = {};
+    stats.forEach(stat => {
+      formattedStats[stat._id] = stat.count;
+    });
 
-  // Get total jobs
-  const totalJobs = await Job.countDocuments({ company: req.user.company });
-  
-  // Get total applications for all jobs
-  const jobs = await Job.find({ company: req.user.company }).select('_id');
-  const jobIds = jobs.map(job => job._id);
-  const totalApplications = await Application.countDocuments({ 
-    job: { $in: jobIds } 
-  });
+    // Get total jobs
+    const totalJobs = await Job.countDocuments({ company: req.user.company });
+    
+    // Get total applications for all jobs
+    const jobs = await Job.find({ company: req.user.company }).select('_id');
+    const jobIds = jobs.map(job => job._id);
+    const totalApplications = await Application.countDocuments({ 
+      job: { $in: jobIds } 
+    });
 
-  res.status(200).json({
-    success: true,
-    data: {
-      total: totalJobs,
-      stats: formattedStats,
-      totalApplications
-    }
-  });
+    res.status(200).json({
+      success: true,
+      data: {
+        total: totalJobs,
+        stats: formattedStats,
+        totalApplications
+      }
+    });
+  } catch (error) {
+    console.error('Error in getJobStats:', error);
+    return next(new ErrorResponse('Failed to fetch job statistics', 500));
+  }
 });
 
 /**

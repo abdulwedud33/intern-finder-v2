@@ -47,6 +47,16 @@ exports.protect = asyncHandler(async (req, res, next) => {
     // Attach user to request object
     req.user = user;
     
+    // Debug logging for company users
+    if (user.role === 'company') {
+      console.log('Company user authenticated:', {
+        id: user._id,
+        name: user.name,
+        role: user.role,
+        company: user.company
+      });
+    }
+    
     // Update last active timestamp (if field exists)
     if (user.lastActive !== undefined) {
       user.lastActive = Date.now();
