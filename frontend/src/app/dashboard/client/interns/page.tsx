@@ -48,7 +48,20 @@ export default function CompanyInternsPage() {
   const terminateMutation = useTerminateIntern()
 
   const interns = internsData?.data || []
-  const stats = statsData?.data
+  const stats = statsData?.data || {
+    total: 0,
+    active: 0,
+    inactive: 0,
+    terminated: 0,
+    completed: 0,
+    averageRating: 0,
+    departments: [],
+    monthlyTrend: []
+  }
+  
+  // Debug logging to help identify API response structure
+  console.log('CompanyInternsPage - statsData:', statsData)
+  console.log('CompanyInternsPage - stats:', stats)
 
   // Filter and sort interns locally for better UX
   const filteredInterns = useMemo(() => {

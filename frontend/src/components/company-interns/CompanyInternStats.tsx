@@ -100,7 +100,7 @@ export function CompanyInternStatsComponent({ stats, isLoading }: CompanyInternS
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg Rating</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.averageRating.toFixed(1)}</p>
+                <p className="text-2xl font-bold text-yellow-600">{(stats.averageRating || 0).toFixed(1)}</p>
               </div>
               <Star className="h-8 w-8 text-yellow-600" />
             </div>
@@ -118,8 +118,8 @@ export function CompanyInternStatsComponent({ stats, isLoading }: CompanyInternS
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {stats.departments.map((dept, index) => {
-              const percentage = (dept.count / stats.total) * 100
+            {(stats.departments || []).map((dept, index) => {
+              const percentage = stats.total > 0 ? (dept.count / stats.total) * 100 : 0
               return (
                 <div key={index} className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -144,20 +144,25 @@ export function CompanyInternStatsComponent({ stats, isLoading }: CompanyInternS
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {stats.monthlyTrend.map((month, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <span className="text-sm font-medium">{month.month}</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-20 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full" 
-                      style={{ width: `${(month.count / Math.max(...stats.monthlyTrend.map(m => m.count))) * 100}%` }}
-                    />
+            {(stats.monthlyTrend || []).map((month, index) => {
+              const maxCount = stats.monthlyTrend && stats.monthlyTrend.length > 0 
+                ? Math.max(...stats.monthlyTrend.map(m => m.count)) 
+                : 1
+              return (
+                <div key={index} className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{month.month}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{ width: `${(month.count / maxCount) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-600 w-8">{month.count}</span>
                   </div>
-                  <span className="text-sm text-gray-600 w-8">{month.count}</span>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </CardContent>
       </Card>
