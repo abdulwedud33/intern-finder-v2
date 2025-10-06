@@ -34,7 +34,7 @@ const link2= [
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="md:hidden bg-teal-500 text-white p-2 rounded-lg shadow-lg hover:bg-teal-600 transition-colors border-2 border-white"
+        className="md:hidden bg-teal-500 h-10 w-10 text-white p-2 rounded-lg shadow-lg hover:bg-teal-600 transition-colors border-2 border-white"
         aria-label="Open Sidebar"
       >
         <ChevronRight className="h-5 w-5" />

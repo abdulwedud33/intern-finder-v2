@@ -2063,7 +2063,7 @@ export default function RegisterPage() {
 
                     <div>
                       <Label htmlFor="headquarters">Company Headquarters</Label>
-                      <Input
+                        <Input
                         placeholder="Enter your company's headquarters address"
                         {...register("headquarters")}
                       />
