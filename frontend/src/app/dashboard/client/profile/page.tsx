@@ -12,7 +12,6 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { 
   Globe, 
-  MapPin, 
   Users, 
   Calendar, 
   Settings, 
@@ -24,8 +23,6 @@ import {
   Phone,
   Mail,
   Link as LinkIcon,
-  Plus,
-  Trash2,
   CheckCircle,
   TrendingUp,
   Eye,
@@ -33,7 +30,9 @@ import {
   Star,
   Award,
   Target,
-  Activity
+  Clock,
+  UserCheck,
+  DollarSign
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useUploadCompanyLogo } from "@/hooks/useFileUpload"
@@ -43,6 +42,9 @@ import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getCurrentUser } from "@/services/authService"
+import { getCompanyJobs } from "@/services/jobService"
+import { getCompanyApplications } from "@/services/applicationService"
+import { getCompanyInterviews } from "@/services/interviewService"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { CompanyProfile } from "@/types/auth"
@@ -57,13 +59,6 @@ interface ProfileFormData {
   phone: string
   founded: string
   employees: string
-  techStack: string[]
-  officeLocations: Array<{
-    address: string
-    city: string
-    country: string
-    isHeadquarters: boolean
-  }>
   socialMedia: {
     linkedin: string
     twitter: string
@@ -89,19 +84,33 @@ export default function ClientProfilePage() {
   const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const [newTech, setNewTech] = useState("")
-  const [newOffice, setNewOffice] = useState({
-    address: "",
-    city: "",
-    country: "",
-    isHeadquarters: false
-  })
 
   // Fetch current user data
   const { data: userData, isLoading, error } = useQuery({
     queryKey: ['currentUser'],
     queryFn: getCurrentUser,
     enabled: !!user,
+  })
+
+  // Fetch company jobs data
+  const { data: jobsData, isLoading: jobsLoading } = useQuery({
+    queryKey: ['companyJobs'],
+    queryFn: () => getCompanyJobs({ limit: 50 }),
+    enabled: !!user && user.role === 'company',
+  })
+
+  // Fetch company applications data
+  const { data: applicationsData, isLoading: applicationsLoading } = useQuery({
+    queryKey: ['companyApplications'],
+    queryFn: () => getCompanyApplications({ limit: 50 }),
+    enabled: !!user && user.role === 'company',
+  })
+
+  // Fetch company interviews data
+  const { data: interviewsData, isLoading: interviewsLoading } = useQuery({
+    queryKey: ['companyInterviews'],
+    queryFn: () => getCompanyInterviews({ limit: 50 }),
+    enabled: !!user && user.role === 'company',
   })
   
   const uploadLogoMutation = useUploadCompanyLogo()
@@ -120,8 +129,6 @@ export default function ClientProfilePage() {
     phone: "",
     founded: "",
     employees: "",
-    techStack: [],
-    officeLocations: [],
     socialMedia: {
       linkedin: "",
       twitter: "",
@@ -149,11 +156,6 @@ export default function ClientProfilePage() {
         phone: userData.phone || "",
         founded: userData.founded?.toString() || "",
         employees: userData.employees || "",
-        techStack: userData.techStack || [],
-        officeLocations: (userData.officeLocations || []).map(loc => ({
-          ...loc,
-          isHeadquarters: loc.isHeadquarters || false
-        })),
         socialMedia: {
           linkedin: userData.socialMedia?.linkedin || "",
           twitter: userData.socialMedia?.twitter || "",
@@ -199,39 +201,6 @@ export default function ClientProfilePage() {
     }))
   }
 
-  const handleAddTech = () => {
-    if (newTech.trim() && !formData.techStack.includes(newTech.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        techStack: [...prev.techStack, newTech.trim()]
-      }))
-      setNewTech("")
-    }
-  }
-
-  const handleRemoveTech = (tech: string) => {
-    setFormData(prev => ({
-      ...prev,
-      techStack: prev.techStack.filter(t => t !== tech)
-    }))
-  }
-
-  const handleAddOffice = () => {
-    if (newOffice.address && newOffice.city && newOffice.country) {
-      setFormData(prev => ({
-        ...prev,
-        officeLocations: [...prev.officeLocations, { ...newOffice }]
-      }))
-      setNewOffice({ address: "", city: "", country: "", isHeadquarters: false })
-    }
-  }
-
-  const handleRemoveOffice = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      officeLocations: prev.officeLocations.filter((_, i) => i !== index)
-    }))
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -268,8 +237,6 @@ export default function ClientProfilePage() {
       profile.phone,
       profile.founded,
       profile.logo,
-      profile.techStack?.length > 0,
-      profile.officeLocations?.length > 0,
       profile.socialMedia?.linkedin || profile.socialMedia?.twitter
     ]
     
@@ -277,15 +244,19 @@ export default function ClientProfilePage() {
     return Math.round((completedFields / fields.length) * 100)
   }
 
-  // Mock company stats (replace with real data)
+  // Calculate real company stats from backend data
   const companyStats = {
-    totalJobs: 12,
-    activeJobs: 8,
-    totalApplications: 156,
-    interviewsScheduled: 23,
-    hiredInterns: 5,
-    profileViews: 89,
-    avgRating: 4.7
+    totalJobs: jobsData?.jobs?.length || 0,
+    activeJobs: jobsData?.jobs?.filter((job: any) => job.status === 'active').length || 0,
+    totalApplications: applicationsData?.applications?.length || 0,
+    interviewsScheduled: interviewsData?.interviews?.filter((interview: any) => 
+      interview.status === 'scheduled' || interview.status === 'pending'
+    ).length || 0,
+    hiredInterns: applicationsData?.applications?.filter((app: any) => 
+      app.status === 'accepted'
+    ).length || 0,
+    profileViews: 89, // This would need a separate API endpoint
+    avgRating: 4.7 // This would need a separate API endpoint
   }
 
   if (isLoading) {
@@ -632,129 +603,155 @@ export default function ClientProfilePage() {
               </CardContent>
             </Card>
 
-            {/* Tech Stack */}
+            {/* Recent Jobs & Applications */}
             <Card>
               <CardHeader>
-                <CardTitle>Tech Stack</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5" />
+                  Recent Jobs & Applications
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                {isEditing ? (
-                  <div className="space-y-4">
-                    <div className="flex gap-2">
-                      <Input
-                        value={newTech}
-                        onChange={(e) => setNewTech(e.target.value)}
-                        placeholder="Add technology"
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTech())}
-                      />
-                      <Button onClick={handleAddTech} disabled={!newTech.trim()}>
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.techStack.map((tech, index) => (
-                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                          {tech}
-                          <button
-                            onClick={() => handleRemoveTech(tech)}
-                            className="ml-1 hover:text-red-500"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {profile?.techStack?.length ? (
-                      profile.techStack.map((tech, index) => (
-                        <Badge key={index} variant="secondary">{tech}</Badge>
-                      ))
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Recent Jobs */}
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Recent Job Postings</h4>
+                    {jobsLoading ? (
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    ) : jobsData?.jobs?.length > 0 ? (
+                      <div className="space-y-3">
+                        {jobsData.jobs.slice(0, 3).map((job: any, index: number) => (
+                          <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-sm">{job.title}</p>
+                                <p className="text-xs text-gray-500">
+                                  {job.applications?.length || 0} applications
+                                </p>
+                              </div>
+                              <Badge 
+                                variant={job.status === 'active' ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {job.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                        <Button variant="ghost" size="sm" className="w-full text-xs">
+                          View All Jobs
+                        </Button>
+                      </div>
                     ) : (
-                      <p className="text-gray-500 italic">No technologies listed</p>
+                      <p className="text-gray-500 text-sm italic">No job postings yet</p>
                     )}
                   </div>
+
+                  {/* Recent Applications */}
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Recent Applications</h4>
+                    {applicationsLoading ? (
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    ) : applicationsData?.applications?.length > 0 ? (
+                      <div className="space-y-3">
+                        {applicationsData.applications.slice(0, 3).map((app: any, index: number) => (
+                          <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-sm">
+                                  {app.internId?.name || 'Unknown Intern'}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Applied to {app.jobId?.title || 'Unknown Job'}
+                                </p>
+                              </div>
+                              <Badge 
+                                variant={
+                                  app.status === 'accepted' ? 'default' : 
+                                  app.status === 'rejected' ? 'destructive' : 
+                                  'secondary'
+                                }
+                                className="text-xs"
+                              >
+                                {app.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                        <Button variant="ghost" size="sm" className="w-full text-xs">
+                          View All Applications
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm italic">No applications yet</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Interview Schedule */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Upcoming Interviews
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {interviewsLoading ? (
+                  <div className="space-y-3">
+                    <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                ) : interviewsData?.interviews?.length > 0 ? (
+                  <div className="space-y-3">
+                    {interviewsData.interviews
+                      .filter((interview: any) => 
+                        interview.status === 'scheduled' || interview.status === 'pending'
+                      )
+                      .slice(0, 3)
+                      .map((interview: any, index: number) => (
+                      <div key={index} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">
+                              {interview.internId?.name || 'Unknown Intern'}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {interview.jobId?.title || 'Unknown Job'}
+                            </p>
+                            <p className="text-xs text-blue-600 font-medium">
+                              {interview.scheduledDate ? 
+                                new Date(interview.scheduledDate).toLocaleDateString() : 
+                                'Date TBD'
+                              }
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {interview.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                    <Button variant="ghost" size="sm" className="w-full text-xs">
+                      View All Interviews
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm italic">No scheduled interviews</p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Office Locations */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Office Locations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isEditing ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input
-                        value={newOffice.address}
-                        onChange={(e) => setNewOffice(prev => ({ ...prev, address: e.target.value }))}
-                        placeholder="Address"
-                      />
-                      <Input
-                        value={newOffice.city}
-                        onChange={(e) => setNewOffice(prev => ({ ...prev, city: e.target.value }))}
-                        placeholder="City"
-                      />
-                      <Input
-                        value={newOffice.country}
-                        onChange={(e) => setNewOffice(prev => ({ ...prev, country: e.target.value }))}
-                        placeholder="Country"
-                      />
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={newOffice.isHeadquarters}
-                          onCheckedChange={(checked) => setNewOffice(prev => ({ ...prev, isHeadquarters: checked }))}
-                        />
-                        <Label>Headquarters</Label>
-                      </div>
-                    </div>
-                    <Button onClick={handleAddOffice} disabled={!newOffice.address || !newOffice.city || !newOffice.country}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Location
-                    </Button>
-                    <div className="space-y-2">
-                      {formData.officeLocations.map((location, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm">
-                              {location.address}, {location.city}, {location.country}
-                              {location.isHeadquarters && " (HQ)"}
-                            </span>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveOffice(index)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {profile?.officeLocations?.length ? (
-                      profile.officeLocations.map((location, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm">
-                            {location.address}, {location.city}, {location.country}
-                            {location.isHeadquarters && " (HQ)"}
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-500 italic">No office locations listed</p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
 
           {/* Right Column - Contact & Social */}
@@ -788,10 +785,14 @@ export default function ClientProfilePage() {
                     <Star className="h-4 w-4 text-yellow-500 fill-current" />
                   </div>
                 </div>
-                <div className="text-center">
+                <div className="space-y-2">
                   <Button variant="outline" size="sm" className="w-full">
-                    <Activity className="h-4 w-4 mr-2" />
-                    View Analytics
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    View All Hires
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Manage Interviews
                   </Button>
                 </div>
               </CardContent>
@@ -971,61 +972,6 @@ export default function ClientProfilePage() {
           </div>
         </div>
 
-        {/* Recent Activity Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Recent Activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Mock recent activities */}
-              <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">New job posting published</p>
-                  <p className="text-xs text-gray-500">Frontend Developer Intern - 2 hours ago</p>
-                </div>
-                <Badge variant="outline" className="text-xs">Active</Badge>
-              </div>
-              
-              <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">15 new applications received</p>
-                  <p className="text-xs text-gray-500">Software Engineer Intern - 5 hours ago</p>
-                </div>
-                <Badge variant="secondary" className="text-xs">15</Badge>
-              </div>
-              
-              <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Interview scheduled</p>
-                  <p className="text-xs text-gray-500">With John Doe - Tomorrow at 2:00 PM</p>
-                </div>
-                <Badge variant="outline" className="text-xs">Scheduled</Badge>
-              </div>
-              
-              <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Profile viewed by 8 interns</p>
-                  <p className="text-xs text-gray-500">Today</p>
-                </div>
-                <Badge variant="outline" className="text-xs">8 views</Badge>
-              </div>
-              
-              <div className="text-center pt-4">
-                <Button variant="ghost" size="sm">
-                  View All Activity
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )
