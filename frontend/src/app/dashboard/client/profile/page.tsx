@@ -922,26 +922,26 @@ export default function ClientProfilePage() {
         {/* Profile Stats - Bottom Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Profile Completion */}
-          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-teal-600">Profile Completion</p>
-                  <p className="text-2xl font-bold text-teal-600">
+                  <p className="text-sm font-medium text-gray-600">Profile Completion</p>
+                  <p className="text-2xl font-bold text-gray-900">
                     {calculateProfileCompletion(profile)}%
                   </p>
                 </div>
                 <div className="relative w-12 h-12">
                   <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
                     <path
-                      className="text-teal-200"
+                      className="text-gray-200"
                       stroke="currentColor"
                       strokeWidth="3"
                       fill="none"
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
                     <path
-                      className="text-teal-600"
+                      className="text-gray-600"
                       stroke="currentColor"
                       strokeWidth="3"
                       fill="none"
@@ -949,59 +949,59 @@ export default function ClientProfilePage() {
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
                   </svg>
-                  <CheckCircle className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-5 h-5 text-teal-600" />
+                  <CheckCircle className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-5 h-5 text-gray-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Active Jobs */}
-          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-teal-600">Active Jobs</p>
+                  <p className="text-sm font-medium text-gray-600">Active Jobs</p>
                   {statsLoading ? (
-                    <div className="h-8 w-12 bg-teal-200 rounded animate-pulse"></div>
+                    <div className="h-8 w-12 bg-gray-200 rounded animate-pulse"></div>
                   ) : (
-                    <p className="text-2xl font-bold text-teal-600">{companyStats.activeJobs}</p>
+                    <p className="text-2xl font-bold text-gray-900">{companyStats.activeJobs}</p>
                   )}
                 </div>
-                <Briefcase className="w-8 h-8 text-teal-600" />
+                <Briefcase className="w-8 h-8 text-gray-600" />
               </div>
             </CardContent>
           </Card>
 
           {/* Total Applications */}
-          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-teal-600">Total Applications</p>
+                  <p className="text-sm font-medium text-gray-600">Total Applications</p>
                   {statsLoading ? (
-                    <div className="h-8 w-12 bg-teal-200 rounded animate-pulse"></div>
+                    <div className="h-8 w-12 bg-gray-200 rounded animate-pulse"></div>
                   ) : (
-                    <p className="text-2xl font-bold text-teal-600">{companyStats.totalApplications}</p>
+                    <p className="text-2xl font-bold text-gray-900">{companyStats.totalApplications}</p>
                   )}
                 </div>
-                <TrendingUp className="w-8 h-8 text-teal-600" />
+                <TrendingUp className="w-8 h-8 text-gray-600" />
               </div>
             </CardContent>
           </Card>
 
           {/* Profile Views */}
-          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-teal-600">Profile Views</p>
+                  <p className="text-sm font-medium text-gray-600">Profile Views</p>
                   {statsLoading ? (
-                    <div className="h-8 w-12 bg-teal-200 rounded animate-pulse"></div>
+                    <div className="h-8 w-12 bg-gray-200 rounded animate-pulse"></div>
                   ) : (
-                    <p className="text-2xl font-bold text-teal-600">{companyStats.profileViews}</p>
+                    <p className="text-2xl font-bold text-gray-900">{companyStats.profileViews}</p>
                   )}
                 </div>
-                <Eye className="w-8 h-8 text-teal-600" />
+                <Eye className="w-8 h-8 text-gray-600" />
               </div>
             </CardContent>
           </Card>
