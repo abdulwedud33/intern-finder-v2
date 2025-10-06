@@ -25,7 +25,15 @@ import {
   Mail,
   Link as LinkIcon,
   Plus,
-  Trash2
+  Trash2,
+  CheckCircle,
+  TrendingUp,
+  Eye,
+  Briefcase,
+  Star,
+  Award,
+  Target,
+  Activity
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useUploadCompanyLogo } from "@/hooks/useFileUpload"
@@ -246,6 +254,40 @@ export default function ClientProfilePage() {
     }
   }
 
+  // Calculate profile completion percentage
+  const calculateProfileCompletion = (profile: any) => {
+    if (!profile) return 0
+    
+    const fields = [
+      profile.name,
+      profile.description,
+      profile.website,
+      profile.industry,
+      profile.companySize,
+      profile.headquarters,
+      profile.phone,
+      profile.founded,
+      profile.logo,
+      profile.techStack?.length > 0,
+      profile.officeLocations?.length > 0,
+      profile.socialMedia?.linkedin || profile.socialMedia?.twitter
+    ]
+    
+    const completedFields = fields.filter(Boolean).length
+    return Math.round((completedFields / fields.length) * 100)
+  }
+
+  // Mock company stats (replace with real data)
+  const companyStats = {
+    totalJobs: 12,
+    activeJobs: 8,
+    totalApplications: 156,
+    interviewsScheduled: 23,
+    hiredInterns: 5,
+    profileViews: 89,
+    avgRating: 4.7
+  }
+
   if (isLoading) {
     return <LoadingCard />
   }
@@ -318,23 +360,31 @@ export default function ClientProfilePage() {
 
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    {isEditing ? (
-                      <Input
-                        value={formData.name}
-                        onChange={(e) => handleInputChange("name", e.target.value)}
-                        className="text-3xl font-bold border-none p-0 h-auto"
-                        placeholder="Company name"
-                      />
-                    ) : (
-                      profile?.name || "Company Name"
-                    )}
-                  </h1>
-                  {profile?.industry && (
-                    <Badge variant="secondary" className="text-sm">
-                      {profile.industry}
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-3xl font-bold text-gray-900">
+                      {isEditing ? (
+                        <Input
+                          value={formData.name}
+                          onChange={(e) => handleInputChange("name", e.target.value)}
+                          className="text-3xl font-bold border-none p-0 h-auto"
+                          placeholder="Company name"
+                        />
+                      ) : (
+                        profile?.name || "Company Name"
+                      )}
+                    </h1>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Verified
+                      </Badge>
+                      {profile?.industry && (
+                        <Badge variant="secondary" className="text-sm">
+                          {profile.industry}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {profile?.website && (
@@ -401,6 +451,82 @@ export default function ClientProfilePage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Profile Completion & Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Profile Completion */}
+          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-teal-700">Profile Completion</p>
+                  <p className="text-2xl font-bold text-teal-900">
+                    {calculateProfileCompletion(profile)}%
+                  </p>
+                </div>
+                <div className="relative w-12 h-12">
+                  <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
+                    <path
+                      className="text-teal-200"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className="text-teal-600"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      fill="none"
+                      strokeDasharray={`${calculateProfileCompletion(profile)}, 100`}
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                  <CheckCircle className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-5 h-5 text-teal-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Active Jobs */}
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-700">Active Jobs</p>
+                  <p className="text-2xl font-bold text-blue-900">{companyStats.activeJobs}</p>
+                </div>
+                <Briefcase className="w-8 h-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Applications */}
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-700">Total Applications</p>
+                  <p className="text-2xl font-bold text-green-900">{companyStats.totalApplications}</p>
+                </div>
+                <TrendingUp className="w-8 h-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Profile Views */}
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-700">Profile Views</p>
+                  <p className="text-2xl font-bold text-purple-900">{companyStats.profileViews}</p>
+                </div>
+                <Eye className="w-8 h-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content */}
@@ -633,6 +759,44 @@ export default function ClientProfilePage() {
 
           {/* Right Column - Contact & Social */}
           <div className="space-y-6">
+            {/* Company Insights */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Company Insights
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">{companyStats.hiredInterns}</div>
+                    <div className="text-sm text-gray-600">Hired Interns</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">{companyStats.interviewsScheduled}</div>
+                    <div className="text-sm text-gray-600">Interviews</div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-500" />
+                    <span className="font-medium">Company Rating</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg font-bold">{companyStats.avgRating}</span>
+                    <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Activity className="h-4 w-4 mr-2" />
+                    View Analytics
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Contact Information */}
             <Card>
               <CardHeader>
@@ -806,6 +970,62 @@ export default function ClientProfilePage() {
             </Card>
           </div>
         </div>
+
+        {/* Recent Activity Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Mock recent activities */}
+              <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">New job posting published</p>
+                  <p className="text-xs text-gray-500">Frontend Developer Intern - 2 hours ago</p>
+                </div>
+                <Badge variant="outline" className="text-xs">Active</Badge>
+              </div>
+              
+              <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">15 new applications received</p>
+                  <p className="text-xs text-gray-500">Software Engineer Intern - 5 hours ago</p>
+                </div>
+                <Badge variant="secondary" className="text-xs">15</Badge>
+              </div>
+              
+              <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Interview scheduled</p>
+                  <p className="text-xs text-gray-500">With John Doe - Tomorrow at 2:00 PM</p>
+                </div>
+                <Badge variant="outline" className="text-xs">Scheduled</Badge>
+              </div>
+              
+              <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Profile viewed by 8 interns</p>
+                  <p className="text-xs text-gray-500">Today</p>
+                </div>
+                <Badge variant="outline" className="text-xs">8 views</Badge>
+              </div>
+              
+              <div className="text-center pt-4">
+                <Button variant="ghost" size="sm">
+                  View All Activity
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
