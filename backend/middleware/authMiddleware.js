@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const asyncHandler = require('./asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 const { User } = require('../models/User');
+const Company = require('../models/Company');
 
 // Protect routes - checks for a valid token (Authentication)
 exports.protect = asyncHandler(async (req, res, next) => {
@@ -32,8 +33,13 @@ exports.protect = asyncHandler(async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key');
     
-    // Get user from the token
+    // Get user from the token - check both User and Company models
     let user = await User.findById(decoded.id);
+    
+    if (!user) {
+      // Try to find in Company model for company users
+      user = await Company.findById(decoded.id);
+    }
     
     if (!user) {
       return next(new ErrorResponse('User not found', 404));

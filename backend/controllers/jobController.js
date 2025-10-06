@@ -151,7 +151,7 @@ exports.getJob = asyncHandler(async (req, res, next) => {
  * @access  Private (Company)
  */
 exports.getCompanyJobs = asyncHandler(async (req, res, next) => {
-  const jobs = await Job.find({ company: req.user.company })
+  const jobs = await Job.find({ company: req.user._id })
     .populate('applications', 'status')
     .sort('-createdAt');
 
@@ -176,7 +176,7 @@ exports.getCompanyJobs = asyncHandler(async (req, res, next) => {
 exports.createJob = asyncHandler(async (req, res, next) => {
   try {
     // Add company to req.body (already validated in middleware)
-    req.body.company = req.user.company;
+    req.body.company = req.user._id;
     
     // Set default status if not provided
     if (!req.body.status) {
@@ -201,7 +201,7 @@ exports.createJob = asyncHandler(async (req, res, next) => {
     
     // Add job to company's jobs array
     await Company.findByIdAndUpdate(
-      req.user.company,
+      req.user._id,
       { $push: { jobs: job._id } },
       { new: true, runValidators: true }
     );
@@ -271,7 +271,7 @@ exports.updateJob = asyncHandler(async (req, res, next) => {
     }
 
   // Make sure user is job owner
-  if (job.company.toString() !== req.user.company.toString()) {
+  if (job.company.toString() !== req.user._id.toString()) {
     return next(
       new ErrorResponse(
         `User ${req.user.id} is not authorized to update this job`,
@@ -350,7 +350,7 @@ exports.deleteJob = asyncHandler(async (req, res, next) => {
 
     // Remove job from company's jobs array
     await Company.findByIdAndUpdate(
-      req.user.company,
+      req.user._id,
       { $pull: { jobs: job._id } },
       { new: true, runValidators: true }
     );
@@ -464,7 +464,7 @@ exports.jobPhotoUpload = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure user is job owner or admin
-  if (job.company.toString() !== req.user.company.toString() && req.user.role !== 'admin') {
+  if (job.company.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
     return next(
       new ErrorResponse(
         `User ${req.user.id} is not authorized to update this job`,
@@ -535,18 +535,15 @@ exports.getJobStats = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Check if user has a company ID
-  if (!req.user.company) {
-    return next(
-      new ErrorResponse('Company profile not found', 404)
-    );
-  }
+  // For company users, req.user is the Company document itself
+  // For regular users, we'd need req.user.company, but we don't support that flow
+  const companyId = req.user._id;
 
   try {
     // Get job statistics
     const stats = await Job.aggregate([
       {
-        $match: { company: new mongoose.Types.ObjectId(req.user.company) }
+        $match: { company: new mongoose.Types.ObjectId(companyId) }
       },
       {
         $group: {
@@ -563,10 +560,10 @@ exports.getJobStats = asyncHandler(async (req, res, next) => {
     });
 
     // Get total jobs
-    const totalJobs = await Job.countDocuments({ company: req.user.company });
+    const totalJobs = await Job.countDocuments({ company: companyId });
     
     // Get total applications for all jobs
-    const jobs = await Job.find({ company: req.user.company }).select('_id');
+    const jobs = await Job.find({ company: companyId }).select('_id');
     const jobIds = jobs.map(job => job._id);
     const totalApplications = await Application.countDocuments({ 
       job: { $in: jobIds } 
@@ -601,7 +598,7 @@ exports.closeJob = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure user is job owner or admin
-  if (job.company.toString() !== req.user.company.toString() && req.user.role !== 'admin') {
+  if (job.company.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
     return next(
       new ErrorResponse(
         `User ${req.user.id} is not authorized to close this job`,
