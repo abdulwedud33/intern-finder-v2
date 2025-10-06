@@ -16,6 +16,7 @@ export function useCompanyInterviews(companyId: string) {
     queryKey: ['companyInterviews', companyId],
     queryFn: () => interviewService.getCompanyInterviews(companyId),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!companyId, // Only run query if companyId is available
   });
 }
 

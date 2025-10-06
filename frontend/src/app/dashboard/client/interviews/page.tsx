@@ -39,6 +39,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import { useCompanyApplications } from "@/hooks/useApplications"
+import { useAuth } from "@/contexts/AuthContext"
 
 // Calculate real statistics from interview data
 const calculateInterviewStats = (interviews: any[]) => {
@@ -84,11 +85,19 @@ export default function ClientInterviewsPage() {
   const [editingInterview, setEditingInterview] = useState<any>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   
-  // Get company ID from user context (you'll need to implement this)
-  const companyId = "company-id" // Replace with actual company ID from context
+  // Get company ID from user context
+  const { user } = useAuth()
+  const companyId = user?._id // Company users are stored directly in Company model
   
-  const { data, isLoading, error } = useCompanyInterviews(companyId)
+  const { data, isLoading, error } = useCompanyInterviews(companyId || "")
   const { data: applicationsData } = useCompanyApplications()
+  
+  // Debug logging to help identify issues
+  console.log('ClientInterviewsPage - user:', user)
+  console.log('ClientInterviewsPage - companyId:', companyId)
+  console.log('ClientInterviewsPage - data:', data)
+  console.log('ClientInterviewsPage - isLoading:', isLoading)
+  console.log('ClientInterviewsPage - error:', error)
   const createInterviewMutation = useCreateInterview()
   const updateInterviewMutation = useUpdateInterview()
   const deleteInterviewMutation = useDeleteInterview()

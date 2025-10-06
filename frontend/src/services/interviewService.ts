@@ -76,7 +76,7 @@ export const interviewService = {
 
   // Get interviews for a specific company
   async getCompanyInterviews(companyId: string): Promise<InterviewResponse> {
-    const response = await api.get(`/interviews/companies/${companyId}/interviews`);
+    const response = await api.get('/interviews/company');
     return response.data;
   },
 
