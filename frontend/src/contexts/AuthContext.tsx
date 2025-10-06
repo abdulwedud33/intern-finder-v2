@@ -47,6 +47,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const userData = JSON.parse(storedUser);
             if (isMounted.current) {
+              // Validate user data
+              if (userData.role === 'company' && !userData.company) {
+                console.warn('Company user missing company field:', userData);
+                // Clear invalid data and redirect to login
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                router.push('/login');
+                return;
+              }
+              
               setUser(userData);
               setLoading(false);
               // Redirect only from auth pages when already logged in

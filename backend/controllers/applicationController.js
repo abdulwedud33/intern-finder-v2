@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Application = require('../models/Application');
 const Job = require('../models/Job');
 const User = require('../models/User');
@@ -333,7 +334,7 @@ exports.getMyApplicationStats = asyncHandler(async (req, res, next) => {
   // Get application stats
   const stats = await Application.aggregate([
     {
-      $match: { user: mongoose.Types.ObjectId(req.user.id) }
+      $match: { user: new mongoose.Types.ObjectId(req.user.id) }
     },
     {
       $group: {
