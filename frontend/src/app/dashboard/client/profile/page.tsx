@@ -32,7 +32,8 @@ import {
   Target,
   Clock,
   UserCheck,
-  DollarSign
+  DollarSign,
+  MapPin
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useUploadCompanyLogo } from "@/hooks/useFileUpload"
@@ -42,9 +43,9 @@ import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getCurrentUser } from "@/services/authService"
-import { getCompanyJobs } from "@/services/jobService"
-import { getCompanyApplications } from "@/services/applicationService"
-import { getCompanyInterviews } from "@/services/interviewService"
+import { jobService } from "@/services/jobService"
+import { applicationService } from "@/services/applicationService"
+import { interviewService } from "@/services/interviewService"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { CompanyProfile } from "@/types/auth"
@@ -95,21 +96,21 @@ export default function ClientProfilePage() {
   // Fetch company jobs data
   const { data: jobsData, isLoading: jobsLoading } = useQuery({
     queryKey: ['companyJobs'],
-    queryFn: () => getCompanyJobs({ limit: 50 }),
+    queryFn: () => jobService.getJobsByCompany(user?.id || '', { limit: 50 }),
     enabled: !!user && user.role === 'company',
   })
 
   // Fetch company applications data
   const { data: applicationsData, isLoading: applicationsLoading } = useQuery({
     queryKey: ['companyApplications'],
-    queryFn: () => getCompanyApplications({ limit: 50 }),
+    queryFn: () => applicationService.getCompanyApplications({ limit: 50 }),
     enabled: !!user && user.role === 'company',
   })
 
   // Fetch company interviews data
   const { data: interviewsData, isLoading: interviewsLoading } = useQuery({
     queryKey: ['companyInterviews'],
-    queryFn: () => getCompanyInterviews({ limit: 50 }),
+    queryFn: () => interviewService.getCompanyInterviews(user?.id || ''),
     enabled: !!user && user.role === 'company',
   })
   
@@ -246,15 +247,15 @@ export default function ClientProfilePage() {
 
   // Calculate real company stats from backend data
   const companyStats = {
-    totalJobs: jobsData?.jobs?.length || 0,
-    activeJobs: jobsData?.jobs?.filter((job: any) => job.status === 'active').length || 0,
-    totalApplications: applicationsData?.applications?.length || 0,
-    interviewsScheduled: interviewsData?.interviews?.filter((interview: any) => 
+    totalJobs: jobsData?.data?.length || 0,
+    activeJobs: jobsData?.data?.filter((job: any) => job.status === 'active').length || 0,
+    totalApplications: Array.isArray(applicationsData?.data) ? applicationsData.data.length : 0,
+    interviewsScheduled: Array.isArray(interviewsData?.data) ? interviewsData.data.filter((interview: any) => 
       interview.status === 'scheduled' || interview.status === 'pending'
-    ).length || 0,
-    hiredInterns: applicationsData?.applications?.filter((app: any) => 
+    ).length : 0,
+    hiredInterns: Array.isArray(applicationsData?.data) ? applicationsData.data.filter((app: any) => 
       app.status === 'accepted'
-    ).length || 0,
+    ).length : 0,
     profileViews: 89, // This would need a separate API endpoint
     avgRating: 4.7 // This would need a separate API endpoint
   }
@@ -622,9 +623,9 @@ export default function ClientProfilePage() {
                         <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                         <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                       </div>
-                    ) : jobsData?.jobs?.length > 0 ? (
+                    ) : jobsData?.data && jobsData.data.length > 0 ? (
                       <div className="space-y-3">
-                        {jobsData.jobs.slice(0, 3).map((job: any, index: number) => (
+                        {jobsData.data.slice(0, 3).map((job: any, index: number) => (
                           <div key={index} className="p-3 bg-gray-50 rounded-lg">
                             <div className="flex items-center justify-between">
                               <div>
@@ -660,9 +661,9 @@ export default function ClientProfilePage() {
                         <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                         <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                       </div>
-                    ) : applicationsData?.applications?.length > 0 ? (
+                    ) : Array.isArray(applicationsData?.data) && applicationsData.data.length > 0 ? (
                       <div className="space-y-3">
-                        {applicationsData.applications.slice(0, 3).map((app: any, index: number) => (
+                        {applicationsData.data.slice(0, 3).map((app: any, index: number) => (
                           <div key={index} className="p-3 bg-gray-50 rounded-lg">
                             <div className="flex items-center justify-between">
                               <div>
@@ -712,9 +713,9 @@ export default function ClientProfilePage() {
                     <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
                     <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
                   </div>
-                ) : interviewsData?.interviews?.length > 0 ? (
+                ) : Array.isArray(interviewsData?.data) && interviewsData.data.length > 0 ? (
                   <div className="space-y-3">
-                    {interviewsData.interviews
+                    {interviewsData.data
                       .filter((interview: any) => 
                         interview.status === 'scheduled' || interview.status === 'pending'
                       )
