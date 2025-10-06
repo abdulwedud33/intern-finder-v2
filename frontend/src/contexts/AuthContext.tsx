@@ -58,7 +58,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 router.push(userData.role === 'company' ? '/dashboard/client' : '/dashboard/intern');
               }
               // If protected route and not authenticated, redirect to login
+              // But only if we've finished checking (not loading)
               if (!userData && !isPublicRoute && pathname !== '/login') {
+                console.log('Redirecting to login - no user data on protected route:', pathname);
                 router.push('/login');
               }
               return; // Exit early if we have valid stored data
@@ -84,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
           // If protected route and not authenticated, redirect to login
           if (!userData && !isPublicRoute && pathname !== '/login') {
+            console.log('API call failed - redirecting to login from protected route:', pathname);
             router.push('/login');
           }
         }
@@ -151,10 +154,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, role?: 'intern' | 'company') => {
     try {
-      // Default to intern; pages perform their own login today, so this is fallback
-      const userData = await authLogin({ email, password, role: 'intern' });
+      const userData = await authLogin({ email, password, role: role || 'intern' });
       setUser(userData);
       router.push(userData.role === 'company' ? '/dashboard/client' : '/dashboard/intern');
     } catch (error) {
