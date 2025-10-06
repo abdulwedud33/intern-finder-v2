@@ -115,7 +115,7 @@ if (hideRoutes.includes(pathname) || isDashboardPage) {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                  <Button variant="secondary" className="relative h-10 w-10 rounded-full p-0">
                     <Avatar className="h-10 w-10">
                       <AvatarImage 
                         src={getUserAvatarUrl(user)} 

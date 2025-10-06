@@ -53,6 +53,7 @@ export function ClientHeader() {
                   <AvatarImage 
                     src={getUserAvatarUrl(user)} 
                     alt={user.name} 
+                    className="bg-white"
                   />
                   <AvatarFallback className="bg-teal-500 text-white text-sm">
                     {user.name.charAt(0).toUpperCase()}

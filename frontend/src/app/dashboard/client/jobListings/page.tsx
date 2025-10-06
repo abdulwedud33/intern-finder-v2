@@ -19,7 +19,11 @@ export default function JobListingsPage() {
   const { toast } = useToast()
   
   // Backend now handles filtering, so we just use the data directly
-  const jobs = data?.data || []
+  const jobs = Array.isArray(data?.data) ? data.data : []
+  
+  // Debug logging to help identify issues
+  console.log('JobListingsPage - data:', data)
+  console.log('JobListingsPage - jobs:', jobs)
   
   const handleDeleteJob = (jobId: string) => {
     deleteJobMutation.mutate(jobId, {
@@ -111,7 +115,7 @@ export default function JobListingsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {jobs.map((job: any) => (
+              {jobs && jobs.length > 0 ? jobs.map((job: any) => (
               <TableRow key={job._id}>
                 <TableCell className="font-medium">{job.title}</TableCell>
                 <TableCell>
@@ -197,7 +201,13 @@ export default function JobListingsPage() {
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                    No jobs found
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         )}
