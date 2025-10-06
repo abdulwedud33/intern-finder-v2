@@ -2,7 +2,11 @@
  * Utility functions for handling image URLs
  */
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com';
+
+// Default fallback images
+const DEFAULT_AVATAR = '/placeholder-user.jpg';
+const DEFAULT_LOGO = '/placeholder-logo.png';
 
 /**
  * Converts a relative image path to a full URL
@@ -10,54 +14,56 @@ const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000';
  * @returns Full URL to the image
  */
 export const getImageUrl = (imagePath: string | undefined | null): string | undefined => {
-  console.log('getImageUrl: Input imagePath:', imagePath);
-  console.log('getImageUrl: API_URL:', API_URL);
-  
+  // If no image path provided, return undefined (will use fallback in component)
   if (!imagePath) {
-    console.log('getImageUrl: No imagePath provided');
     return undefined;
   }
   
   // If it's already a full URL, return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    console.log('getImageUrl: Already full URL:', imagePath);
     return imagePath;
   }
   
   // If it starts with '/', it's a relative path from the backend
   if (imagePath.startsWith('/')) {
-    const fullUrl = `${API_URL}${imagePath}`;
-    console.log('getImageUrl: Constructed full URL from relative path:', fullUrl);
-    return fullUrl;
+    return `${API_URL}${imagePath}`;
   }
   
   // Otherwise, assume it's a relative path and prepend the uploads path
-  const fullUrl = `${API_URL}/uploads/${imagePath}`;
-  console.log('getImageUrl: Constructed full URL from filename:', fullUrl);
-  return fullUrl;
+  return `${API_URL}/uploads/${imagePath}`;
 };
 
 /**
- * Gets the avatar URL for a user
+ * Gets the avatar URL for a user with fallback support
  * @param user - User object with avatar/logo properties
- * @returns Full URL to the avatar/logo
+ * @returns Full URL to the avatar/logo or fallback
  */
-export const getUserAvatarUrl = (user: { role: string; avatar?: string; logo?: string } | null | undefined): string | undefined => {
+export const getUserAvatarUrl = (user: { role: string; avatar?: string; logo?: string } | null | undefined): string => {
   if (!user) {
-    console.log('getUserAvatarUrl: No user provided');
-    return undefined;
+    return DEFAULT_AVATAR;
   }
-  
-  console.log('getUserAvatarUrl: Full user object:', user);
-  console.log('getUserAvatarUrl: User data:', { role: user.role, avatar: user.avatar, logo: user.logo });
   
   if (user.role === 'company') {
-    const logoUrl = getImageUrl(user.logo);
-    console.log('getUserAvatarUrl: Company logo URL:', logoUrl);
-    return logoUrl;
+    return user.logo ? getImageUrl(user.logo) || DEFAULT_LOGO : DEFAULT_LOGO;
   } else {
-    const avatarUrl = getImageUrl(user.avatar);
-    console.log('getUserAvatarUrl: Intern avatar URL:', avatarUrl);
-    return avatarUrl;
+    return user.avatar ? getImageUrl(user.avatar) || DEFAULT_AVATAR : DEFAULT_AVATAR;
   }
+};
+
+/**
+ * Gets the company logo URL with fallback
+ * @param logo - Logo path or undefined
+ * @returns Full URL to the logo or fallback
+ */
+export const getCompanyLogoUrl = (logo: string | undefined | null): string => {
+  return logo ? getImageUrl(logo) || DEFAULT_LOGO : DEFAULT_LOGO;
+};
+
+/**
+ * Gets the user avatar URL with fallback
+ * @param avatar - Avatar path or undefined
+ * @returns Full URL to the avatar or fallback
+ */
+export const getUserProfileUrl = (avatar: string | undefined | null): string => {
+  return avatar ? getImageUrl(avatar) || DEFAULT_AVATAR : DEFAULT_AVATAR;
 };

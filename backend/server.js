@@ -29,6 +29,7 @@ const internCompanyRoutes = require('./routes/internCompanyRoutes');
 const userRoutes = require('./routes/userRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const statsRoutes = require('./routes/statsRoutes');
+const apiRoutes = require('./routes/apiRoutes');
 // Import other route files as needed
 
 // Connect to database
@@ -74,7 +75,7 @@ const corsOptions = {
     if (!origin) return callback(null, true);
     
     // Allow all localhost origins for development
-    if (origin && origin.includes('localhost')) {
+    if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
       console.log('Allowing localhost origin:', origin);
       return callback(null, true);
     }
@@ -92,8 +93,8 @@ const corsOptions = {
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       process.env.CLIENT_URL,
-      // Add your Vercel deployment URL here
-      'https://intern-finder-alpha.vercel.app'
+      'https://intern-finder-alpha.vercel.app',
+      // Add more production domains as needed
     ].filter(Boolean);
 
     if (allowedOrigins.includes(origin)) {
@@ -130,25 +131,9 @@ const corsOptions = {
   optionsSuccessStatus: 204,
   maxAge: 86400 // 24 hours
 };
-    
 
 // Enable CORS with options
 app.use(cors(corsOptions));
-
-// Additional CORS headers for debugging
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Auth-Token, Accept, Content-Length, Origin, X-Forwarded-For, Set-Cookie, Cookie');
-  
-  // Log CORS requests for debugging
-  if (req.method === 'OPTIONS') {
-    console.log('CORS preflight request from:', req.headers.origin);
-  }
-  
-  next();
-});
 
 // Dev logging middleware
 if (process.env.NODE_ENV === 'development') {
@@ -157,6 +142,7 @@ if (process.env.NODE_ENV === 'development') {
 
 
 // Mount API routes with /api prefix
+app.use('/api', apiRoutes); // API documentation
 app.use('/api/auth', authRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/jobs', jobRoutes);
@@ -168,16 +154,42 @@ app.use('/api/company-interns', companyInternRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/intern-companies', internCompanyRoutes);
 app.use('/api/users', userRoutes);
-
-// Mount other routes as needed
 app.use('/api/stats', statsRoutes);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'API is healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
 // Root route
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Welcome to the Intern Finder API',
-    version: '2.0.0'
+    version: '2.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      jobs: '/api/jobs',
+      applications: '/api/applications',
+      interviews: '/api/interviews',
+      companies: '/api/companies',
+      interns: '/api/interns',
+      stats: '/api/stats',
+      uploads: '/api/uploads'
+    }
+  });
+});
+
+// 404 handler for undefined routes
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Route ${req.originalUrl} not found`
   });
 });
 

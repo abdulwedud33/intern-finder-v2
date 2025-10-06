@@ -30,7 +30,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
   try {
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key');
     
     // Get user from the token
     let user = await User.findById(decoded.id);
@@ -39,21 +39,32 @@ exports.protect = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse('User not found', 404));
     }
     
-    // Check if user is active
-    if (!user.isActive) {
+    // Check if user is active (if isActive field exists)
+    if (user.isActive === false) {
       return next(new ErrorResponse('User account is inactive', 401));
     }
     
     // Attach user to request object
     req.user = user;
     
-    // Update last active timestamp
-    user.lastActive = Date.now();
-    await user.save({ validateBeforeSave: false });
+    // Update last active timestamp (if field exists)
+    if (user.lastActive !== undefined) {
+      user.lastActive = Date.now();
+      await user.save({ validateBeforeSave: false });
+    }
     
     next();
   } catch (err) {
     console.error('Auth error:', err);
+    
+    // Handle specific JWT errors
+    if (err.name === 'JsonWebTokenError') {
+      return next(new ErrorResponse('Invalid token', 401));
+    }
+    if (err.name === 'TokenExpiredError') {
+      return next(new ErrorResponse('Token expired', 401));
+    }
+    
     return next(new ErrorResponse('Not authorized to access this route', 401));
   }
 });

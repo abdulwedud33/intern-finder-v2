@@ -14,11 +14,22 @@ const securityHeaders = (app) => {
   app.use(helmet.frameguard({ action: 'deny' }));
 };
 
-// Rate limiting
+// Rate limiting - More lenient for development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again after 15 minutes'
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // More lenient in development
+  message: {
+    success: false,
+    error: 'Too many requests from this IP, please try again after 15 minutes'
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      error: 'Too many requests from this IP, please try again after 15 minutes'
+    });
+  }
 });
 
 // Request size limiting

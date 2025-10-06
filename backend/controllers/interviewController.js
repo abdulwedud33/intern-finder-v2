@@ -543,11 +543,11 @@ exports.deleteInterview = asyncHandler(async (req, res, next) => {
 });
 
 /**
- * @desc    Get all interviews for a company (admin/company view)
+ * @desc    Get all interviews for a company by ID (admin/company view)
  * @route   GET /api/v1/companies/:companyId/interviews
  * @access  Private (Company, Admin)
  */
-exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
+exports.getCompanyInterviewsById = asyncHandler(async (req, res, next) => {
   // Check if user is authorized (admin or company owner)
   if (req.user.role !== 'admin' && 
       (req.user.role !== 'company' || req.user.company.toString() !== req.params.companyId)) {

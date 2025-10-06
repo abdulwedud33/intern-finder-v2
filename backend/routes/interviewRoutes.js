@@ -3,6 +3,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 const {
   scheduleInterview,
   getCompanyInterviews,
+  getCompanyInterviewsById,
   getMyInterviews,
   getInterview,
   updateInterview,
@@ -17,7 +18,7 @@ router.use(protect);
 
 // Company routes
 router.get('/company', authorize('company'), getCompanyInterviews);
-router.get('/companies/:companyId/interviews', authorize('company', 'admin'), getCompanyInterviews);
+router.get('/companies/:companyId/interviews', authorize('company', 'admin'), getCompanyInterviewsById);
 
 // Intern routes
 router.get('/me', authorize('intern'), getMyInterviews);
