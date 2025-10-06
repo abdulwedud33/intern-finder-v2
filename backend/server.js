@@ -186,7 +186,7 @@ app.get('/', (req, res) => {
 });
 
 // 404 handler for undefined routes
-app.use('*', (req, res) => {
+app.all('*', (req, res) => {
   res.status(404).json({
     success: false,
     error: `Route ${req.originalUrl} not found`
