@@ -139,15 +139,8 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Only companies can access this resource', 403));
   }
   
-  // Get company profile for the current user
-  const company = await User.findOne({ user: req.user.id, role: 'company' });
-  
-  if (!company) {
-    return next(new ErrorResponse('Company profile not found', 404));
-  }
-  
   // Get all interviews for this company
-  const interviews = await Interview.find({ company: company._id })
+  const interviews = await Interview.find({ company: req.user.company })
     .populate({
       path: 'company',
       select: 'name logo',

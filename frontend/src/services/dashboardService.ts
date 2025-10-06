@@ -111,7 +111,7 @@ export const dashboardService = {
 
   // Get recent applications for company
   async getRecentApplications(limit: number = 5): Promise<{ success: boolean; data: any[] }> {
-    const response = await api.get(`/applications?limit=${limit}&sort=-createdAt`);
+    const response = await api.get(`/applications/company?limit=${limit}&sort=-createdAt`);
     return response.data;
   },
 
@@ -151,7 +151,7 @@ export const dashboardService = {
     return response.data;
   },
 
-  // Get applications for charts
+  // Get applications for charts (company view)
   async getApplicationsForCharts(filters?: {
     status?: string;
     dateRange?: { start: string; end: string };
@@ -165,11 +165,11 @@ export const dashboardService = {
     }
     if (filters?.limit) params.append('limit', filters.limit.toString());
     
-    const response = await api.get(`/applications?${params.toString()}`);
+    const response = await api.get(`/applications/company?${params.toString()}`);
     return response.data;
   },
 
-  // Get interviews for charts
+  // Get interviews for charts (company view)
   async getInterviewsForCharts(filters?: {
     status?: string;
     dateRange?: { start: string; end: string };
@@ -183,7 +183,7 @@ export const dashboardService = {
     }
     if (filters?.limit) params.append('limit', filters.limit.toString());
     
-    const response = await api.get(`/interviews?${params.toString()}`);
+    const response = await api.get(`/interviews/company?${params.toString()}`);
     return response.data;
   }
 };

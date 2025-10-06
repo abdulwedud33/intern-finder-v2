@@ -537,7 +537,7 @@ exports.getJobStats = asyncHandler(async (req, res, next) => {
   // Get job statistics
   const stats = await Job.aggregate([
     {
-      $match: { company: mongoose.Types.ObjectId(req.user.company) }
+      $match: { company: new mongoose.Types.ObjectId(req.user.company) }
     },
     {
       $group: {

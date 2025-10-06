@@ -13,10 +13,16 @@ export const api = axios.create({
 // Add a request interceptor to include the auth token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
+  console.log('API Request:', config.method?.toUpperCase(), config.url, config.baseURL);
+  console.log('Token available:', !!token, token ? 'Yes' : 'No');
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    console.log('Authorization header set');
+  } else {
+    console.warn('No token found in localStorage');
   }
-  console.log('API Request:', config.method?.toUpperCase(), config.url, config.baseURL);
+  
   return config;
 });
 
