@@ -113,6 +113,30 @@ export default function ClientProfilePage() {
     queryFn: () => interviewService.getCompanyInterviews(user?.id || ''),
     enabled: !!user && user.role === 'company',
   })
+
+  // Fetch company stats data
+  const { data: statsData, isLoading: statsLoading } = useQuery({
+    queryKey: ['companyStats'],
+    queryFn: async () => {
+      // Get job views from jobs data
+      const jobViews = jobsData?.data?.reduce((total: number, job: any) => total + (job.views || 0), 0) || 0
+      
+      return {
+        totalJobs: jobsData?.data?.length || 0,
+        activeJobs: jobsData?.data?.filter((job: any) => job.status === 'active').length || 0,
+        totalApplications: Array.isArray(applicationsData?.data) ? applicationsData.data.length : 0,
+        interviewsScheduled: Array.isArray(interviewsData?.data) ? interviewsData.data.filter((interview: any) => 
+          interview.status === 'scheduled' || interview.status === 'pending'
+        ).length : 0,
+        hiredInterns: Array.isArray(applicationsData?.data) ? applicationsData.data.filter((app: any) => 
+          app.status === 'accepted'
+        ).length : 0,
+        profileViews: jobViews, // Using job views as proxy for profile engagement
+        avgRating: 4.7 // This would need a separate API endpoint for reviews
+      }
+    },
+    enabled: !!user && user.role === 'company' && !!jobsData && !!applicationsData && !!interviewsData,
+  })
   
   const uploadLogoMutation = useUploadCompanyLogo()
 
@@ -246,19 +270,15 @@ export default function ClientProfilePage() {
     return Math.round((completedFields / fields.length) * 100)
   }
 
-  // Calculate real company stats from backend data
-  const companyStats = {
-    totalJobs: jobsData?.data?.length || 0,
-    activeJobs: jobsData?.data?.filter((job: any) => job.status === 'active').length || 0,
-    totalApplications: Array.isArray(applicationsData?.data) ? applicationsData.data.length : 0,
-    interviewsScheduled: Array.isArray(interviewsData?.data) ? interviewsData.data.filter((interview: any) => 
-      interview.status === 'scheduled' || interview.status === 'pending'
-    ).length : 0,
-    hiredInterns: Array.isArray(applicationsData?.data) ? applicationsData.data.filter((app: any) => 
-      app.status === 'accepted'
-    ).length : 0,
-    profileViews: 89, // This would need a separate API endpoint
-    avgRating: 4.7 // This would need a separate API endpoint
+  // Use real company stats from backend data
+  const companyStats = statsData || {
+    totalJobs: 0,
+    activeJobs: 0,
+    totalApplications: 0,
+    interviewsScheduled: 0,
+    hiredInterns: 0,
+    profileViews: 0,
+    avgRating: 4.7
   }
 
   if (isLoading) {
@@ -426,81 +446,6 @@ export default function ClientProfilePage() {
           </div>
         </div>
 
-        {/* Profile Completion & Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Profile Completion */}
-          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-teal-700">Profile Completion</p>
-                  <p className="text-2xl font-bold text-teal-900">
-                    {calculateProfileCompletion(profile)}%
-                  </p>
-                </div>
-                <div className="relative w-12 h-12">
-                  <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
-                    <path
-                      className="text-teal-200"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className="text-teal-600"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      fill="none"
-                      strokeDasharray={`${calculateProfileCompletion(profile)}, 100`}
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                  </svg>
-                  <CheckCircle className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-5 h-5 text-teal-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Active Jobs */}
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-700">Active Jobs</p>
-                  <p className="text-2xl font-bold text-blue-900">{companyStats.activeJobs}</p>
-                </div>
-                <Briefcase className="w-8 h-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Total Applications */}
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-700">Total Applications</p>
-                  <p className="text-2xl font-bold text-green-900">{companyStats.totalApplications}</p>
-                </div>
-                <TrendingUp className="w-8 h-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Profile Views */}
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-700">Profile Views</p>
-                  <p className="text-2xl font-bold text-purple-900">{companyStats.profileViews}</p>
-                </div>
-                <Eye className="w-8 h-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -972,6 +917,94 @@ export default function ClientProfilePage() {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Profile Stats - Bottom Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Profile Completion */}
+          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-teal-600">Profile Completion</p>
+                  <p className="text-2xl font-bold text-teal-600">
+                    {calculateProfileCompletion(profile)}%
+                  </p>
+                </div>
+                <div className="relative w-12 h-12">
+                  <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
+                    <path
+                      className="text-teal-200"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className="text-teal-600"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      fill="none"
+                      strokeDasharray={`${calculateProfileCompletion(profile)}, 100`}
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                  <CheckCircle className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-5 h-5 text-teal-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Active Jobs */}
+          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-teal-600">Active Jobs</p>
+                  {statsLoading ? (
+                    <div className="h-8 w-12 bg-teal-200 rounded animate-pulse"></div>
+                  ) : (
+                    <p className="text-2xl font-bold text-teal-600">{companyStats.activeJobs}</p>
+                  )}
+                </div>
+                <Briefcase className="w-8 h-8 text-teal-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Applications */}
+          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-teal-600">Total Applications</p>
+                  {statsLoading ? (
+                    <div className="h-8 w-12 bg-teal-200 rounded animate-pulse"></div>
+                  ) : (
+                    <p className="text-2xl font-bold text-teal-600">{companyStats.totalApplications}</p>
+                  )}
+                </div>
+                <TrendingUp className="w-8 h-8 text-teal-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Profile Views */}
+          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-teal-600">Profile Views</p>
+                  {statsLoading ? (
+                    <div className="h-8 w-12 bg-teal-200 rounded animate-pulse"></div>
+                  ) : (
+                    <p className="text-2xl font-bold text-teal-600">{companyStats.profileViews}</p>
+                  )}
+                </div>
+                <Eye className="w-8 h-8 text-teal-600" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
       </div>
