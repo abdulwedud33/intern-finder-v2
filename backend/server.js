@@ -28,8 +28,8 @@ const companyInternRoutes = require('./routes/companyInternRoutes');
 const internCompanyRoutes = require('./routes/internCompanyRoutes');
 const userRoutes = require('./routes/userRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const statsRoutes = require('./routes/statsRoutes');
 // Import other route files as needed
-// const statsRoutes = require('./routes/statsRoutes');
 
 // Connect to database
 connectDB();
@@ -73,20 +73,31 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // Allow all localhost origins for development
+    if (origin && origin.includes('localhost')) {
+      console.log('Allowing localhost origin:', origin);
+      return callback(null, true);
+    }
+    
     // Allow all origins in development
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
+      console.log('Allowing origin in development:', origin);
       return callback(null, true);
     }
     
     // In production, restrict to specific origins
     const allowedOrigins = [
       'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
       process.env.CLIENT_URL,
       // Add your Vercel deployment URL here
       'https://intern-finder-alpha.vercel.app'
     ].filter(Boolean);
 
     if (allowedOrigins.includes(origin)) {
+      console.log('Allowing production origin:', origin);
       return callback(null, true);
     }
     
@@ -123,6 +134,21 @@ const corsOptions = {
 // Enable CORS with options
 app.use(cors(corsOptions));
 
+// Additional CORS headers for debugging
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Auth-Token, Accept, Content-Length, Origin, X-Forwarded-For, Set-Cookie, Cookie');
+  
+  // Log CORS requests for debugging
+  if (req.method === 'OPTIONS') {
+    console.log('CORS preflight request from:', req.headers.origin);
+  }
+  
+  next();
+});
+
 // Dev logging middleware
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -143,7 +169,7 @@ app.use('/api/intern-companies', internCompanyRoutes);
 app.use('/api/users', userRoutes);
 
 // Mount other routes as needed
-// app.use('/api/stats', statsRoutes);
+app.use('/api/stats', statsRoutes);
 
 // Root route
 app.get('/', (req, res) => {
