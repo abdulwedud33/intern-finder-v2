@@ -81,11 +81,9 @@ const corsOptions = {
     // In production, restrict to specific origins
     const allowedOrigins = [
       'http://localhost:3000',
-      'https://localhost:3000',
       process.env.CLIENT_URL,
-      process.env.NEXT_PUBLIC_APP_URL,
       // Add your Vercel deployment URL here
-      'https://your-app-name.vercel.app'
+      'https://intern-finder-alpha.vercel.app'
     ].filter(Boolean);
 
     if (allowedOrigins.includes(origin)) {

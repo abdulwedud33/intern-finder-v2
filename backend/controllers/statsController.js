@@ -3,6 +3,7 @@ const ErrorResponse = require('../utils/errorResponse');
 const Application = require('../models/Application');
 const Interview = require('../models/Interview');
 const Job = require('../models/Job');
+const mongoose = require('mongoose');
 
 // @desc    Get application statistics
 // @route   GET /api/stats/applications
@@ -14,12 +15,12 @@ exports.getApplicationStats = asyncHandler(async (req, res, next) => {
   // Filter by user role
   if (role === 'company') {
     // Get applications for company's jobs
-    const jobs = await Job.find({ companyId: req.user.company }).select('_id');
+    const jobs = await Job.find({ user: req.user.id }).select('_id');
     const jobIds = jobs.map(job => job._id);
     query = { jobId: { $in: jobIds } };
   } else if (role === 'intern') {
     // Get applications for current intern
-    query = { user: req.user.id };
+    query = { internId: req.user.id };
   } else {
     return next(new ErrorResponse('Not authorized to view these stats', 403));
   }
@@ -61,19 +62,19 @@ exports.getInterviewStats = asyncHandler(async (req, res, next) => {
   // Filter by user role
   if (role === 'company') {
     // Get interviews for company's applications
-    const jobs = await Job.find({ companyId: req.user.company }).select('_id');
+    const jobs = await Job.find({ user: req.user.id }).select('_id');
     const applications = await Application.find({ 
       jobId: { $in: jobs.map(job => job._id) } 
     }).select('_id');
     
     query = { 
-      application: { $in: applications.map(app => app._id) },
+      applicationId: { $in: applications.map(app => app._id) },
       scheduledBy: req.user.id
     };
   } else if (role === 'intern') {
     // Get interviews for current intern
-    const applications = await Application.find({ user: req.user.id }).select('_id');
-    query = { application: { $in: applications.map(app => app._id) } };
+    const applications = await Application.find({ internId: req.user.id }).select('_id');
+    query = { applicationId: { $in: applications.map(app => app._id) } };
   } else {
     return next(new ErrorResponse('Not authorized to view these stats', 403));
   }
@@ -117,13 +118,13 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
   let stats = {};
 
   if (role === 'company') {
-    // Get company's listings
-    const listings = await Listing.find({ user: userId }).select('_id');
-    const listingIds = listings.map(listing => listing._id);
+    // Get company's jobs
+    const jobs = await Job.find({ user: userId }).select('_id');
+    const jobIds = jobs.map(job => job._id);
 
     // Get application counts
     const applicationCounts = await Application.aggregate([
-      { $match: { listing: { $in: listingIds } } },
+      { $match: { jobId: { $in: jobIds } } },
       {
         $group: {
           _id: null,
@@ -148,7 +149,7 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
     const interviewCounts = await Interview.aggregate([
       { 
         $match: { 
-          scheduledBy: mongoose.Types.ObjectId(userId) 
+          scheduledBy: new mongoose.Types.ObjectId(userId) 
         } 
       },
       {
@@ -170,12 +171,12 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
 
     // Get recent applications
     const recentApplications = await Application.find({ 
-      listing: { $in: listingIds } 
+      jobId: { $in: jobIds } 
     })
       .sort('-createdAt')
       .limit(5)
-      .populate('user', 'name email')
-      .populate('listing', 'title');
+      .populate('internId', 'name email')
+      .populate('jobId', 'title');
 
     stats = {
       applications: applicationCounts[0] || { total: 0, pending: 0, reviewed: 0, accepted: 0, rejected: 0 },
@@ -186,7 +187,7 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
   } else if (role === 'intern') {
     // Get intern's applications
     const applicationCounts = await Application.aggregate([
-      { $match: { user: mongoose.Types.ObjectId(userId) } },
+      { $match: { internId: new mongoose.Types.ObjectId(userId) } },
       {
         $group: {
           _id: null,
@@ -209,16 +210,16 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
 
     // Get interview counts
     const interviewCounts = await Interview.aggregate([
-      { 
+      {
         $lookup: {
           from: 'applications',
-          localField: 'application',
+          localField: 'applicationId',
           foreignField: '_id',
           as: 'application'
         }
       },
       { $unwind: '$application' },
-      { $match: { 'application.user': mongoose.Types.ObjectId(userId) } },
+      { $match: { 'application.internId': new mongoose.Types.ObjectId(userId) } },
       {
         $group: {
           _id: null,
@@ -238,17 +239,17 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
 
     // Get upcoming interviews
     const upcomingInterviews = await Interview.find({
-      'application.user': userId,
+      internId: userId,
       status: 'scheduled',
       date: { $gte: new Date() }
     })
       .sort('date')
       .limit(5)
       .populate({
-        path: 'application',
+        path: 'applicationId',
         populate: {
-          path: 'listing',
-          select: 'title companyName'
+          path: 'jobId',
+          select: 'title company'
         }
       });
 

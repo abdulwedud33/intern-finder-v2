@@ -21,7 +21,7 @@ export interface ApplicationResponse {
 
 export interface Application {
   _id: string;
-  job: {
+  jobId: {
     _id: string;
     title: string;
     company: {
@@ -30,12 +30,12 @@ export interface Application {
       logo?: string;
     };
   };
-  user: {
+  internId: {
     _id: string;
     name: string;
     email: string;
   };
-  status: 'applied' | 'reviewed' | 'shortlisted' | 'rejected' | 'hired';
+  status: 'under_review' | 'interview' | 'accepted' | 'rejected';
   coverLetter?: string;
   resume?: string;
   createdAt: string;

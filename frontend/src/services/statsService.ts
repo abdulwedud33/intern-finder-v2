@@ -28,11 +28,11 @@ export interface DashboardStats {
   };
   recentApplications?: Array<{
     _id: string;
-    user: {
+    internId: {
       name: string;
       email: string;
     };
-    listing: {
+    jobId: {
       title: string;
     };
     status: string;
@@ -40,10 +40,10 @@ export interface DashboardStats {
   }>;
   upcomingInterviews?: Array<{
     _id: string;
-    application: {
-      listing: {
+    applicationId: {
+      jobId: {
         title: string;
-        companyName: string;
+        company: string;
       };
     };
     date: string;

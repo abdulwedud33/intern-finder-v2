@@ -99,17 +99,17 @@ interface JobData {
 
 interface ApplicationData {
   _id: string
-  job: {
+  jobId: {
     _id: string
     title: string
   }
-  user: {
+  internId: {
     _id: string
     name: string
     email: string
     profilePictureUrl?: string
   }
-  status: 'applied' | 'reviewed' | 'shortlisted' | 'rejected' | 'hired'
+  status: 'under_review' | 'interview' | 'accepted' | 'rejected'
   coverLetter?: string
   createdAt: string
   updatedAt: string
@@ -229,15 +229,15 @@ export default function ClientDashboard() {
       new Date(app.createdAt) > subDays(new Date(), 7)
     ).length,
     shortlistedCandidates: dashboardStats?.applications?.reviewed || applications.filter((app: ApplicationData) => 
-      app.status === 'shortlisted' || app.status === 'reviewed'
+      app.status === 'interview' || app.status === 'accepted'
     ).length,
     hiredCandidates: dashboardStats?.applications?.accepted || applications.filter((app: ApplicationData) => 
-      app.status === 'hired'
+      app.status === 'accepted'
     ).length,
     jobViews: jobs.reduce((sum: number, job: JobData) => sum + (job.viewCount || 0), 0),
     applicationRate: jobs.length > 0 ? (applications.length / jobs.length) : 0,
     hireRate: applications.length > 0 ? 
-      ((dashboardStats?.applications?.accepted || applications.filter((app: ApplicationData) => app.status === 'hired').length) / applications.length) * 100 : 0
+      ((dashboardStats?.applications?.accepted || applications.filter((app: ApplicationData) => app.status === 'accepted').length) / applications.length) * 100 : 0
   }
 
   // Filter jobs based on search and status
@@ -418,17 +418,17 @@ export default function ClientDashboard() {
                 {recentApplicationsData.map((application: ApplicationData) => (
                   <div key={application._id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={application.user.profilePictureUrl} />
+                      <AvatarImage src={application.internId.profilePictureUrl} />
                       <AvatarFallback>
-                        {application.user.name.charAt(0)}
+                        {application.internId.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
-                        {application.user.name}
+                        {application.internId.name}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
-                        {application.job.title}
+                        {application.jobId.title}
                       </p>
                       <p className="text-xs text-gray-400">
                         {formatDistanceToNow(new Date(application.createdAt), { addSuffix: true })}
@@ -436,8 +436,8 @@ export default function ClientDashboard() {
                     </div>
                     <Badge 
                       variant={
-                        application.status === 'hired' ? 'default' :
-                        application.status === 'shortlisted' ? 'secondary' :
+                        application.status === 'accepted' ? 'default' :
+                        application.status === 'interview' ? 'secondary' :
                         application.status === 'rejected' ? 'destructive' : 'outline'
                       }
                       className="text-xs"
