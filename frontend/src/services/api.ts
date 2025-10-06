@@ -33,13 +33,28 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('API Error:', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      message: error.message,
-      response: error.response?.data
-    });
+    // Handle different types of errors
+    if (!error) {
+      console.error('API Error: No error object provided');
+      return Promise.reject(error);
+    }
+
+    // Check if it's a network error or other non-Axios error
+    if (error.code === 'NETWORK_ERROR' || error.code === 'ERR_NETWORK') {
+      console.error('API Error: Network error -', error.message || 'No message');
+    } else if (error.message === 'Request aborted') {
+      console.error('API Error: Request was aborted');
+    } else {
+      // Standard Axios error
+      console.error('API Error:', {
+        url: error.config?.url || 'unknown',
+        method: error.config?.method || 'unknown',
+        status: error.response?.status || 'no response',
+        message: error.message || 'unknown error',
+        response: error.response?.data || null,
+        code: error.code || 'no code'
+      });
+    }
     
     // Handle specific error cases
     if (error.response?.status === 401) {
