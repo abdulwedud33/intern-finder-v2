@@ -47,15 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const userData = JSON.parse(storedUser);
             if (isMounted.current) {
-              // Validate user data
-              if (userData.role === 'company' && !userData.company) {
-                console.warn('Company user missing company field:', userData);
-                // Clear invalid data and redirect to login
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
-                router.push('/login');
-                return;
-              }
+              // Validate user data - for company users, they don't need a separate company field
+              // since they ARE the company (stored in Company model, not User model)
+              console.log('User data restored from localStorage:', userData);
               
               setUser(userData);
               setLoading(false);
