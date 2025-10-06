@@ -144,39 +144,6 @@ export default function ClientProfilePage() {
     return user && user.role === 'company'
   }
 
-  // Helper function to clean social media values
-  const cleanSocialMediaValue = (platform: string, value: string): string => {
-    if (!value) return ""
-    
-    let cleanValue = value.trim()
-    
-    // Remove common URL prefixes based on platform
-    switch (platform) {
-      case 'linkedin':
-        cleanValue = cleanValue.replace(/^https?:\/\/(www\.)?linkedin\.com\/company\//, '')
-        cleanValue = cleanValue.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '')
-        break
-      case 'twitter':
-        cleanValue = cleanValue.replace(/^https?:\/\/(www\.)?twitter\.com\//, '')
-        cleanValue = cleanValue.replace(/^@/, '') // Remove @ if present
-        break
-      case 'facebook':
-        cleanValue = cleanValue.replace(/^https?:\/\/(www\.)?facebook\.com\//, '')
-        break
-      case 'instagram':
-        cleanValue = cleanValue.replace(/^https?:\/\/(www\.)?instagram\.com\//, '')
-        cleanValue = cleanValue.replace(/^@/, '') // Remove @ if present
-        break
-      case 'youtube':
-        cleanValue = cleanValue.replace(/^https?:\/\/(www\.)?youtube\.com\//, '')
-        cleanValue = cleanValue.replace(/^https?:\/\/(www\.)?youtube\.com\/channel\//, '')
-        cleanValue = cleanValue.replace(/^https?:\/\/(www\.)?youtube\.com\/user\//, '')
-        cleanValue = cleanValue.replace(/^@/, '') // Remove @ if present
-        break
-    }
-    
-    return cleanValue
-  }
 
   // Update form data when user data loads
   useEffect(() => {
@@ -192,11 +159,11 @@ export default function ClientProfilePage() {
         founded: userData.founded?.toString() || "",
         employees: userData.employees || "",
         socialMedia: {
-          linkedin: cleanSocialMediaValue('linkedin', userData.socialMedia?.linkedin || ""),
-          twitter: cleanSocialMediaValue('twitter', userData.socialMedia?.twitter || ""),
-          facebook: cleanSocialMediaValue('facebook', userData.socialMedia?.facebook || ""),
-          instagram: cleanSocialMediaValue('instagram', userData.socialMedia?.instagram || ""),
-          youtube: cleanSocialMediaValue('youtube', userData.socialMedia?.youtube || "")
+          linkedin: userData.socialMedia?.linkedin || "",
+          twitter: userData.socialMedia?.twitter || "",
+          facebook: userData.socialMedia?.facebook || "",
+          instagram: userData.socialMedia?.instagram || "",
+          youtube: userData.socialMedia?.youtube || ""
         }
       })
     }
@@ -227,13 +194,11 @@ export default function ClientProfilePage() {
   }
 
   const handleSocialMediaChange = (platform: string, value: string) => {
-    const cleanValue = cleanSocialMediaValue(platform, value)
-    
     setFormData(prev => ({
       ...prev,
       socialMedia: {
         ...prev.socialMedia,
-        [platform]: cleanValue
+        [platform]: value
       }
     }))
   }
@@ -894,7 +859,7 @@ export default function ClientProfilePage() {
                       <Input
                         value={formData.socialMedia.linkedin}
                         onChange={(e) => handleSocialMediaChange("linkedin", e.target.value)}
-                        placeholder="company-name (without URL)"
+                        placeholder="https://linkedin.com/company/your-company"
                       />
                     </div>
                     <div>
@@ -902,7 +867,7 @@ export default function ClientProfilePage() {
                       <Input
                         value={formData.socialMedia.twitter}
                         onChange={(e) => handleSocialMediaChange("twitter", e.target.value)}
-                        placeholder="username (without @ or URL)"
+                        placeholder="https://twitter.com/your-username"
                       />
                     </div>
                     <div>
@@ -910,7 +875,7 @@ export default function ClientProfilePage() {
                       <Input
                         value={formData.socialMedia.facebook}
                         onChange={(e) => handleSocialMediaChange("facebook", e.target.value)}
-                        placeholder="page-name (without URL)"
+                        placeholder="https://facebook.com/your-page"
                       />
                     </div>
                     <div>
@@ -918,7 +883,7 @@ export default function ClientProfilePage() {
                       <Input
                         value={formData.socialMedia.instagram}
                         onChange={(e) => handleSocialMediaChange("instagram", e.target.value)}
-                        placeholder="username (without @ or URL)"
+                        placeholder="https://instagram.com/your-username"
                       />
                     </div>
                     <div>
@@ -926,7 +891,7 @@ export default function ClientProfilePage() {
                       <Input
                         value={formData.socialMedia.youtube}
                         onChange={(e) => handleSocialMediaChange("youtube", e.target.value)}
-                        placeholder="channel-name (without @ or URL)"
+                        placeholder="https://youtube.com/your-channel"
                       />
                     </div>
                   </div>
@@ -936,7 +901,7 @@ export default function ClientProfilePage() {
                       <div className="flex items-center gap-2">
                         <LinkIcon className="h-4 w-4 text-blue-600" />
                         <a
-                          href={`https://linkedin.com/company/${profile.socialMedia.linkedin}`}
+                          href={profile.socialMedia.linkedin}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline"
@@ -949,7 +914,7 @@ export default function ClientProfilePage() {
                       <div className="flex items-center gap-2">
                         <LinkIcon className="h-4 w-4 text-blue-400" />
                         <a
-                          href={`https://twitter.com/${profile.socialMedia.twitter}`}
+                          href={profile.socialMedia.twitter}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-400 hover:underline"
@@ -962,7 +927,7 @@ export default function ClientProfilePage() {
                       <div className="flex items-center gap-2">
                         <LinkIcon className="h-4 w-4 text-blue-800" />
                         <a
-                          href={`https://facebook.com/${profile.socialMedia.facebook}`}
+                          href={profile.socialMedia.facebook}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-800 hover:underline"
@@ -975,7 +940,7 @@ export default function ClientProfilePage() {
                       <div className="flex items-center gap-2">
                         <LinkIcon className="h-4 w-4 text-pink-600" />
                         <a
-                          href={`https://instagram.com/${profile.socialMedia.instagram}`}
+                          href={profile.socialMedia.instagram}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-pink-600 hover:underline"
@@ -988,7 +953,7 @@ export default function ClientProfilePage() {
                       <div className="flex items-center gap-2">
                         <LinkIcon className="h-4 w-4 text-red-600" />
                         <a
-                          href={`https://youtube.com/${profile.socialMedia.youtube}`}
+                          href={profile.socialMedia.youtube}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-red-600 hover:underline"
