@@ -197,7 +197,7 @@ exports.updateApplicationStatus = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure the application belongs to the company
-  if (application.company.toString() !== req.user.id) {
+  if (application.company.toString() !== req.user._id.toString()) {
     return next(
       new ErrorResponse(
         `User ${req.user.id} is not authorized to update this application`,
@@ -516,42 +516,5 @@ exports.preCheckJob = asyncHandler(async (req, res, next) => {
         deadline: job.deadline
       }
     }
-  });
-});
-
-// @desc      Update application status
-// @route     PUT /api/applications/:id/status
-// @access    Private (Company only)
-exports.updateApplicationStatus = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-  const { status } = req.body;
-
-  // Find the application and populate the listing to check ownership
-  const application = await Application.findById(id).populate({
-    path: 'listing',
-    select: 'user',
-  });
-
-  if (!application) {
-    return next(new ErrorResponse(`No application with the id of ${id}`, 404));
-  }
-
-  // Check if the logged-in user is the owner of the listing
-  if (application.listing.user.toString() !== req.user.id) {
-    return next(
-      new ErrorResponse(
-        `User ${req.user.id} is not authorized to update this application`,
-        403
-      )
-    );
-  }
-
-  // Update the status
-  application.status = status;
-  await application.save();
-
-  res.status(200).json({
-    success: true,
-    data: application,
   });
 });

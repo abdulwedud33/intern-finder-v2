@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import React, { useState, useCallback, useMemo } from "react"
 import { 
   Search, 
   MoreHorizontal, 
@@ -33,6 +33,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -163,6 +164,10 @@ function ApplicationCard({ application, onAction }: { application: Application; 
                 Send Message
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onAction('update_status', application)}>
+                <Settings className="h-4 w-4 mr-2" />
+                Update Status
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onAction('decline', application)} className="text-red-600">
                 <XCircle className="h-4 w-4 mr-2" />
                 Decline Application
@@ -273,6 +278,99 @@ function ScheduleInterviewModal({
   )
 }
 
+// Status Update Modal
+function StatusUpdateModal({
+  application,
+  isOpen,
+  onClose,
+  onUpdate,
+}: {
+  application: Application | null
+  isOpen: boolean
+  onClose: () => void
+  onUpdate: (status: string) => void
+}) {
+  const [selectedStatus, setSelectedStatus] = useState<string>('')
+
+  // Set initial status when modal opens
+  React.useEffect(() => {
+    if (application && isOpen) {
+      setSelectedStatus(application.status)
+    }
+  }, [application, isOpen])
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (selectedStatus && selectedStatus !== application?.status) {
+      onUpdate(selectedStatus)
+      onClose()
+    }
+  }
+
+  if (!application) return null
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-blue-600" />
+            Update Application Status
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-medium text-gray-900">{application.user?.name}</h4>
+            <p className="text-sm text-gray-600">{application.job?.title}</p>
+            <div className="mt-2">
+              <span className="text-xs text-gray-500">Current Status: </span>
+              <Badge className={`${STAGES.find(s => s.id === application.status)?.className || 'bg-gray-100 text-gray-800'} text-xs`}>
+                {STAGES.find(s => s.id === application.status)?.title || application.status}
+              </Badge>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                New Status
+              </label>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STAGES.map((stage) => (
+                    <SelectItem key={stage.id} value={stage.id}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${stage.className.replace('text-', 'bg-').replace('bg-blue-100', 'bg-blue-500').replace('bg-purple-100', 'bg-purple-500').replace('bg-green-100', 'bg-green-500').replace('bg-red-100', 'bg-red-500')}`}></div>
+                        {stage.title}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!selectedStatus || selectedStatus === application.status}
+              >
+                Update Status
+              </Button>
+            </div>
+          </form>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // Main component
 export default function ApplicantsPage() {
   // State
@@ -280,6 +378,7 @@ export default function ApplicantsPage() {
   const [viewMode, setViewMode] = useState<"pipeline" | "table">("pipeline")
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null)
   const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false)
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -371,6 +470,10 @@ export default function ApplicantsPage() {
           description: "This feature will be implemented soon.",
         })
         break
+      case 'update_status':
+        setSelectedApplication(application)
+        setIsStatusModalOpen(true)
+        break
       case 'decline':
         if (window.confirm('Are you sure you want to decline this application?')) {
           updateStatusMutation.mutate({ 
@@ -402,6 +505,31 @@ export default function ApplicantsPage() {
     toast({
       title: "Interview scheduled",
       description: `Interview scheduled for ${data.date.toLocaleDateString()}`,
+    })
+  }
+
+  const handleStatusUpdate = (newStatus: string) => {
+    if (!selectedApplication) return
+    
+    updateStatusMutation.mutate({ 
+      applicationId: selectedApplication._id, 
+      status: newStatus 
+    }, {
+      onSuccess: () => {
+        toast({
+          title: "Status updated",
+          description: `Application status changed to ${STAGES.find(s => s.id === newStatus)?.title || newStatus}`,
+        })
+        setIsStatusModalOpen(false)
+        setSelectedApplication(null)
+      },
+      onError: () => {
+        toast({
+          title: "Update failed",
+          description: "Failed to update application status. Please try again.",
+          variant: "destructive",
+        })
+      }
     })
   }
 
@@ -740,6 +868,10 @@ export default function ApplicantsPage() {
                                 Send Message
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleAction('update_status', application)}>
+                                <Settings className="h-4 w-4 mr-2" />
+                                Update Status
+                              </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleAction('decline', application)} 
                             className="text-red-600"
@@ -780,6 +912,17 @@ export default function ApplicantsPage() {
           setSelectedApplication(null)
         }}
         onSchedule={handleScheduleInterview}
+      />
+
+      {/* Status Update Modal */}
+      <StatusUpdateModal
+        application={selectedApplication}
+        isOpen={isStatusModalOpen}
+        onClose={() => {
+          setIsStatusModalOpen(false)
+          setSelectedApplication(null)
+        }}
+        onUpdate={handleStatusUpdate}
       />
       </div>
     </div>
