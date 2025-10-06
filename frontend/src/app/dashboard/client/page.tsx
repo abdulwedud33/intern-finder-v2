@@ -268,8 +268,28 @@ export default function ClientDashboard() {
 
   if (jobsError || applicationsError) {
     return (
-      <div className="p-4 text-red-500">
-        Error loading dashboard data. Please try again later.
+      <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+        <div className="flex items-center gap-2 text-red-800 mb-2">
+          <AlertCircle className="h-5 w-5" />
+          <h3 className="font-semibold">Error loading dashboard data</h3>
+        </div>
+        <div className="text-red-600 text-sm space-y-1">
+          {jobsError && (
+            <p>• Jobs data error: {jobsError.message || 'Failed to load jobs'}</p>
+          )}
+          {applicationsError && (
+            <p>• Applications data error: {applicationsError.message || 'Failed to load applications'}</p>
+          )}
+          <p className="mt-2">Please check your connection and try refreshing the page.</p>
+        </div>
+        <Button 
+          onClick={() => window.location.reload()} 
+          variant="outline" 
+          size="sm" 
+          className="mt-3"
+        >
+          Refresh Page
+        </Button>
       </div>
     )
   }
