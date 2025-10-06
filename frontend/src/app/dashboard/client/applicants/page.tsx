@@ -581,56 +581,78 @@ export default function ApplicantsPage() {
 
       {/* Content */}
       {viewMode === 'pipeline' ? (
-        // Pipeline View
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Application Pipeline</h2>
-              <div className="text-sm text-gray-600">
-                {filteredApplications.length} of {applications.length} applications
-              </div>
+        // Pipeline View with Tabs
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">Application Pipeline</h2>
+            <div className="text-sm text-gray-600">
+              {filteredApplications.length} of {applications.length} applications
             </div>
+          </div>
+          
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="all" className="flex items-center gap-2">
+                All
+                <Badge variant="secondary" className="text-xs">
+                  {filteredApplications.length}
+                </Badge>
+              </TabsTrigger>
+              {stageCounts.map((stage) => (
+                <TabsTrigger key={stage.id} value={stage.id} className="flex items-center gap-2">
+                  {stage.title}
+                  <Badge variant="secondary" className={`text-xs ${stage.className}`}>
+                    {stage.count}
+                  </Badge>
+                </TabsTrigger>
+              ))}
+            </TabsList>
             
-        <div className="overflow-x-auto pb-4">
-              <div className="flex gap-6 min-w-max">
-                {stageCounts.map((stage) => {
-                  const stageApplications = filteredApplications.filter((app: any) => app.status === stage.id)
-              return (
-                    <div key={stage.id} className="w-80 flex-shrink-0">
-                      <div className={`p-4 rounded-t-lg ${stage.className} bg-opacity-20 border-b-2 border-${stage.color}-300`}>
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-gray-900">{stage.title}</h3>
-                          <Badge variant="secondary" className="bg-white text-gray-700">
-                            {stage.count}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {stageApplications.length} applicant{stageApplications.length !== 1 ? 's' : ''}
-                        </p>
+            <TabsContent value="all" className="mt-6">
+              <div className="grid gap-4">
+                {filteredApplications.map((application: Application) => (
+                  <ApplicationCard 
+                    key={application._id}
+                    application={application} 
+                    onAction={handleAction} 
+                  />
+                ))}
+                {filteredApplications.length === 0 && (
+                  <div className="text-center text-sm text-gray-500 py-12">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                      <Users className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p>No applications found</p>
                   </div>
-                      <div className="bg-white p-3 rounded-b-lg min-h-[600px] border border-t-0">
-                        <div className="space-y-3">
+                )}
+              </div>
+            </TabsContent>
+            
+            {stageCounts.map((stage) => {
+              const stageApplications = filteredApplications.filter((app: any) => app.status === stage.id)
+              return (
+                <TabsContent key={stage.id} value={stage.id} className="mt-6">
+                  <div className="grid gap-4">
                     {stageApplications.map((application: Application) => (
-                        <ApplicationCard 
-                              key={application._id}
-                          application={application} 
-                          onAction={handleAction} 
-                        />
+                      <ApplicationCard 
+                        key={application._id}
+                        application={application} 
+                        onAction={handleAction} 
+                      />
                     ))}
                     {stageApplications.length === 0 && (
-                            <div className="text-center text-sm text-gray-500 py-8">
-                              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                                <Users className="h-8 w-8 text-gray-400" />
-                              </div>
-                              <p>No applications in this stage</p>
+                      <div className="text-center text-sm text-gray-500 py-12">
+                        <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                          <Users className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <p>No applications in {stage.title.toLowerCase()} stage</p>
                       </div>
                     )}
-                        </div>
                   </div>
-                </div>
+                </TabsContent>
               )
             })}
-              </div>
-          </div>
+          </Tabs>
         </div>
       ) : (
         // Table View
