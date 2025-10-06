@@ -69,7 +69,7 @@ type Application = {
     skills?: string[]
     experience?: string
   }
-  status: 'applied' | 'reviewed' | 'shortlisted' | 'rejected' | 'hired'
+  status: 'under_review' | 'interview' | 'accepted' | 'rejected'
   coverLetter?: string
   createdAt: string
   updatedAt: string
@@ -86,10 +86,9 @@ type Stage = {
 }
 
 const STAGES: Omit<Stage, 'count'>[] = [
-  { id: 'applied', title: 'Applied', className: 'bg-blue-100 text-blue-800', color: 'blue' },
-  { id: 'reviewed', title: 'Reviewed', className: 'bg-yellow-100 text-yellow-800', color: 'yellow' },
-  { id: 'shortlisted', title: 'Shortlisted', className: 'bg-purple-100 text-purple-800', color: 'purple' },
-  { id: 'hired', title: 'Hired', className: 'bg-green-100 text-green-800', color: 'green' },
+  { id: 'under_review', title: 'Under Review', className: 'bg-blue-100 text-blue-800', color: 'blue' },
+  { id: 'interview', title: 'Interview', className: 'bg-purple-100 text-purple-800', color: 'purple' },
+  { id: 'accepted', title: 'Accepted', className: 'bg-green-100 text-green-800', color: 'green' },
   { id: 'rejected', title: 'Rejected', className: 'bg-red-100 text-red-800', color: 'red' }
 ]
 
@@ -315,7 +314,7 @@ export default function ApplicantsPage() {
         skills: app.user?.skills || [],
         experience: app.user?.experience || ''
       },
-      status: app.status || 'applied',
+      status: app.status || 'under_review',
       coverLetter: app.coverLetter,
       createdAt: app.createdAt,
       updatedAt: app.updatedAt,
@@ -591,7 +590,7 @@ export default function ApplicantsPage() {
           </div>
           
           <Tabs defaultValue="all" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="all" className="flex items-center gap-2">
                 All
                 <Badge variant="secondary" className="text-xs">
