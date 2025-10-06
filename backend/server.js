@@ -185,14 +185,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// 404 handler for undefined routes
-app.all('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: `Route ${req.originalUrl} not found`
-  });
-});
-
 // --- Error Handling Middleware ---
 // This MUST be the last middleware to catch all errors from the routes above
 app.use(errorHandler);
