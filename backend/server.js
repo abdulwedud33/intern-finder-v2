@@ -130,6 +130,7 @@ const corsOptions = {
   optionsSuccessStatus: 204,
   maxAge: 86400 // 24 hours
 };
+    
 
 // Enable CORS with options
 app.use(cors(corsOptions));
