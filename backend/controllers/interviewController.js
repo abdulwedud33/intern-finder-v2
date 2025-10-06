@@ -139,27 +139,41 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Only companies can access this resource', 403));
   }
   
-  // Get all interviews for this company
-  const interviews = await Interview.find({ company: req.user.company })
+  console.log('getCompanyInterviews - req.user:', {
+    id: req.user._id,
+    role: req.user.role,
+    name: req.user.name
+  });
+  
+  // First, get all jobs for this company
+  const Job = require('../models/Job');
+  const companyJobs = await Job.find({ company: req.user._id }).select('_id');
+  const jobIds = companyJobs.map(job => job._id);
+  
+  console.log('getCompanyInterviews - companyJobs:', companyJobs.length, 'jobIds:', jobIds);
+  
+  // Then get all interviews for these jobs
+  const interviews = await Interview.find({ jobId: { $in: jobIds } })
     .populate({
-      path: 'company',
-      select: 'name logo',
+      path: 'jobId',
+      select: 'title company',
       populate: {
-        path: 'user',
-        select: 'name email'
+        path: 'company',
+        select: 'name logo contactEmail'
       }
     })
     .populate({
-      path: 'intern',
+      path: 'internId',
       select: 'firstName lastName avatar',
       populate: {
         path: 'user',
         select: 'name email'
       }
     })
-    .populate('job', 'title')
-    .populate('application', 'status')
+    .populate('applicationId', 'status')
     .sort('-createdAt');
+  
+  console.log('getCompanyInterviews - interviews found:', interviews.length);
     
   res.status(200).json({
     success: true,
@@ -543,7 +557,7 @@ exports.deleteInterview = asyncHandler(async (req, res, next) => {
 exports.getCompanyInterviewsById = asyncHandler(async (req, res, next) => {
   // Check if user is authorized (admin or company owner)
   if (req.user.role !== 'admin' && 
-      (req.user.role !== 'company' || req.user.company.toString() !== req.params.companyId)) {
+      (req.user.role !== 'company' || req.user._id.toString() !== req.params.companyId)) {
     return next(new ErrorResponse('Not authorized to access these interviews', 403));
   }
 
