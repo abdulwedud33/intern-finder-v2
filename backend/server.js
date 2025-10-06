@@ -61,6 +61,12 @@ app.use(requestSizeLimit);
 // Input sanitization
 app.use(sanitizeInput);
 
+// Serve static files from uploads directory (must be before CORS and API routes)
+const uploadsPath = path.join(__dirname, 'public/uploads');
+console.log('Static files path:', uploadsPath);
+console.log('Directory exists:', require('fs').existsSync(uploadsPath));
+app.use('/uploads', express.static(uploadsPath));
+
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
@@ -138,8 +144,6 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/intern-companies', internCompanyRoutes);
 app.use('/api/users', userRoutes);
 
-// Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 // Mount other routes as needed
 // app.use('/api/stats', statsRoutes);
 

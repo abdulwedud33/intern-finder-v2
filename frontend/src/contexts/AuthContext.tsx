@@ -38,6 +38,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         pathname.startsWith('/_next') ||
         pathname.startsWith('/api/');
 
+      // First check localStorage for immediate user data
+      if (typeof window !== 'undefined') {
+        const storedUser = localStorage.getItem('user');
+        const storedToken = localStorage.getItem('token');
+        
+        if (storedUser && storedToken) {
+          try {
+            const userData = JSON.parse(storedUser);
+            if (isMounted.current) {
+              setUser(userData);
+              setLoading(false);
+              // Redirect only from auth pages when already logged in
+              if (userData && ['/login', '/register'].includes(pathname)) {
+                router.push(userData.role === 'company' ? '/dashboard/client' : '/dashboard/intern');
+              }
+              // If protected route and not authenticated, redirect to login
+              if (!userData && !isPublicRoute && pathname !== '/login') {
+                router.push('/login');
+              }
+              return; // Exit early if we have valid stored data
+            }
+          } catch (error) {
+            console.error('Error parsing stored user data:', error);
+            // Clear invalid data
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+          }
+        }
+      }
+
+      // Fallback to API call if no stored data
       try {
         const userData = await getCurrentUser();
         if (isMounted.current) {
@@ -57,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           // Clear any invalid tokens
           localStorage.removeItem('token');
+          localStorage.removeItem('user');
           // If we're on a protected route, redirect to login
           if (!isPublicRoute && pathname !== '/login') {
             router.push('/login');
@@ -84,11 +116,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleAuthStateChange = async () => {
       try {
-        const userData = await getCurrentUser();
-        if (isMounted.current) {
-          setUser(userData);
+        // First try to get user from localStorage (faster)
+        const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          if (isMounted.current) {
+            setUser(userData);
+            console.log('AuthContext updated from localStorage:', userData);
+          }
+        } else {
+          // Fallback to API call
+          const userData = await getCurrentUser();
+          if (isMounted.current) {
+            setUser(userData);
+            console.log('AuthContext updated from API:', userData);
+          }
         }
       } catch (error) {
+        console.error('Error in handleAuthStateChange:', error);
         if (isMounted.current) {
           setUser(null);
         }

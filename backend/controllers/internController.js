@@ -68,7 +68,6 @@ exports.updateInternProfile = asyncHandler(async (req, res, next) => {
     github,
     linkedin,
     twitter,
-    education,
     skills,
     experience,
     resume,
@@ -91,7 +90,6 @@ exports.updateInternProfile = asyncHandler(async (req, res, next) => {
   if (github) intern.social.github = github;
   if (linkedin) intern.social.linkedin = linkedin;
   if (twitter) intern.social.twitter = twitter;
-  if (education) intern.education = education;
   if (skills) intern.skills = skills;
   if (experience) intern.experience = experience;
   if (resume) intern.resume = resume;
@@ -330,9 +328,8 @@ exports.getInternStats = asyncHandler(async (req, res, next) => {
   const stats = await Intern.aggregate([
     {
       $group: {
-        _id: '$education.degree',
+        _id: '$skills.name',
         count: { $sum: 1 },
-        avgGPA: { $avg: '$education.gpa' },
         avgExperience: { $avg: { $size: '$experience' } }
       }
     },
@@ -372,7 +369,6 @@ exports.updateInternProfile = asyncHandler(async (req, res, next) => {
     github,
     linkedin,
     twitter,
-    education,
     skills,
     experience,
     resume,
@@ -394,7 +390,6 @@ exports.updateInternProfile = asyncHandler(async (req, res, next) => {
     ...(bio && { bio }),
     ...(location && { location }),
     ...(website && { website }),
-    ...(education && { education }),
     ...(skills && { skills }),
     ...(experience && { experience }),
     ...(resume && { resume }),

@@ -48,6 +48,7 @@ export default function LoginPage() {
       
       // Use single unified login endpoint
       const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+      console.log('Login: Using baseUrl:', baseUrl)
       
       const response = await fetch(`${baseUrl}/api/auth/login`, {
         method: "POST",
@@ -74,6 +75,8 @@ export default function LoginPage() {
       if (typeof window !== "undefined") {
         localStorage.setItem("token", responseData.token)
         localStorage.setItem("user", JSON.stringify(responseData.user))
+        console.log('Login: Stored user data:', responseData.user)
+        console.log('Login: Stored token:', responseData.token)
       }
 
       if (data.rememberMe && typeof window !== "undefined") {
@@ -86,6 +89,7 @@ export default function LoginPage() {
       // Update AuthContext with the logged-in user
       // This will trigger a re-render of all components using useAuth
       if (responseData.user) {
+        console.log('Login: Dispatching authStateChanged event')
         // Force AuthContext to re-check authentication
         window.dispatchEvent(new Event('authStateChanged'))
       }

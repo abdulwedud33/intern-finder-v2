@@ -1,10 +1,9 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, MapPin, Star, ArrowRight, Users, Building2, Briefcase, TrendingUp, CheckCircle } from "lucide-react"
+import { Star, ArrowRight, Users, Building2, Briefcase, TrendingUp, CheckCircle, MapPin, User } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -12,6 +11,8 @@ import { useState, useEffect } from "react"
 import { useJobs } from "@/hooks/useJobs"
 import { useCompanies } from "@/hooks/useCompanies"
 import { LoadingCard } from "@/components/ui/loading-spinner"
+import { useAuth } from "@/contexts/AuthContext"
+import { getImageUrl } from "@/utils/imageUtils"
 
 // Import images
 import briefCase from "../../public/images/briefcase(2) 2.png"
@@ -66,8 +67,7 @@ const blogPosts = [
 
 export default function Homepage() {
   const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [locationQuery, setLocationQuery] = useState("")
+  const { user } = useAuth()
   
   // Fetch data for stats and featured jobs
   const { jobs: allJobs, loading: jobsLoading, error: jobsError, total: totalJobs } = useJobs({ limit: 4 })
@@ -96,27 +96,6 @@ export default function Homepage() {
   const isLoading = jobsLoading
   const error = jobsError
 
-  // Handle search form submission
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim() || locationQuery.trim()) {
-      // Build query parameters
-      const params = new URLSearchParams()
-      if (searchQuery.trim()) params.set('search', searchQuery.trim())
-      if (locationQuery.trim()) params.set('location', locationQuery.trim())
-      
-      // Navigate to jobs page with filters
-      router.push(`/jobs?${params.toString()}`)
-    } else {
-      // If no search terms, just go to jobs page
-      router.push('/jobs')
-    }
-  }
-
-  // Handle "Search Jobs" button click
-  const handleSearchJobsClick = () => {
-    handleSearch(new Event('submit') as any)
-  }
 
   // Handle "Find Your Company" button click
   const handleFindCompanyClick = () => {
@@ -144,35 +123,29 @@ export default function Homepage() {
             Connecting Talent with Opportunity: Your Gateway to Career Success
           </p>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="bg-white rounded-lg shadow-lg p-3 sm:p-4 max-w-4xl mx-auto flex flex-col w-full mb-8 sm:mb-10">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input 
-                  placeholder="Job title, keywords, or company" 
-                  className="pl-10 h-11 sm:h-12 text-gray-900 w-full" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <div className="flex-1 relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input 
-                  placeholder="Location" 
-                  className="pl-10 h-11 sm:h-12 text-gray-900 w-full" 
-                  value={locationQuery}
-                  onChange={(e) => setLocationQuery(e.target.value)}
-                />
-              </div>
+          {/* Call to Action Buttons */}
+          <div className="rounded-lg shadow-lg p-2 sm:p-4 max-w-2xl mx-auto flex flex-col justify-center items-center sm:flex-row gap-4 w-full mb-8 sm:mb-10">
+            <Link href="/jobs">
+            <Button 
+              size="lg"
+              className="h-12 sm:h-14 px-8 bg-teal-500 hover:bg-teal-600 text-white font-semibold flex-1"
+              onClick={() => router.push('/jobs')}
+            >
+              <Briefcase className="h-5 w-5 mr-2" />
+              Explore Jobs
+            </Button>
+            </Link>
+             <Link href="/register">
               <Button 
-                type="submit"
-                className="h-11 sm:h-12 px-6 sm:px-8 bg-teal-500 hover:bg-teal-600 w-full sm:w-auto"
+                size="lg"
+                variant="outline"
+                className="h-12 sm:h-14 px-8 border-teal-500 text-teal-500 hover:bg-teal-500 hover:text-white font-semibold w-full"
               >
-                Search Jobs
+                <Users className="h-5 w-5 mr-2" />
+                Get Started Now
               </Button>
-            </div>
-          </form>
+             </Link>
+          </div>
 
           {/* Stats */}
           <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-10 text-center mb-8 sm:mb-10">
@@ -254,17 +227,20 @@ export default function Homepage() {
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
                           {job.company?.logo ? (
                             <Image
-                              src={job.company.logo}
+                              src={getImageUrl(job.company.logo) || ""}
                               alt={`${job.company.name} logo`}
                               width={48}
                               height={48}
                               className="object-contain p-2"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                              }}
                             />
-                          ) : (
-                            <div className="text-lg font-bold text-gray-400">
-                              {job.company?.name?.charAt(0) || 'C'}
-                            </div>
-                          )}
+                          ) : null}
+                          <div className={`text-lg font-bold text-gray-400 ${job.company?.logo ? 'hidden' : ''}`}>
+                            {job.company?.name?.charAt(0) || 'C'}
+                          </div>
                         </div>
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
@@ -456,10 +432,10 @@ export default function Homepage() {
             <Button 
               size="lg" 
               className="bg-white text-teal-600 hover:bg-gray-100 px-8 py-3"
-              onClick={handleSearchJobsClick}
+              onClick={() => router.push('/jobs')}
             >
-              <Search className="h-5 w-5 mr-2" />
-              Search Jobs
+              <Briefcase className="h-5 w-5 mr-2" />
+              Browse Jobs
             </Button>
             <Button 
               size="lg" 

@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { useState } from "react"
-
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 
 export function InternSidebar() {
 const pathname = usePathname();
@@ -137,7 +137,7 @@ const link2= [
         >
           <Avatar className="w-12 h-12">
             <AvatarImage 
-              src={user?.role === 'intern' ? (user as any).avatar || '/placeholder-user.jpg' : '/placeholder-user.jpg'} 
+              src={getUserAvatarUrl(user)} 
               alt={user?.name} 
             />
             <AvatarFallback className="bg-teal-500 text-white">

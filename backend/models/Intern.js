@@ -14,32 +14,6 @@ const internSchema = new mongoose.Schema({
     required: [true, 'Please add gender']
   },
   
-  // Education
-  education: [{
-    institution: {
-      type: String,
-      required: [true, 'Please add institution name']
-    },
-    degree: {
-      type: String,
-      required: [true, 'Please add degree']
-    },
-    fieldOfStudy: {
-      type: String,
-      required: [true, 'Please add field of study']
-    },
-    startDate: {
-      type: Date,
-      required: true
-    },
-    endDate: Date,
-    isCurrent: {
-      type: Boolean,
-      default: false
-    },
-    description: String,
-    gpa: Number
-  }],
   
   // Skills
   skills: [{
@@ -230,7 +204,7 @@ internSchema.methods.calculateProfileCompletion = function() {
     this.phone ? 1 : 0,
     this.about ? 1 : 0,
     this.skills?.length > 0 ? 1 : 0,
-    this.education?.length > 0 ? 1 : 0,
+    this.experience?.length > 0 ? 1 : 0,
     this.resume ? 1 : 0,
     this.avatar ? 1 : 0
   ];

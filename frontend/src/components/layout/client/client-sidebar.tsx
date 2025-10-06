@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { useState } from "react"
-
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 
 export function ClientSidebar() {
 const pathname = usePathname();
@@ -34,7 +34,7 @@ const link2= [
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-22 left-2 z-50 md:hidden bg-teal-500 text-white p-2 rounded-lg shadow-lg hover:bg-teal-600 transition-colors border-2 border-white"
+        className="md:hidden bg-teal-500 text-white p-2 rounded-lg shadow-lg hover:bg-teal-600 transition-colors border-2 border-white"
         aria-label="Open Sidebar"
       >
         <ChevronRight className="h-5 w-5" />
@@ -135,7 +135,7 @@ const link2= [
         >
           <Avatar className="w-12 h-12">
             <AvatarImage 
-              src={user?.role === 'company' ? (user as any).logo || '/placeholder-logo.svg' : '/placeholder-logo.svg'} 
+              src={getUserAvatarUrl(user)} 
               alt={user?.name} 
             />
             <AvatarFallback className="bg-teal-500 text-white">

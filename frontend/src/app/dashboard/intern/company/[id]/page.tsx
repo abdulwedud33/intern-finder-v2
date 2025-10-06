@@ -26,6 +26,7 @@ import { ErrorPage } from "@/components/ui/error-boundary"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
+import { getImageUrl } from "@/utils/imageUtils"
 
 interface CompanyDetailPageProps {
   params: { id: string }
@@ -65,7 +66,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
             </Button>
             <div className="flex items-center gap-4">
               <Avatar className="w-16 h-16">
-                <AvatarImage src={company.logo || ""} alt={`${company.name} Logo`} />
+                <AvatarImage src={getImageUrl(company.logo) || ""} alt={`${company.name} Logo`} />
                 <AvatarFallback className="text-xl">
                   {company.name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -320,7 +321,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="w-10 h-10">
-                          <AvatarImage src={job.company?.logo || ""} alt={`${job.company?.name} Logo`} />
+                          <AvatarImage src={getImageUrl(job.company?.logo) || ""} alt={`${job.company?.name} Logo`} />
                           <AvatarFallback>
                             {job.company?.name?.slice(0, 2).toUpperCase()}
                           </AvatarFallback>

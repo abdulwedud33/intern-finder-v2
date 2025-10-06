@@ -14,6 +14,7 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 
 export function InternHeader() {
   const [isOpen, setIsOpen] = useState(false)
@@ -21,7 +22,7 @@ export function InternHeader() {
   const { user, logout } = useAuth()
 
   return (
-    <header className="bg-gray-900 text-white px-6 py-4">
+    <header className="*:bg-gray-900 text-white px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Logo and Brand */}
         <div className="flex items-center space-x-2">
@@ -108,10 +109,10 @@ export function InternHeader() {
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-4">
                   <Avatar className="h-10 w-10">
                     <AvatarImage 
-                      src={user.avatar} 
+                      src={getUserAvatarUrl(user)} 
                       alt={user.name} 
                     />
                     <AvatarFallback className="bg-teal-500 text-white">

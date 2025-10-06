@@ -30,15 +30,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
   // 3. Parse JSON fields from FormData
   if (role === 'intern') {
-    // Parse education and skills arrays from JSON strings
-    if (profileData.education && typeof profileData.education === 'string') {
-      try {
-        profileData.education = JSON.parse(profileData.education);
-      } catch (error) {
-        console.error('Error parsing education:', error);
-        profileData.education = [];
-      }
-    }
+    // Parse skills arrays from JSON strings
     
     if (profileData.skills && typeof profileData.skills === 'string') {
       try {
@@ -110,7 +102,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     }
   } else if (role === 'company') {
     // Parse company-specific arrays from JSON strings
-    const arrayFields = ['values', 'specialties', 'benefits', 'technologies'];
+    const arrayFields = ['benefits'];
     arrayFields.forEach(field => {
       if (profileData[field] && typeof profileData[field] === 'string') {
         try {

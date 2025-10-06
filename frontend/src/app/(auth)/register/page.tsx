@@ -61,32 +61,6 @@ const baseUserSchema = z.object({
   path: ["confirmPassword"],
 });
 
-// Education schema (matches backend Intern.education)
-const educationSchema = z.object({
-  institution: z.string()
-    .min(2, "Institution name is required")
-    .max(100, "Institution name is too long"),
-  degree: z.string()
-    .min(2, "Degree is required")
-    .max(100, "Degree name is too long"),
-  fieldOfStudy: z.string()
-    .min(2, "Field of study is required")
-    .max(100, "Field of study is too long"),
-  startDate: z.string()
-    .min(1, "Start date is required")
-    .refine(val => !isNaN(Date.parse(val)), "Invalid date format"),
-  endDate: z.string()
-    .optional()
-    .refine(val => !val || !isNaN(Date.parse(val)), "Invalid date format")
-    .nullable(),
-  isCurrent: z.boolean().default(false),
-  description: z.string().max(1000, "Description is too long").optional(),
-  gpa: z.union([z.string(), z.number()])
-    .transform(val => typeof val === 'string' ? parseFloat(val) || 0 : val)
-    .refine(val => val >= 0 && val <= 4, "GPA must be between 0 and 4")
-    .optional()
-    .nullable(),
-});
 
 // Skill schema (matches backend Intern.skills)
 const skillSchema = z.object({
@@ -183,10 +157,6 @@ const internSchema = baseUserSchema.extend({
     error: "Please select a valid gender"
   }),
   
-  // Education (required at least one)
-  education: z.array(educationSchema)
-    .min(1, "At least one education entry is required")
-    .max(10, "Maximum 10 education entries allowed"),
   
   // Skills (required at least one)
   skills: z.array(skillSchema)
@@ -283,13 +253,7 @@ const companySchema = baseUserSchema.extend({
   ]).optional(),
   
   // Location
-  headquarters: z.object({
-    address: z.string().max(200, "Address is too long").optional(),
-    city: z.string().max(100, "City name is too long").optional(),
-    state: z.string().max(100, "State name is too long").optional(),
-    country: z.string().max(100, "Country name is too long").optional(),
-    postalCode: z.string().max(20, "Postal code is too long").optional(),
-  }).optional(),
+  headquarters: z.string().max(500, "Headquarters address is too long").optional(),
   
   // Contact Information
   contactEmail: z.string()
@@ -309,37 +273,9 @@ const companySchema = baseUserSchema.extend({
     github: z.string().url("Please enter a valid URL").or(z.literal("")).optional(),
   }).optional().default({}),
   
-  // Company Culture
-  values: z.array(z.string())
-    .max(10, "Maximum 10 values allowed")
-    .optional()
-    .default([]),
-    
-  mission: z.string()
-    .max(1000, "Mission statement is too long")
-    .optional(),
-    
-  vision: z.string()
-    .max(1000, "Vision statement is too long")
-    .optional(),
-    
-  culture: z.string()
-    .max(5000, "Culture description is too long")
-    .optional(),
-  
   // Additional Information
-  specialties: z.array(z.string())
-    .max(20, "Maximum 20 specialties allowed")
-    .optional()
-    .default([]),
-    
   benefits: z.array(z.string())
     .max(50, "Maximum 50 benefits allowed")
-    .optional()
-    .default([]),
-    
-  technologies: z.array(z.string())
-    .max(50, "Maximum 50 technologies allowed")
     .optional()
     .default([]),
   
@@ -407,13 +343,6 @@ export default function RegisterPage() {
     reset({
       role: activeTab,
       agreeToTerms: false,
-      education: activeTab === "intern" ? [{
-        institution: "",
-        degree: "",
-        fieldOfStudy: "",
-        startDate: "",
-        isCurrent: false,
-      }] : [],
       skills: activeTab === "intern" ? [] : [],
       preferredIndustries: [],
     } as any)
@@ -502,8 +431,6 @@ export default function RegisterPage() {
       if (checkAllSteps || step === 2) {
         if (!formValues.dateOfBirth?.trim()) emptyFields.push("Date of Birth");
         if (!formValues.gender?.trim()) emptyFields.push("Gender");
-        if (!formValues.education || formValues.education.length === 0 || 
-            !formValues.education[0]?.institution?.trim()) emptyFields.push("Education Institution");
         if (!formValues.skills || formValues.skills.length === 0) emptyFields.push("Skills");
         if (!formValues.workAuthorization?.trim()) emptyFields.push("Work Authorization");
       }
@@ -542,7 +469,7 @@ export default function RegisterPage() {
         case 1:
           return ["name", "email", "password", "confirmPassword", "phone", "location", "agreeToTerms"];
         case 2:
-          return ["dateOfBirth", "gender", "education", "skills", "workAuthorization"];
+          return ["dateOfBirth", "gender", "skills", "workAuthorization"];
         case 3:
           return ["linkedinUrl", "website", "about"];
         default:
@@ -633,16 +560,6 @@ export default function RegisterPage() {
         formData.append('website', (data as any).website || '');
         formData.append('linkedinUrl', (data as any).linkedinUrl || '');
         
-        // Add education array
-        const education = (data as any).education?.map((e: any) => ({
-              institution: e.institution,
-              degree: e.degree,
-              fieldOfStudy: e.fieldOfStudy,
-              startDate: e.startDate,
-              endDate: e.endDate || undefined,
-              isCurrent: Boolean(e.isCurrent),
-        }));
-        formData.append('education', JSON.stringify(education));
         
         // Add skills array
         const skills = (data as any).skills?.map((s: any) => (typeof s === 'string' ? { name: s } : { name: s.name }));
@@ -727,7 +644,7 @@ export default function RegisterPage() {
         
         // Headquarters
         if ((data as any).headquarters) {
-          formData.append('headquarters', JSON.stringify((data as any).headquarters));
+          formData.append('headquarters', (data as any).headquarters);
         }
         
         // Social media
@@ -735,29 +652,9 @@ export default function RegisterPage() {
           formData.append('socialMedia', JSON.stringify((data as any).socialMedia));
         }
         
-        // Company culture
-        if ((data as any).values) {
-          formData.append('values', JSON.stringify((data as any).values));
-        }
-        if ((data as any).mission) {
-          formData.append('mission', (data as any).mission);
-        }
-        if ((data as any).vision) {
-          formData.append('vision', (data as any).vision);
-        }
-        if ((data as any).culture) {
-          formData.append('culture', (data as any).culture);
-        }
-        
         // Additional info
-        if ((data as any).specialties) {
-          formData.append('specialties', JSON.stringify((data as any).specialties));
-        }
         if ((data as any).benefits) {
           formData.append('benefits', JSON.stringify((data as any).benefits));
-        }
-        if ((data as any).technologies) {
-          formData.append('technologies', JSON.stringify((data as any).technologies));
         }
         
         
@@ -1197,162 +1094,6 @@ export default function RegisterPage() {
                       )}
                     </div>
 
-                    <div>
-                      <div className="flex justify-between items-center">
-                        <Label>Education</Label>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const currentEducation = watch("education") || [];
-                            setValue("education", [
-                              ...currentEducation,
-                              {
-                                institution: "",
-                                degree: "",
-                                fieldOfStudy: "",
-                                startDate: "",
-                                isCurrent: false,
-                              },
-                            ]);
-                          }}
-                        >
-                          <Plus className="w-4 h-4 mr-1" /> Add Education
-                        </Button>
-                      </div>
-                      
-                      {watch("education")?.map((edu: any, index: number) => (
-                        <div key={index} className="mt-4 p-4 border rounded-lg space-y-3">
-                          <div>
-                            <Label>Institution</Label>
-                            <Input
-                              {...register(`education.${index}.institution`)}
-                              placeholder="e.g., University of California, Berkeley"
-                            />
-                            {(errors.education as any)?.[index]?.institution && (
-                              <p className="text-sm text-red-500">
-                                {(errors.education as any)?.[index]?.institution?.message as string}
-                              </p>
-                            )}
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Degree</Label>
-                              <Input
-                                {...register(`education.${index}.degree`)}
-                                placeholder="e.g., Bachelor's"
-                              />
-                              {(errors.education as any)?.[index]?.degree && (
-                                <p className="text-sm text-red-500">
-                                  {(errors.education as any)?.[index]?.degree?.message as string}
-                                </p>
-                              )}
-                            </div>
-                            <div>
-                              <Label>Field of Study</Label>
-                              <Input
-                                {...register(`education.${index}.fieldOfStudy`)}
-                                placeholder="e.g., Computer Science"
-                              />
-                              {(errors.education as any)?.[index]?.fieldOfStudy && (
-                                <p className="text-sm text-red-500">
-                                  {(errors.education as any)?.[index]?.fieldOfStudy?.message as string}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Start Date</Label>
-                              <Input
-                                type="date"
-                                {...register(`education.${index}.startDate`)}
-                              />
-                              {(errors.education as any)?.[index]?.startDate && (
-                                <p className="text-sm text-red-500">
-                                  {(errors.education as any)?.[index]?.startDate?.message as string}
-                                </p>
-                              )}
-                            </div>
-                            <div>
-                              <Label>End Date</Label>
-                              <Input
-                                type="date"
-                                {...register(`education.${index}.endDate`)}
-                                disabled={watch(`education.${index}.isCurrent`)}
-                              />
-                              <div className="flex items-center space-x-2 mt-2">
-                                <Checkbox
-                                  id={`current-${index}`}
-                                  checked={watch(`education.${index}.isCurrent`)}
-                                  onCheckedChange={(checked) => {
-                                    setValue(`education.${index}.isCurrent`, Boolean(checked));
-                                    if (checked) {
-                                      setValue(`education.${index}.endDate`, "");
-                                    }
-                                  }}
-                                />
-                                <label
-                                  htmlFor={`current-${index}`}
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                  Currently enrolled
-                                </label>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <Label>GPA (optional)</Label>
-                            <Input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              max="4"
-                              {...register(`education.${index}.gpa`)}
-                              placeholder="e.g., 3.5"
-                            />
-                            {(errors.education as any)?.[index]?.gpa && (
-                              <p className="text-sm text-red-500">
-                                {(errors.education as any)?.[index]?.gpa?.message as string}
-                              </p>
-                            )}
-                          </div>
-
-                          <div>
-                            <Label>Description (optional)</Label>
-                            <textarea
-                              {...register(`education.${index}.description`)}
-                              className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                              placeholder="Relevant coursework, achievements, etc."
-                            />
-                          </div>
-
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="w-full mt-2"
-                            onClick={() => {
-                              const currentEducation = watch("education") || [];
-                              setValue(
-                                "education",
-                                currentEducation.filter((_: any, i: number) => i !== index)
-                              );
-                            }}
-                          >
-                            Remove Education
-                          </Button>
-                        </div>
-                      ))}
-                      
-                      {errors.education && !Array.isArray(errors.education) && (
-                        <p className="text-sm text-red-500 mt-1">{errors.education.message as string}</p>
-                      )}
-                    </div>
 
 
                     <div>
@@ -2269,7 +2010,7 @@ export default function RegisterPage() {
                       <Label htmlFor="description">Company Description</Label>
                       <textarea
                         id="description"
-                        placeholder="Tell us about your company, mission, and culture..."
+                        placeholder="Tell us about your company and what you do..."
                         {...register("description")}
                         className="flex h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       />
@@ -2322,210 +2063,19 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                      <Label>Company Headquarters</Label>
-                      <div className="space-y-3">
-                        <Input
-                          placeholder="Street Address"
-                          {...register("headquarters.address")}
-                        />
-                        <div className="grid grid-cols-2 gap-3">
-                          <Input
-                            placeholder="City"
-                            {...register("headquarters.city")}
-                          />
-                          <Input
-                            placeholder="State/Province"
-                            {...register("headquarters.state")}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <Input
-                            placeholder="Country"
-                            {...register("headquarters.country")}
-                          />
-                          <Input
-                            placeholder="Postal Code"
-                            {...register("headquarters.postalCode")}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="mission">Mission Statement</Label>
-                      <textarea
-                        id="mission"
-                        placeholder="What is your company's mission?"
-                        {...register("mission")}
-                        className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      <Label htmlFor="headquarters">Company Headquarters</Label>
+                      <Input
+                        placeholder="Enter your company's headquarters address"
+                        {...register("headquarters")}
                       />
-                      {"mission" in errors && errors.mission && (
-                        <p className="text-sm text-red-500 mt-1">{errors.mission.message as string}</p>
+                      {errors.headquarters && (
+                        <p className="text-sm text-red-500 mt-1">{errors.headquarters.message as string}</p>
                       )}
                     </div>
 
-                    <div>
-                      <Label htmlFor="vision">Vision Statement</Label>
-                      <textarea
-                        id="vision"
-                        placeholder="What is your company's vision for the future?"
-                        {...register("vision")}
-                        className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      />
-                      {"vision" in errors && errors.vision && (
-                        <p className="text-sm text-red-500 mt-1">{errors.vision.message as string}</p>
-                      )}
-                    </div>
 
-                    <div>
-                      <Label>Company Values</Label>
-                      <Controller
-                        name="values"
-                        control={control}
-                        render={({ field }) => (
-                          <div>
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {field.value?.map((value: any, index: number) => (
-                                <div
-                                  key={index}
-                                  className="bg-gray-100 px-3 py-1 rounded-full text-sm flex items-center"
-                                >
-                                  {value}
-                                  <button
-                                    type="button"
-                                    className="ml-2 text-gray-500 hover:text-red-500"
-                                    onClick={() => {
-                                      const newValues = [...field.value];
-                                      newValues.splice(index, 1);
-                                      field.onChange(newValues);
-                                    }}
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="flex">
-                              <Input
-                                type="text"
-                                placeholder="Add a company value and press Enter"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                                    e.preventDefault();
-                                    field.onChange([
-                                      ...(field.value || []),
-                                      e.currentTarget.value.trim(),
-                                    ]);
-                                    e.currentTarget.value = '';
-                                  }
-                                }}
-                                className="flex-1"
-                              />
-                            </div>
-                          </div>
-                        )}
-                      />
-                    </div>
 
-                    <div>
-                      <Label>Company Specialties</Label>
-                      <Controller
-                        name="specialties"
-                        control={control}
-                        render={({ field }) => (
-                          <div>
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {field.value?.map((specialty: any, index: number) => (
-                                <div
-                                  key={index}
-                                  className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm flex items-center"
-                                >
-                                  {specialty}
-                                  <button
-                                    type="button"
-                                    className="ml-2 text-teal-600 hover:text-teal-900"
-                                    onClick={() => {
-                                      const newSpecialties = [...field.value];
-                                      newSpecialties.splice(index, 1);
-                                      field.onChange(newSpecialties);
-                                    }}
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="flex">
-                              <Input
-                                type="text"
-                                placeholder="Add a specialty and press Enter"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                                    e.preventDefault();
-                                    field.onChange([
-                                      ...(field.value || []),
-                                      e.currentTarget.value.trim(),
-                                    ]);
-                                    e.currentTarget.value = '';
-                                  }
-                                }}
-                                className="flex-1"
-                              />
-                            </div>
-                          </div>
-                        )}
-                      />
-                    </div>
 
-                    <div>
-                      <Label>Technologies Used</Label>
-                      <Controller
-                        name="technologies"
-                        control={control}
-                        render={({ field }) => (
-                          <div>
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {field.value?.map((tech: any, index: number) => (
-                                <div
-                                  key={index}
-                                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
-                                >
-                                  {tech}
-                                  <button
-                                    type="button"
-                                    className="ml-2 text-blue-600 hover:text-blue-900"
-                                    onClick={() => {
-                                      const newTechs = [...field.value];
-                                      newTechs.splice(index, 1);
-                                      field.onChange(newTechs);
-                                    }}
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="flex">
-                              <Input
-                                type="text"
-                                placeholder="Add a technology and press Enter"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                                    e.preventDefault();
-                                    field.onChange([
-                                      ...(field.value || []),
-                                      e.currentTarget.value.trim(),
-                                    ]);
-                                    e.currentTarget.value = '';
-                                  }
-                                }}
-                                className="flex-1"
-                              />
-                            </div>
-                          </div>
-                        )}
-                      />
-                    </div>
 
                     <div>
                       <Label>Employee Benefits</Label>
@@ -2577,18 +2127,6 @@ export default function RegisterPage() {
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="culture">Company Culture</Label>
-                      <textarea
-                        id="culture"
-                        placeholder="Describe your company culture, work environment, and team dynamics..."
-                        {...register("culture")}
-                        className="flex h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      />
-                      {"culture" in errors && errors.culture && (
-                        <p className="text-sm text-red-500 mt-1">{errors.culture.message as string}</p>
-                      )}
-                    </div>
 
                     <div>
                       <Label>Internship Duration</Label>
@@ -2764,7 +2302,7 @@ export default function RegisterPage() {
                   <CheckCircle className="w-6 h-6 mr-3 mt-0.5 flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold">Quality Matches</h4>
-                    <p className="text-teal-100 text-sm">Find interns who align with your company culture and needs</p>
+                    <p className="text-teal-100 text-sm">Find interns who align with your company needs</p>
                   </div>
                 </div>
               </>

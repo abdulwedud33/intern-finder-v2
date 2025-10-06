@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 
 export function ClientHeader() {
   const { user, logout } = useAuth()
@@ -47,10 +48,10 @@ export function ClientHeader() {
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="text-white hover:bg-gray-800 p-2 flex items-center space-x-2">
+              <Button variant="ghost" className="text-white hover:bg-gray-800 p-4 flex items-center space-x-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage 
-                    src={user.role === 'company' ? (user as any).logo : undefined} 
+                    src={getUserAvatarUrl(user)} 
                     alt={user.name} 
                   />
                   <AvatarFallback className="bg-teal-500 text-white text-sm">

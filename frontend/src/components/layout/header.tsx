@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 
 type user = {
   id: string
@@ -117,7 +118,7 @@ if (hideRoutes.includes(pathname) || isDashboardPage) {
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
                     <Avatar className="h-10 w-10">
                       <AvatarImage 
-                        src={user.role === 'company' ? user.logo : user.avatar} 
+                        src={getUserAvatarUrl(user)} 
                         alt={user.name}
                       />
                       <AvatarFallback className="bg-teal-500 text-white">
@@ -192,7 +193,7 @@ if (hideRoutes.includes(pathname) || isDashboardPage) {
             >
               <Avatar className="h-8 w-8">
                 <AvatarImage 
-                  src={user.role === 'company' ? '/placeholder-logo.svg' : user.avatar} 
+                  src={getUserAvatarUrl(user)} 
                   alt={user.name} 
                 />
                 <AvatarFallback className="bg-teal-500 text-white text-sm">
@@ -298,7 +299,7 @@ if (hideRoutes.includes(pathname) || isDashboardPage) {
                     <div className="flex items-center space-x-3 w-full">
                       <Avatar className="h-10 w-10 ring-2 ring-teal-500/20">
                         <AvatarImage 
-                          src={user.role === 'company' ? '/placeholder-logo.svg' : user.avatar} 
+                          src={getUserAvatarUrl(user)} 
                           alt={user.name} 
                         />
                         <AvatarFallback className="bg-teal-500 text-white">

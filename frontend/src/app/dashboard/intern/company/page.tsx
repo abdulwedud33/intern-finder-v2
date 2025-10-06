@@ -9,6 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useCompanies, type Company } from "@/hooks/useCompanies"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
+import { getImageUrl } from "@/utils/imageUtils"
 import { useState, useMemo } from "react"
 import Link from "next/link"
 
@@ -179,7 +180,7 @@ export default function CompanyPage() {
                 <div className="flex items-start justify-between mb-4">
                   <Avatar className="w-12 h-12 flex-shrink-0">
                     <AvatarImage 
-                      src={company.logo || ""} 
+                      src={getImageUrl(company.logo) || ""} 
                       alt={`${company.name} Logo`} 
                     />
                     <AvatarFallback>

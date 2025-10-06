@@ -37,13 +37,7 @@ const companySchema = new mongoose.Schema({
   },
   
   // Location
-  headquarters: {
-    address: String,
-    city: String,
-    state: String,
-    country: String,
-    postalCode: String
-  },
+  headquarters: String,
   
   // Contact Information
   contactEmail: {
@@ -65,16 +59,8 @@ const companySchema = new mongoose.Schema({
     github: String
   },
   
-  // Company Culture
-  values: [String],
-  mission: String,
-  vision: String,
-  culture: String,
-  
   // Additional Information
-  specialties: [String],
   benefits: [String],
-  technologies: [String],
   
   // Media
   logo: String,
