@@ -345,6 +345,7 @@ export default function RegisterPage() {
       agreeToTerms: false,
       skills: activeTab === "intern" ? [] : [],
       preferredIndustries: [],
+      headquarters: activeTab === "company" ? "" : undefined,
     } as any)
     setCurrentStep(1)
   }, [activeTab, reset])
@@ -643,9 +644,7 @@ export default function RegisterPage() {
         }
         
         // Headquarters
-        if ((data as any).headquarters) {
-          formData.append('headquarters', (data as any).headquarters);
-        }
+        formData.append('headquarters', (data as any).headquarters || '');
         
         // Social media
         if ((data as any).socialMedia) {

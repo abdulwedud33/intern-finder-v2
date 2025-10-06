@@ -114,15 +114,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
       }
     });
     
-    // Parse headquarters object if present
-    if (profileData.headquarters && typeof profileData.headquarters === 'string') {
-      try {
-        profileData.headquarters = JSON.parse(profileData.headquarters);
-      } catch (error) {
-        console.error('Error parsing headquarters:', error);
-        profileData.headquarters = {};
-      }
-    }
+    // Headquarters is now a simple string, no parsing needed
     
     // Parse socialMedia object if present
     if (profileData.socialMedia && typeof profileData.socialMedia === 'string') {
