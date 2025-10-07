@@ -74,6 +74,22 @@ export const jobService = {
     });
 
     const response = await api.get(`/jobs?${params.toString()}`);
+    
+    // Transform the response to ensure company data is properly formatted
+    if (response.data && response.data.data) {
+      response.data.data = response.data.data.map((job: any) => ({
+        ...job,
+        company: job.company || {
+          _id: job.companyId || null,
+          name: "Company",
+          logo: null,
+          industry: null,
+          companySize: null
+        },
+        companyId: undefined // Remove companyId to avoid confusion
+      }));
+    }
+    
     return response.data;
   },
 
