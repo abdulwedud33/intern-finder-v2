@@ -47,7 +47,8 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
   let query = Job.find(queryObj)
     .populate({
       path: 'companyId',
-      select: 'name logo industry companySize'
+      select: 'name logo industry companySize',
+      match: { role: 'company' } // Only populate if it's a company
     });
 
   // Select fields
@@ -76,6 +77,35 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
   // Executing query
   const jobs = await query;
 
+  // Transform jobs to ensure company data is properly formatted for frontend
+  const transformedJobs = jobs.map(job => {
+    const jobObj = job.toObject();
+    
+    // If companyId is populated, use it as company
+    if (jobObj.companyId && typeof jobObj.companyId === 'object') {
+      jobObj.company = {
+        _id: jobObj.companyId._id,
+        name: jobObj.companyId.name,
+        logo: jobObj.companyId.logo,
+        industry: jobObj.companyId.industry,
+        companySize: jobObj.companyId.companySize
+      };
+      delete jobObj.companyId; // Remove the original companyId field
+    } else {
+      // If no company data, provide a fallback
+      jobObj.company = {
+        _id: null,
+        name: "Company",
+        logo: null,
+        industry: null,
+        companySize: null
+      };
+      delete jobObj.companyId;
+    }
+    
+    return jobObj;
+  });
+
   // Pagination result
   const pagination = {};
 
@@ -95,9 +125,9 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    count: jobs.length,
+    count: transformedJobs.length,
     pagination,
-    data: jobs
+    data: transformedJobs
   });
 });
 
