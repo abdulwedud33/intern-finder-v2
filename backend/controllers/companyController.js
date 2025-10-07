@@ -11,11 +11,9 @@ const fs = require('fs');
  * @access  Private (Company)
  */
 exports.getCompanyProfile = asyncHandler(async (req, res, next) => {
-  // Since Company is a discriminator of User, we can directly use req.user
-  // and populate any additional fields if needed
-  const company = await Company.findById(req.user.id)
-    .select('-password -resetPasswordToken -resetPasswordExpire')
-    .populate('interns', 'name email avatar');
+  // Since Company is now standalone, we can directly use req.user
+  const company = await Company.findById(req.user._id)
+    .select('-password -resetPasswordToken -resetPasswordExpire');
 
   if (!company) {
     return next(new ErrorResponse('Company profile not found', 404));
@@ -34,8 +32,7 @@ exports.getCompanyProfile = asyncHandler(async (req, res, next) => {
  */
 exports.getCompanyById = asyncHandler(async (req, res, next) => {
   const company = await Company.findById(req.params.id)
-    .select('-password -resetPasswordToken -resetPasswordExpire -emailVerified -status -role')
-    .populate('interns', 'name avatar');
+    .select('-password -resetPasswordToken -resetPasswordExpire -emailVerified -emailVerificationToken -emailVerificationExpire');
 
   if (!company) {
     return next(new ErrorResponse('Company not found', 404));
@@ -77,8 +74,8 @@ exports.updateCompanyProfile = asyncHandler(async (req, res, next) => {
     ...otherFields
   } = req.body;
 
-  // Find the company (which is a User with role=company)
-  let company = await Company.findById(req.user.id);
+  // Find the company
+  let company = await Company.findById(req.user._id);
 
   if (!company) {
     return next(new ErrorResponse('Company not found', 404));
@@ -90,17 +87,11 @@ exports.updateCompanyProfile = asyncHandler(async (req, res, next) => {
   if (website) company.website = website;
   if (industry) company.industry = industry;
   if (companySize) company.companySize = companySize;
-  if (founded) company.founded = founded;
+  if (founded) company.foundedYear = founded;
   if (headquarters) company.headquarters = headquarters;
   if (logo) company.logo = logo;
-  if (coverPhoto) company.coverPhoto = coverPhoto;
   if (socialMedia) company.socialMedia = socialMedia;
   if (phone) company.phone = phone;
-  if (address) company.address = address;
-  if (city) company.city = city;
-  if (state) company.state = state;
-  if (country) company.country = country;
-  if (zipCode) company.zipCode = zipCode;
 
   // Update any other fields that were passed in
   Object.keys(otherFields).forEach(key => {
@@ -109,49 +100,20 @@ exports.updateCompanyProfile = asyncHandler(async (req, res, next) => {
     }
   });
 
-  // Set the updatedAt timestamp
-  company.updatedAt = Date.now();
-  if (phone) company.contact.phone = phone;
-  if (address) company.contact.address = address;
-  if (city) company.contact.city = city;
-  if (state) company.contact.state = state;
-  if (country) company.contact.country = country;
-  if (zipCode) company.contact.zipCode = zipCode;
-
   await company.save();
 
-  // Update user's name if company name changed
-  if (companyName) {
-    await User.findByIdAndUpdate(req.user.id, { name: companyName });
-  }
-
   res.status(200).json({
     success: true,
     data: company
   });
 });
 
-// @desc    Get company by ID
-// @route   GET /api/companies/:id
-// @access  Public
-exports.getCompanyById = asyncHandler(async (req, res, next) => {
-  const company = await Company.findById(req.params.id)
-    .populate('user', 'name email')
-    .select('-interns'); // Don't expose intern list publicly
 
-  if (!company) {
-    return next(new ErrorResponse('Company not found', 404));
-  }
-
-  res.status(200).json({
-    success: true,
-    data: company
-  });
-});
-
-// @desc    Get all companies
-// @route   GET /api/companies
-// @access  Public
+/**
+ * @desc    Get all companies
+ * @route   GET /api/companies
+ * @access  Public
+ */
 exports.getCompanies = asyncHandler(async (req, res, next) => {
   // Copy req.query
   const reqQuery = { ...req.query };
@@ -164,7 +126,12 @@ exports.getCompanies = asyncHandler(async (req, res, next) => {
   let queryStr = JSON.stringify(reqQuery);
   queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
 
-  let query = Company.find(JSON.parse(queryStr)).select('-interns');
+  // Parse query and add role filter for companies
+  let queryObj = JSON.parse(queryStr);
+  queryObj.role = 'company';
+
+  let query = Company.find(queryObj)
+    .select('-password -resetPasswordToken -resetPasswordExpire -emailVerificationToken -emailVerificationExpire');
 
   // Select fields
   if (req.query.select) {
@@ -185,7 +152,7 @@ exports.getCompanies = asyncHandler(async (req, res, next) => {
   const limit = parseInt(req.query.limit, 10) || 10;
   const startIndex = (page - 1) * limit;
   const endIndex = page * limit;
-  const total = await Company.countDocuments(JSON.parse(queryStr));
+  const total = await Company.countDocuments(queryObj);
 
   query = query.skip(startIndex).limit(limit);
 
@@ -264,7 +231,7 @@ exports.uploadCompanyLogo = asyncHandler(async (req, res, next) => {
 
     // Update company logo
     const company = await Company.findByIdAndUpdate(
-      req.user.id,
+      req.user._id,
       { logo: file.name },
       { new: true, runValidators: true }
     )
