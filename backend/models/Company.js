@@ -1,21 +1,5 @@
 const mongoose = require('mongoose');
-
-// Ensure User model is registered first
-let User;
-try {
-  const UserModule = require('./User');
-  User = UserModule.User;
-  
-  // If User model is not registered yet, register it
-  if (!mongoose.models.User) {
-    User = mongoose.model('User', UserModule.userSchema);
-  } else {
-    User = mongoose.models.User;
-  }
-} catch (error) {
-  console.error('Error loading User model:', error);
-  throw error;
-}
+const { User } = require('./User');
 
 // Define the Company schema
 const companySchema = new mongoose.Schema({
@@ -193,6 +177,10 @@ companySchema.methods.calculateProfileCompletion = function() {
 };
 
 // Create the Company model as a discriminator of User
+// Ensure User model is registered first
+if (!mongoose.models.User) {
+  console.error('User model not registered when creating Company model');
+}
 const Company = User.discriminator('company', companySchema);
 
 module.exports = Company;

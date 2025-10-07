@@ -96,8 +96,13 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Base User model
-const User = mongoose.model('User', userSchema);
+// Base User model - only register if not already registered
+let User;
+if (mongoose.models.User) {
+  User = mongoose.models.User;
+} else {
+  User = mongoose.model('User', userSchema);
+}
 
 // Export the base model and schema for extending
 module.exports = { User, userSchema };

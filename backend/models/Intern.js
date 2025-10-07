@@ -215,6 +215,10 @@ internSchema.methods.calculateProfileCompletion = function() {
 };
 
 // Create the Intern model as a discriminator of User
+// Ensure User model is registered first
+if (!mongoose.models.User) {
+  console.error('User model not registered when creating Intern model');
+}
 const Intern = User.discriminator('intern', internSchema);
 
 module.exports = Intern;
