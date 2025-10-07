@@ -130,27 +130,37 @@ exports.getCompanies = asyncHandler(async (req, res, next) => {
   let queryObj = JSON.parse(queryStr);
   queryObj.role = 'company';
   
-  // Also check for companies in the User collection (for backward compatibility)
-  const User = require('../models/User');
-  const userCompanies = await User.find({ role: 'company' }).select('name email logo industry companySize');
+  // Look for companies in the Company collection (standalone model)
+  const companyResults = await Company.find(queryObj)
+    .select('-password -resetPasswordToken -resetPasswordExpire -emailVerificationToken -emailVerificationExpire');
   
-  // If we found companies in User collection, add them to the results
-  if (userCompanies.length > 0) {
-    const transformedUserCompanies = userCompanies.map(user => ({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      logo: user.logo,
-      industry: user.industry,
-      companySize: user.companySize,
-      role: 'company'
-    }));
+  // If we found companies, return them
+  if (companyResults.length > 0) {
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedCompanies = companyResults.slice(startIndex, endIndex);
+    
+    // Pagination result
+    const pagination = {};
+    if (endIndex < companyResults.length) {
+      pagination.next = {
+        page: page + 1,
+        limit
+      };
+    }
+    if (startIndex > 0) {
+      pagination.prev = {
+        page: page - 1,
+        limit
+      };
+    }
     
     res.status(200).json({
       success: true,
-      count: transformedUserCompanies.length,
-      pagination: {},
-      data: transformedUserCompanies
+      count: paginatedCompanies.length,
+      pagination,
+      data: paginatedCompanies
     });
     return;
   }

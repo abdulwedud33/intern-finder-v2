@@ -48,7 +48,7 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
     .populate({
       path: 'companyId',
       select: 'name logo industry companySize',
-      match: { role: 'company' } // Only populate if it's a company
+      model: 'Company' // Explicitly specify the Company model
     });
 
   // Select fields
@@ -122,10 +122,10 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
     }
     
     // If companyId is populated, use it as company
-    if (jobObj.companyId && typeof jobObj.companyId === 'object') {
+    if (jobObj.companyId && typeof jobObj.companyId === 'object' && jobObj.companyId._id) {
       jobObj.company = {
         _id: jobObj.companyId._id,
-        name: jobObj.companyId.name,
+        name: jobObj.companyId.name || "Company",
         logo: jobObj.companyId.logo,
         industry: jobObj.companyId.industry,
         companySize: jobObj.companyId.companySize
@@ -134,7 +134,7 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
     } else {
       // If no company data, provide a fallback
       jobObj.company = {
-        _id: null,
+        _id: jobObj.companyId || null,
         name: "Company",
         logo: null,
         industry: null,
