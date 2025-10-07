@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const Job = require('../models/Job');
 const User = require('../models/User');
-const Company = require('../models/Company');
 const Application = require('../models/Application');
 const asyncHandler = require('../middleware/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
@@ -198,13 +197,6 @@ exports.createJob = asyncHandler(async (req, res, next) => {
     }
 
     const job = await Job.create(req.body);
-    
-    // Add job to company's jobs array
-    await Company.findByIdAndUpdate(
-      req.user._id,
-      { $push: { jobs: job._id } },
-      { new: true, runValidators: true }
-    );
 
     // Populate company details
     await job.populate({
@@ -348,12 +340,7 @@ exports.deleteJob = asyncHandler(async (req, res, next) => {
     job.closedAt = Date.now();
     await job.save();
 
-    // Remove job from company's jobs array
-    await Company.findByIdAndUpdate(
-      req.user._id,
-      { $pull: { jobs: job._id } },
-      { new: true, runValidators: true }
-    );
+    // Note: No need to update Company's jobs array since it's a virtual field
 
     // Schedule cleanup of files after a delay (e.g., 30 days)
     const cleanupDate = new Date();
