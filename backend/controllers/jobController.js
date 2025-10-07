@@ -83,9 +83,9 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
   // First, fix any jobs with null companyId by assigning them to the first available company
   const jobsWithNullCompany = jobs.filter(job => !job.companyId);
   if (jobsWithNullCompany.length > 0) {
-    // Find the first company in the database
-    const Company = require('../models/Company');
-    const firstCompany = await Company.findOne({ role: 'company' });
+    // Find the first company in the database (companies are stored in User collection)
+    const User = require('../models/User');
+    const firstCompany = await User.findOne({ role: 'company' });
     
     if (firstCompany) {
       // Update jobs with null companyId to have the first company's ID
@@ -100,6 +100,7 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
         .populate({
           path: 'companyId',
           select: 'name logo industry companySize',
+          model: User,
           match: { role: 'company' }
         })
         .skip(startIndex)
