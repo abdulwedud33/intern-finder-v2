@@ -1,7 +1,69 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 // Define the Company schema
 const companySchema = new mongoose.Schema({
+  // User fields (since Company is now standalone)
+  name: {
+    type: String,
+    required: [true, 'Please provide a company name'],
+    trim: true,
+    maxlength: [100, 'Name cannot be more than 100 characters']
+  },
+  email: {
+    type: String,
+    required: [true, 'Please provide an email'],
+    unique: true,
+    match: [
+      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+      'Please provide a valid email'
+    ]
+  },
+  password: {
+    type: String,
+    required: [true, 'Please provide a password'],
+    minlength: 6,
+    select: false
+  },
+  role: {
+    type: String,
+    enum: ['company'],
+    default: 'company'
+  },
+  phone: {
+    type: String,
+    required: [true, 'Please provide a phone number']
+  },
+  avatar: {
+    type: String,
+    default: ''
+  },
+  about: {
+    type: String,
+    default: ''
+  },
+  location: {
+    type: String,
+    default: ''
+  },
+  website: {
+    type: String,
+    default: ''
+  },
+  social: {
+    linkedin: { type: String, default: '' },
+    portfolio: { type: String, default: '' },
+    github: { type: String, default: '' }
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  lastLogin: {
+    type: Date
+  },
+  
   // Company Information
   industry: {
     type: String,
@@ -156,6 +218,30 @@ companySchema.virtual('givenReviews', {
   match: { direction: 'company_to_intern' }
 });
 
+// Encrypt password before saving
+companySchema.pre('save', async function (next) {
+  if (!this.isModified('password')) {
+    next();
+  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Generate JWT token
+companySchema.methods.getSignedJwtToken = function () {
+  const expiresIn = process.env.JWT_EXPIRE && process.env.JWT_EXPIRE.trim() !== ''
+    ? process.env.JWT_EXPIRE
+    : '30d';
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+    expiresIn
+  });
+};
+
+// Match user entered password to hashed password
+companySchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
 // Calculate profile completion percentage
 companySchema.methods.calculateProfileCompletion = function() {
   let completion = 0;
@@ -175,16 +261,8 @@ companySchema.methods.calculateProfileCompletion = function() {
   return this.save();
 };
 
-// Create the Company model as a discriminator of User
-// Ensure User model is registered first
-let Company;
-if (mongoose.models.User) {
-  const { User } = require('./User');
-  Company = User.discriminator('company', companySchema);
-} else {
-  // Fallback: create a standalone Company model if User is not available
-  console.warn('User model not registered, creating standalone Company model');
-  Company = mongoose.model('Company', companySchema);
-}
+// Create the Company model as a standalone model
+// This ensures it's always registered with Mongoose
+const Company = mongoose.model('Company', companySchema);
 
 module.exports = Company;
