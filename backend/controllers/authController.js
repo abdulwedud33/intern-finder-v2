@@ -19,6 +19,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
   // 2. Handle file upload
   let avatarPath = '';
+  console.log('File upload debug:', {
+    hasFile: !!req.file,
+    file: req.file,
+    files: req.files,
+    body: req.body
+  });
+  
   if (req.file) {
     avatarPath = `/uploads/${req.file.filename}`;
     console.log('File uploaded:', {
@@ -26,6 +33,8 @@ const registerUser = asyncHandler(async (req, res, next) => {
       path: req.file.path,
       avatarPath: avatarPath
     });
+  } else {
+    console.log('No file uploaded during registration');
   }
 
   // 3. Parse JSON fields from FormData
