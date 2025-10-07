@@ -147,8 +147,10 @@ exports.uploadProfilePicture = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Create custom filename
-  file.name = `profile_${req.user.id}${path.parse(file.name).ext}`;
+  // Create custom filename with timestamp to avoid conflicts
+  const timestamp = Date.now();
+  const fileExtension = path.parse(file.name).ext;
+  const filename = `profile_${req.user.id}_${timestamp}${fileExtension}`;
 
   // Create uploads directory if it doesn't exist
   const uploadPath = process.env.FILE_UPLOAD_PATH || './public/uploads';
@@ -156,17 +158,14 @@ exports.uploadProfilePicture = asyncHandler(async (req, res, next) => {
     fs.mkdirSync(uploadPath, { recursive: true });
   }
 
-  // Upload file
-  file.mv(`${uploadPath}/${file.name}`, async err => {
-    if (err) {
-      console.error(err);
-      return next(new ErrorResponse('Problem with file upload', 500));
-    }
+  try {
+    // Upload file using async/await
+    await file.mv(`${uploadPath}/${filename}`);
 
     // Update intern profile picture
     const intern = await Intern.findByIdAndUpdate(
       req.user.id,
-      { photo: file.name },
+      { photo: filename },
       { new: true, runValidators: true }
     )
       .select('-password -resetPasswordToken -resetPasswordExpire')
@@ -174,9 +173,13 @@ exports.uploadProfilePicture = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: intern
+      data: intern,
+      message: 'Profile picture uploaded successfully'
     });
-  });
+  } catch (err) {
+    console.error('File upload error:', err);
+    return next(new ErrorResponse('Problem with file upload', 500));
+  }
 });
 
 /**

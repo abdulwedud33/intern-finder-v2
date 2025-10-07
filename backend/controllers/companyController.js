@@ -248,8 +248,10 @@ exports.uploadCompanyLogo = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Create custom filename
-  file.name = `logo_${req.user.id}${path.parse(file.name).ext}`;
+  // Create custom filename with timestamp to avoid conflicts
+  const timestamp = Date.now();
+  const fileExtension = path.parse(file.name).ext;
+  const filename = `logo_${req.user.id}_${timestamp}${fileExtension}`;
 
   // Create uploads directory if it doesn't exist
   const uploadPath = process.env.FILE_UPLOAD_PATH || './public/uploads';
@@ -257,17 +259,14 @@ exports.uploadCompanyLogo = asyncHandler(async (req, res, next) => {
     fs.mkdirSync(uploadPath, { recursive: true });
   }
 
-  // Upload file
-  file.mv(`${uploadPath}/${file.name}`, async err => {
-    if (err) {
-      console.error(err);
-      return next(new ErrorResponse('Problem with file upload', 500));
-    }
+  try {
+    // Upload file using async/await
+    await file.mv(`${uploadPath}/${filename}`);
 
     // Update company logo
     const company = await Company.findByIdAndUpdate(
       req.user._id,
-      { logo: file.name },
+      { logo: filename },
       { new: true, runValidators: true }
     )
       .select('-password -resetPasswordToken -resetPasswordExpire')
@@ -275,7 +274,11 @@ exports.uploadCompanyLogo = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: company
+      data: company,
+      message: 'Company logo uploaded successfully'
     });
-  });
+  } catch (err) {
+    console.error('File upload error:', err);
+    return next(new ErrorResponse('Problem with file upload', 500));
+  }
 });
