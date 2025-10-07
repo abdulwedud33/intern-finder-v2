@@ -44,11 +44,14 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
   }
 
   // Finding resource with populated company details
+  // Since companies are stored in User collection with role: 'company'
+  const User = require('../models/User');
   let query = Job.find(queryObj)
     .populate({
       path: 'companyId',
       select: 'name logo industry companySize',
-      model: 'Company' // Explicitly specify the Company model
+      model: User, // Use User model since companies are stored there
+      match: { role: 'company' } // Only populate if it's a company
     });
 
   // Select fields
