@@ -76,17 +76,17 @@ exports.getCompanyApplications = asyncHandler(async (req, res, next) => {
   }
 
   // Get jobs created by the company
-  const jobs = await Job.find({ company: req.user.id }).select('_id');
+  const jobs = await Job.find({ companyId: req.user.id }).select('_id');
   const jobIds = jobs.map(job => job._id);
 
   // Find all applications for the company's jobs
-  const applications = await Application.find({ job: { $in: jobIds } })
+  const applications = await Application.find({ jobId: { $in: jobIds } })
     .populate({
-      path: 'user',
-      select: 'name email avatar'
+      path: 'internId',
+      select: 'name email photo'
     })
     .populate({
-      path: 'job',
+      path: 'jobId',
       select: 'title description'
     })
     .sort({ createdAt: -1 });
@@ -110,13 +110,13 @@ exports.getMyApplications = asyncHandler(async (req, res, next) => {
   }
 
   // Find all applications for the intern
-  const applications = await Application.find({ user: req.user.id })
+  const applications = await Application.find({ internId: req.user.id })
     .populate({
-      path: 'job',
-      select: 'title company description location'
+      path: 'jobId',
+      select: 'title companyName description location'
     })
     .populate({
-      path: 'company',
+      path: 'companyId',
       select: 'name logo'
     })
     .sort({ createdAt: -1 });
@@ -136,15 +136,15 @@ exports.getMyApplications = asyncHandler(async (req, res, next) => {
 exports.getApplication = asyncHandler(async (req, res, next) => {
   const application = await Application.findById(req.params.id)
     .populate({
-      path: 'user',
-      select: 'name email phone avatar'
+      path: 'internId',
+      select: 'name email phone photo'
     })
     .populate({
-      path: 'job',
+      path: 'jobId',
       select: 'title description requirements'
     })
     .populate({
-      path: 'company',
+      path: 'companyId',
       select: 'name logo'
     });
 
@@ -156,8 +156,8 @@ exports.getApplication = asyncHandler(async (req, res, next) => {
 
   // Make sure user is application owner or company
   if (
-    application.user._id.toString() !== req.user.id &&
-    application.company.toString() !== req.user.id
+    application.internId._id.toString() !== req.user.id &&
+    application.companyId._id.toString() !== req.user.id
   ) {
     return next(
       new ErrorResponse(
@@ -381,8 +381,8 @@ exports.checkApplicationAccess = asyncHandler(async (req, res, next) => {
 
   // Check if user is the application owner, company, or admin
   if (
-    application.user.toString() !== req.user.id &&
-    application.company.toString() !== req.user.id &&
+    application.internId.toString() !== req.user.id &&
+    application.companyId.toString() !== req.user.id &&
     req.user.role !== 'admin'
   ) {
     return next(
@@ -461,7 +461,7 @@ exports.getApplicationsByJobId = asyncHandler(async (req, res, next) => {
   // First verify the job exists and is owned by the company
   const job = await Job.findOne({
     _id: jobId,
-    companyId: req.user.company // Ensure the job belongs to the company
+    companyId: req.user.id // Ensure the job belongs to the company
   });
 
   if (!job) {
@@ -470,10 +470,10 @@ exports.getApplicationsByJobId = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const applications = await Application.find({ listing: jobId })
+  const applications = await Application.find({ jobId: jobId })
     .populate({
-      path: 'user',
-      select: 'name email'
+      path: 'internId',
+      select: 'name email photo'
     });
 
   res.status(200).json({
@@ -500,8 +500,8 @@ exports.preCheckJob = asyncHandler(async (req, res, next) => {
 
   // Check if already applied
   const existingApplication = await Application.findOne({
-    user: userId,
-    listing: jobId
+    internId: userId,
+    jobId: jobId
   });
 
   res.status(200).json({
