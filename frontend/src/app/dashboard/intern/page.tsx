@@ -782,7 +782,9 @@ export default function InternDashboard() {
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-gray-600">
-                          <p>{job.salary?.min && job.salary?.max ? `$${job.salary.min} - $${job.salary.max}` : "Salary not specified"}</p>
+                          <p>{typeof job.salary === 'string' 
+                            ? job.salary 
+                            : (job.salary?.min && job.salary?.max ? `$${job.salary.min} - $${job.salary.max}` : "Salary not specified")}</p>
                           <p className="text-xs">{job.type}</p>
                         </div>
                         <div className="flex gap-2">

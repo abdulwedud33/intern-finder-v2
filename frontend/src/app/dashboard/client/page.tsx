@@ -617,7 +617,9 @@ export default function ClientDashboard() {
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <DollarSign className="h-4 w-4" />
                           <span>
-                            {job.salary.currency} {job.salary.min.toLocaleString()} - {job.salary.max.toLocaleString()}
+                            {typeof job.salary === 'string' 
+                              ? job.salary 
+                              : `${job.salary?.currency || ''} ${job.salary?.min?.toLocaleString() || ''} - ${job.salary?.max?.toLocaleString() || ''}`}
                         </span>
                         </div>
                       )}

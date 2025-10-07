@@ -263,7 +263,9 @@ export default function Homepage() {
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-semibold text-teal-600">
                         {job.salary 
-                          ? `$${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()} ${job.salary.currency}`
+                          ? (typeof job.salary === 'string' 
+                              ? job.salary 
+                              : `$${job.salary.min?.toLocaleString()} - $${job.salary.max?.toLocaleString()} ${job.salary.currency || ''}`)
                           : "Competitive"
                         }
                       </span>

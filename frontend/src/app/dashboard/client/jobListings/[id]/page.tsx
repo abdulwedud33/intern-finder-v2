@@ -313,7 +313,9 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                     <div>
                       <p className="text-sm text-gray-600">Salary</p>
                       <p className="font-medium">
-                        ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()} {job.salary.currency}
+                        {typeof job.salary === 'string' 
+                          ? job.salary 
+                          : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}`}
                       </p>
                     </div>
                   </div>

@@ -209,7 +209,9 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                   <div className="text-teal-600 text-lg font-medium flex items-center">
                     <DollarSign className="h-5 w-5 mr-1" />
                     {job.salary 
-                      ? `$${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()} ${job.salary.currency}`
+                      ? (typeof job.salary === 'string' 
+                          ? job.salary 
+                          : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}`)
                       : 'Not specified'}
                   </div>
                 </div>
@@ -273,7 +275,9 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                     <p className="text-sm text-gray-500">Salary</p>
                     <p className="font-medium">
                       {job.salary 
-                        ? `$${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()} ${job.salary.currency}`
+                        ? (typeof job.salary === 'string' 
+                          ? job.salary 
+                          : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}`)
                         : 'Not specified'}
                     </p>
                   </div>

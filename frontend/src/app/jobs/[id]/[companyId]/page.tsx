@@ -343,7 +343,9 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                       {job.salary && (
                         <div className="flex items-center gap-2 text-sm text-gray-500">
                           <DollarSign className="h-4 w-4" />
-                          ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}
+                          {typeof job.salary === 'string' 
+                            ? job.salary 
+                            : `${job.salary?.min?.toLocaleString()} - ${job.salary?.max?.toLocaleString()}`}
                         </div>
                       )}
                     </div>

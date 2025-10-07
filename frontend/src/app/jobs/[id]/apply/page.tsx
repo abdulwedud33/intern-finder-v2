@@ -151,7 +151,9 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
     company: job.company?.name || "",
     location: job.location || "",
     type: job.type || "",
-    salary: job.salary ? `$${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()} ${job.salary.currency}/${job.salary.period}` : "",
+    salary: job.salary ? (typeof job.salary === 'string' 
+      ? job.salary 
+      : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}/${job.salary?.period || ''}`) : "",
     applicants: 0, // This would need to be fetched separately
     description: job.description || "",
     requirements: job.requirements || [],

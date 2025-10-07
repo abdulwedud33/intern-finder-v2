@@ -46,7 +46,9 @@ export default function JobsPage() {
     company: job.company?.name || "Company",
     location: job.location,
     type: job.type,
-    salary: job.salary ? `$${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()} ${job.salary.currency}/${job.salary.period}` : "Salary not specified",
+    salary: job.salary ? (typeof job.salary === 'string' 
+      ? job.salary 
+      : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}/${job.salary?.period || ''}`) : "Salary not specified",
     posted: new Date(job.createdAt).toLocaleDateString(),
     logo: job.company?.logo || "/placeholder.svg",
     description: job.description,
