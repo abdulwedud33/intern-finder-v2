@@ -1,5 +1,6 @@
 "use client"
 
+import { use } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, MoreHorizontal, Edit, Trash2, Eye, Users, Calendar, MapPin, DollarSign, Clock } from "lucide-react"
@@ -14,15 +15,16 @@ import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
 
 type JobDetailsPageProps = {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default function JobDetailsPage({ params }: JobDetailsPageProps) {
+  const resolvedParams = use(params)
   const queryClient = useQueryClient()
   const { toast } = useToast()
-  const jobId = params.id
+  const jobId = resolvedParams.id
 
   // Fetch job details
   const { data: jobData, isLoading, error } = useQuery({

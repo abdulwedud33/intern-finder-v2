@@ -1,5 +1,6 @@
 "use client"
 
+import { use } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -15,13 +16,14 @@ import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 
 interface JobDetailPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default function JobDetailPage({ params }: JobDetailPageProps) {
+  const resolvedParams = use(params)
   const router = useRouter()
   const { toast } = useToast()
-  const { job, loading, error } = useJobById(params.id)
+  const { job, loading, error } = useJobById(resolvedParams.id)
   const { user } = useAuth()
 
   // Check if user is an intern
@@ -69,7 +71,7 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
     }
     
     // Navigate to application page
-    router.push(`/jobs/${params.id}/apply`)
+    router.push(`/jobs/${resolvedParams.id}/apply`)
   }
 
   if (loading) return <LoadingPage />
@@ -109,7 +111,7 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                     <div>
                       <h1 className="text-2xl font-semibold text-gray-900">{job.title}</h1>
                       <Link 
-                        href={`/jobs/${params.id}/${job.company?._id}`}
+                        href={`/jobs/${resolvedParams.id}/${job.company?._id}`}
                         className="text-gray-600 hover:text-teal-600 transition-colors duration-200"
                       >
                         {job.company?.name}
@@ -220,7 +222,7 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                   </Button>
                 ) : isIntern ? (
                   <Button size="lg" className="w-full bg-teal-600 hover:bg-teal-700 mb-4" asChild>
-                    <Link href={`/jobs/${params.id}/apply`}>Apply Now</Link>
+                    <Link href={`/jobs/${resolvedParams.id}/apply`}>Apply Now</Link>
                   </Button>
                 ) : (
                   <Button size="lg" className="w-full bg-gray-400 text-white mb-4" disabled>
@@ -236,7 +238,7 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                   className="w-full" 
                   asChild
                 >
-                  <Link href={`/jobs/${params.id}/${job.company?._id}`}>
+                  <Link href={`/jobs/${resolvedParams.id}/${job.company?._id}`}>
                     View Company
                   </Link>
                 </Button>
