@@ -19,6 +19,8 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
   // 2. Handle file upload
   let avatarPath = '';
+  let resumePath = '';
+  
   console.log('File upload debug:', {
     hasFile: !!req.file,
     file: req.file,
@@ -26,6 +28,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     body: req.body
   });
   
+  // Handle single file upload (for companies)
   if (req.file) {
     avatarPath = `/uploads/${req.file.filename}`;
     console.log('File uploaded:', {
@@ -33,8 +36,31 @@ const registerUser = asyncHandler(async (req, res, next) => {
       path: req.file.path,
       avatarPath: avatarPath
     });
-  } else {
-    console.log('No file uploaded during registration');
+  }
+  
+  // Handle multiple file uploads (for interns)
+  if (req.files) {
+    if (req.files.avatar && req.files.avatar[0]) {
+      avatarPath = `/uploads/${req.files.avatar[0].filename}`;
+      console.log('Avatar uploaded:', {
+        filename: req.files.avatar[0].filename,
+        path: req.files.avatar[0].path,
+        avatarPath: avatarPath
+      });
+    }
+    
+    if (req.files.resume && req.files.resume[0]) {
+      resumePath = `/uploads/${req.files.resume[0].filename}`;
+      console.log('Resume uploaded:', {
+        filename: req.files.resume[0].filename,
+        path: req.files.resume[0].path,
+        resumePath: resumePath
+      });
+    }
+  }
+  
+  if (!avatarPath && !resumePath) {
+    console.log('No files uploaded during registration');
   }
 
   // 3. Parse JSON fields from FormData
@@ -174,6 +200,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
       phone,
       role,
       avatar: avatarPath,
+      resume: resumePath,
       ...profileData
     });
   } else if (role === 'company') {
