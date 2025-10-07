@@ -19,7 +19,7 @@ export default function JobListingsPage() {
   const { toast } = useToast()
   
   // Backend now handles filtering, so we just use the data directly
-  const jobs = Array.isArray(data?.data) ? data.data : []
+  const jobs = Array.isArray(data?.data?.jobs) ? data.data.jobs : []
   
   // Debug logging to help identify issues
   console.log('JobListingsPage - data:', data)

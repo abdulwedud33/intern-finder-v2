@@ -320,7 +320,18 @@ exports.createJob = asyncHandler(async (req, res, next) => {
   try {
     // Add company to req.body (already validated in middleware)
     req.body.companyId = req.user._id;
-    req.body.companyName = req.user.name; // Add company name directly
+    
+    // Get the actual company name from the Company model
+    let companyName = req.user.name; // fallback to user name
+    if (req.user.role === 'company') {
+      // For company users, get the company name from the Company collection
+      const Company = require('../models/Company');
+      const company = await Company.findById(req.user._id).select('name');
+      if (company && company.name) {
+        companyName = company.name;
+      }
+    }
+    req.body.companyName = companyName;
     
     // Set default status if not provided
     if (!req.body.status) {
