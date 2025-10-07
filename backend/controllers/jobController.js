@@ -50,7 +50,7 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
     .populate({
       path: 'companyId',
       select: 'name logo industry companySize',
-      model: User, // Use User model since companies are stored there
+      model: 'User', // Use string name instead of model object
       match: { role: 'company' } // Only populate if it's a company
     });
 
@@ -100,7 +100,7 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
         .populate({
           path: 'companyId',
           select: 'name logo industry companySize',
-          model: User,
+          model: 'User',
           match: { role: 'company' }
         })
         .skip(startIndex)
