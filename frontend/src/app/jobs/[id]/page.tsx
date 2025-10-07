@@ -122,7 +122,13 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                       </div>
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4" />
-                        <span className="font-semibold text-green-600">{job.salary}</span>
+                        <span className="font-semibold text-green-600">
+                          {job.salary 
+                            ? (typeof job.salary === 'string' 
+                              ? job.salary 
+                              : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}`)
+                            : 'Not specified'}
+                        </span>
                       </div>
                     </div>
                   </div>
