@@ -13,6 +13,7 @@ import { useCompanies } from "@/hooks/useCompanies"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { useAuth } from "@/contexts/AuthContext"
 import { getImageUrl } from "@/utils/imageUtils"
+import { decodeHtmlEntities } from "@/utils/htmlUtils"
 
 // Import images
 import briefCase from "../../public/images/briefcase(2) 2.png"
@@ -264,7 +265,7 @@ export default function Homepage() {
                       <span className="text-lg font-semibold text-teal-600">
                         {job.salary 
                           ? (typeof job.salary === 'string' 
-                              ? job.salary 
+                              ? decodeHtmlEntities(job.salary)
                               : `$${job.salary.min?.toLocaleString()} - $${job.salary.max?.toLocaleString()} ${job.salary.currency || ''}`)
                           : "Competitive"
                         }
