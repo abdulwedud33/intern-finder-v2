@@ -1,5 +1,21 @@
 const mongoose = require('mongoose');
-const { User } = require('./User');
+
+// Ensure User model is registered first
+let User;
+try {
+  const UserModule = require('./User');
+  User = UserModule.User;
+  
+  // If User model is not registered yet, register it
+  if (!mongoose.models.User) {
+    User = mongoose.model('User', UserModule.userSchema);
+  } else {
+    User = mongoose.models.User;
+  }
+} catch (error) {
+  console.error('Error loading User model:', error);
+  throw error;
+}
 
 // Define the Company schema
 const companySchema = new mongoose.Schema({

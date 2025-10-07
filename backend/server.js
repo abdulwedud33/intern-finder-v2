@@ -32,14 +32,12 @@ const statsRoutes = require('./routes/statsRoutes');
 const apiRoutes = require('./routes/apiRoutes');
 // Import other route files as needed
 
-// Connect to database
-connectDB();
-
-// Import models after database connection is established
-// This ensures all models are properly registered with Mongoose
+// Import models to ensure they are registered with Mongoose
+// Load base models first
 require('./models/User');
 require('./models/Company');
 require('./models/Intern');
+// Load dependent models
 require('./models/Job');
 require('./models/Application');
 require('./models/Interview');
@@ -47,6 +45,9 @@ require('./models/Review');
 require('./models/CompanyReview');
 require('./models/InternReview');
 require('./models/CompanyIntern');
+
+// Connect to database after models are loaded
+connectDB();
 
 // Initialize express app
 const app = express();
