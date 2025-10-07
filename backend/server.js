@@ -168,6 +168,7 @@ app.use('/api/company-interns', companyInternRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/intern-companies', internCompanyRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/cleanup', require('./routes/cleanupRoutes'));
 app.use('/api/stats', statsRoutes);
 
 // Health check endpoint

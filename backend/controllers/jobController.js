@@ -43,7 +43,7 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
     queryObj.status = 'published';
   }
 
-  // Finding resource - no need to populate since we store companyName directly
+  // Finding resource - simple query without population
   let query = Job.find(queryObj);
 
   // Select fields
