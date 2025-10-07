@@ -121,25 +121,33 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                         <div className="prose max-w-none">
                           <p>{job.description || 'No description provided.'}</p>
                           
-                          {job.responsibilities && job.responsibilities.length > 0 && (
+                          {job.responsibilities && (
                             <div className="mt-6">
                               <h3 className="text-lg font-medium mb-2">Responsibilities</h3>
-                              <ul className="list-disc pl-5 space-y-2">
-                                {job.responsibilities.map((item: string, index: number) => (
-                                  <li key={index}>{item}</li>
-                                ))}
-                              </ul>
+                              {Array.isArray(job.responsibilities) ? (
+                                <ul className="list-disc pl-5 space-y-2">
+                                  {job.responsibilities.map((item: string, index: number) => (
+                                    <li key={index}>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-gray-700 whitespace-pre-line">{job.responsibilities}</p>
+                              )}
                             </div>
                           )}
                           
-                          {job.requirements && job.requirements.length > 0 && (
+                          {job.requirements && (
                             <div className="mt-6">
                               <h3 className="text-lg font-medium mb-2">Requirements</h3>
-                              <ul className="list-disc pl-5 space-y-2">
-                                {job.requirements.map((item: string, index: number) => (
-                                  <li key={index}>{item}</li>
-                                ))}
-                              </ul>
+                              {Array.isArray(job.requirements) ? (
+                                <ul className="list-disc pl-5 space-y-2">
+                                  {job.requirements.map((item: string, index: number) => (
+                                    <li key={index}>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-gray-700 whitespace-pre-line">{job.requirements}</p>
+                              )}
                             </div>
                           )}
                         </div>

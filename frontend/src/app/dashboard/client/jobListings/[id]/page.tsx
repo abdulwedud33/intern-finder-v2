@@ -242,47 +242,59 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
             </div>
 
             {/* Requirements */}
-            {job.requirements && job.requirements.length > 0 && (
+            {job.requirements && (
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h3 className="text-xl font-semibold mb-4">Requirements</h3>
-                <ul className="space-y-3">
-                  {job.requirements.map((requirement: string, idx: number) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-teal-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-gray-700">{requirement}</span>
-                    </li>
-                  ))}
-                </ul>
+                {Array.isArray(job.requirements) ? (
+                  <ul className="space-y-3">
+                    {job.requirements.map((requirement: string, idx: number) => (
+                      <li key={idx} className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-teal-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="text-gray-700">{requirement}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-700 whitespace-pre-line">{job.requirements}</p>
+                )}
               </div>
             )}
 
             {/* Responsibilities */}
-            {job.responsibilities && job.responsibilities.length > 0 && (
+            {job.responsibilities && (
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h3 className="text-xl font-semibold mb-4">Responsibilities</h3>
-                <ul className="space-y-3">
-                  {job.responsibilities.map((responsibility: string, idx: number) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-teal-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-gray-700">{responsibility}</span>
-                    </li>
-                  ))}
-                </ul>
+                {Array.isArray(job.responsibilities) ? (
+                  <ul className="space-y-3">
+                    {job.responsibilities.map((responsibility: string, idx: number) => (
+                      <li key={idx} className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-teal-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="text-gray-700">{responsibility}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-700 whitespace-pre-line">{job.responsibilities}</p>
+                )}
               </div>
             )}
 
             {/* Qualifications */}
-            {job.qualifications && job.qualifications.length > 0 && (
+            {job.qualifications && (
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h3 className="text-xl font-semibold mb-4">Qualifications</h3>
-                <ul className="space-y-3">
-                  {job.qualifications.map((qualification: string, idx: number) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-teal-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-gray-700">{qualification}</span>
-                    </li>
-                  ))}
-                </ul>
+                {Array.isArray(job.qualifications) ? (
+                  <ul className="space-y-3">
+                    {job.qualifications.map((qualification: string, idx: number) => (
+                      <li key={idx} className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-teal-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="text-gray-700">{qualification}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-700 whitespace-pre-line">{job.qualifications}</p>
+                )}
               </div>
             )}
           </div>
