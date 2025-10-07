@@ -13,20 +13,6 @@ dotenv.config();
 // Import database connection
 const connectDB = require('./config/db');
 
-// Import models to ensure they are registered with Mongoose
-// Load base models first
-require('./models/User');
-require('./models/Company');
-require('./models/Intern');
-// Load dependent models
-require('./models/Job');
-require('./models/Application');
-require('./models/Interview');
-require('./models/Review');
-require('./models/CompanyReview');
-require('./models/InternReview');
-require('./models/CompanyIntern');
-
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
 
@@ -48,6 +34,19 @@ const apiRoutes = require('./routes/apiRoutes');
 
 // Connect to database
 connectDB();
+
+// Import models after database connection is established
+// This ensures all models are properly registered with Mongoose
+require('./models/User');
+require('./models/Company');
+require('./models/Intern');
+require('./models/Job');
+require('./models/Application');
+require('./models/Interview');
+require('./models/Review');
+require('./models/CompanyReview');
+require('./models/InternReview');
+require('./models/CompanyIntern');
 
 // Initialize express app
 const app = express();
