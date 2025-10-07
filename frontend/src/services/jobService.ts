@@ -5,6 +5,8 @@ export interface Job {
   _id: string;
   title: string;
   description: string;
+  companyId?: string;
+  companyName?: string;
   company: {
     _id: string;
     name: string;
@@ -87,12 +89,12 @@ export const jobService = {
           salary: fixedSalary,
           company: job.company || {
             _id: job.companyId || null,
-            name: "Company",
+            name: job.companyName || "Company",
             logo: null,
             industry: null,
             companySize: null
-          },
-          companyId: undefined // Remove companyId to avoid confusion
+          }
+          // Keep companyId and companyName for fallback usage
         };
       });
     }
