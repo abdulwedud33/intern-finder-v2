@@ -32,7 +32,7 @@ export default function JobsPage() {
       search: searchQuery,
       location: locationFilter,
       company: companyFilter,
-      status: 'active', // Only show active jobs
+      // Remove status filter to show all jobs (published, active, draft, etc.)
       limit: 20
     };
     
@@ -56,6 +56,12 @@ export default function JobsPage() {
   });
 
   const displayedJobs = jobs.map(formatJobForDisplay);
+
+  // Debug logging
+  console.log('JobsPage - jobs:', jobs);
+  console.log('JobsPage - displayedJobs:', displayedJobs);
+  console.log('JobsPage - loading:', loading);
+  console.log('JobsPage - error:', error);
 
   return (
     <div className="bg-[#F8F9FB] text-gray-800 min-h-screen font-sans">
