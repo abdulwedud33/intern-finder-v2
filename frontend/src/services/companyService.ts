@@ -58,11 +58,11 @@ export const getCompanies = async (filters: CompanyFilters = {}): Promise<GetCom
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.sort) params.append('sort', filters.sort);
 
-  const response = await api.get(`/api/companies?${params.toString()}`);
+  const response = await api.get(`/companies?${params.toString()}`);
   return response.data;
 };
 
 export const getCompanyById = async (id: string): Promise<{ success: boolean; data: Company }> => {
-  const response = await api.get(`/api/companies/${id}`);
+  const response = await api.get(`/companies/${id}`);
   return response.data;
 };
