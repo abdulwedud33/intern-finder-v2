@@ -35,19 +35,19 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
 
   // If company ID is provided in params, filter by that company
   if (req.params.companyId) {
-    queryObj.company = req.params.companyId;
+    queryObj.companyId = req.params.companyId;
   }
 
   // If user is an intern, don't show expired jobs
   if (req.user && req.user.role === 'intern') {
     queryObj.deadline = { $gte: new Date() };
-    queryObj.status = 'active';
+    queryObj.status = 'published';
   }
 
   // Finding resource with populated company details
   let query = Job.find(queryObj)
     .populate({
-      path: 'company',
+      path: 'companyId',
       select: 'name logo industry companySize'
     });
 
@@ -110,7 +110,7 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
 exports.getJob = asyncHandler(async (req, res, next) => {
   const job = await Job.findById(req.params.id)
     .populate({
-      path: 'company',
+      path: 'companyId',
       select: 'name logo industry companySize website'
     })
     .populate({
@@ -151,7 +151,7 @@ exports.getJob = asyncHandler(async (req, res, next) => {
  * @access  Private (Company)
  */
 exports.getCompanyJobs = asyncHandler(async (req, res, next) => {
-  const jobs = await Job.find({ company: req.user._id })
+  const jobs = await Job.find({ companyId: req.user._id })
     .populate('applications', 'status')
     .sort('-createdAt');
 
@@ -176,7 +176,7 @@ exports.getCompanyJobs = asyncHandler(async (req, res, next) => {
 exports.createJob = asyncHandler(async (req, res, next) => {
   try {
     // Add company to req.body (already validated in middleware)
-    req.body.company = req.user._id;
+    req.body.companyId = req.user._id;
     
     // Set default status if not provided
     if (!req.body.status) {
@@ -208,7 +208,7 @@ exports.createJob = asyncHandler(async (req, res, next) => {
 
     // Populate company details
     await job.populate({
-      path: 'company',
+      path: 'companyId',
       select: 'name logo industry companySize'
     });
 
@@ -271,7 +271,7 @@ exports.updateJob = asyncHandler(async (req, res, next) => {
     }
 
   // Make sure user is job owner
-  if (job.company.toString() !== req.user._id.toString()) {
+  if (job.companyId.toString() !== req.user._id.toString()) {
     return next(
       new ErrorResponse(
         `User ${req.user.id} is not authorized to update this job`,
@@ -281,7 +281,7 @@ exports.updateJob = asyncHandler(async (req, res, next) => {
   }
 
     // Prevent changing company ownership
-    if (req.body.company && req.body.company !== job.company.toString()) {
+    if (req.body.companyId && req.body.companyId !== job.companyId.toString()) {
       return next(
         new ErrorResponse('You cannot change the company of a job', 400)
       );
@@ -293,7 +293,7 @@ exports.updateJob = asyncHandler(async (req, res, next) => {
       req.body, 
       { new: true, runValidators: true }
     ).populate({
-      path: 'company',
+      path: 'companyId',
       select: 'name logo industry companySize'
     });
 
@@ -380,7 +380,7 @@ exports.deleteJob = asyncHandler(async (req, res, next) => {
  * @access  Public
  */
 exports.getJobsByCompany = asyncHandler(async (req, res, next) => {
-  const jobs = await Job.find({ company: req.params.companyId });
+  const jobs = await Job.find({ companyId: req.params.companyId });
 
   res.status(200).json({
     success: true,
@@ -435,10 +435,10 @@ exports.getJobsInRadius = asyncHandler(async (req, res, next) => {
     location: {
       $geoWithin: { $centerSphere: [[lng, lat], radius] }
     },
-    status: 'active',
+    status: 'published',
     deadline: { $gte: new Date() }
   }).populate({
-    path: 'company',
+    path: 'companyId',
     select: 'name logo industry'
   });
 
@@ -464,7 +464,7 @@ exports.jobPhotoUpload = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure user is job owner or admin
-  if (job.company.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+  if (job.companyId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
     return next(
       new ErrorResponse(
         `User ${req.user.id} is not authorized to update this job`,
@@ -543,7 +543,7 @@ exports.getJobStats = asyncHandler(async (req, res, next) => {
     // Get job statistics
     const stats = await Job.aggregate([
       {
-        $match: { company: new mongoose.Types.ObjectId(companyId) }
+        $match: { companyId: new mongoose.Types.ObjectId(companyId) }
       },
       {
         $group: {
@@ -560,10 +560,10 @@ exports.getJobStats = asyncHandler(async (req, res, next) => {
     });
 
     // Get total jobs
-    const totalJobs = await Job.countDocuments({ company: companyId });
+    const totalJobs = await Job.countDocuments({ companyId: companyId });
     
     // Get total applications for all jobs
-    const jobs = await Job.find({ company: companyId }).select('_id');
+    const jobs = await Job.find({ companyId: companyId }).select('_id');
     const jobIds = jobs.map(job => job._id);
     const totalApplications = await Application.countDocuments({ 
       job: { $in: jobIds } 
@@ -598,7 +598,7 @@ exports.closeJob = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure user is job owner or admin
-  if (job.company.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+  if (job.companyId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
     return next(
       new ErrorResponse(
         `User ${req.user.id} is not authorized to close this job`,

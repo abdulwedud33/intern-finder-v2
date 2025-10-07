@@ -39,8 +39,18 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Check if it's a network error or other non-Axios error
-    if (error.code === 'NETWORK_ERROR' || error.code === 'ERR_NETWORK') {
+    // Log the raw error object first for debugging
+    console.error('Raw API Error Object:', error);
+    console.error('Error type:', typeof error);
+    console.error('Error constructor:', error.constructor?.name);
+    console.error('Error keys:', Object.keys(error));
+    console.error('Error stack:', error.stack);
+    console.error('Error toString:', error.toString());
+
+    // Check if it's an empty object or has no meaningful properties
+    if (Object.keys(error).length === 0) {
+      console.error('API Error: Empty error object received - this might indicate a network issue or server problem');
+    } else if (error.code === 'NETWORK_ERROR' || error.code === 'ERR_NETWORK') {
       console.error('API Error: Network error -', error.message || 'No message');
     } else if (error.message === 'Request aborted') {
       console.error('API Error: Request was aborted');
@@ -51,8 +61,13 @@ api.interceptors.response.use(
         method: error.config?.method || 'unknown',
         status: error.response?.status || 'no response',
         message: error.message || 'unknown error',
-        response: error.response?.data || null,
-        code: error.code || 'no code'
+        responseData: error.response?.data || null,
+        code: error.code || 'no code',
+        // Additional debugging info
+        isAxiosError: error.isAxiosError,
+        request: error.request ? 'present' : 'missing',
+        config: error.config ? 'present' : 'missing',
+        response: error.response ? 'present' : 'missing'
       });
     }
     

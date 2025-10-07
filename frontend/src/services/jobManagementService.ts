@@ -32,6 +32,12 @@ export const jobManagementService = {
     return response.data;
   },
 
+  // Get job by ID
+  async getJobById(jobId: string): Promise<JobManagementResponse> {
+    const response = await api.get(`/jobs/detail/${jobId}`);
+    return response.data;
+  },
+
   // Create a new job
   async createJob(jobData: CreateJobRequest): Promise<JobManagementResponse> {
     const response = await api.post('/jobs', jobData);

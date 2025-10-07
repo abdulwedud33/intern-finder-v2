@@ -16,9 +16,11 @@
 3. **Environment Configuration**
    Create a `.env.local` file in the frontend root directory:
    ```env
-   # API Configuration
-   NEXT_PUBLIC_SERVER_URL=http://localhost:5000
-   NEXT_PUBLIC_API_URL=http://localhost:5000
+   # API Configuration (Production)
+   NEXT_PUBLIC_SERVER_URL=https://intern-finder-backend-v2.onrender.com
+   
+   # For local development, use:
+   # NEXT_PUBLIC_SERVER_URL=http://localhost:5000
    
    # App Configuration
    NEXT_PUBLIC_APP_NAME=Intern Finder
@@ -34,8 +36,7 @@
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `NEXT_PUBLIC_SERVER_URL` | Backend API URL | http://localhost:5000 | ✅ |
-| `NEXT_PUBLIC_API_URL` | Alternative API URL | http://localhost:5000 | ❌ |
+| `NEXT_PUBLIC_SERVER_URL` | Backend API URL | https://intern-finder-backend-v2.onrender.com | ✅ |
 | `NEXT_PUBLIC_APP_NAME` | Application name | Intern Finder | ❌ |
 | `NEXT_PUBLIC_APP_URL` | Frontend URL | http://localhost:3000 | ❌ |
 

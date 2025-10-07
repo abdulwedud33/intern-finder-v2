@@ -1,13 +1,11 @@
 import axios from 'axios';
 import { AuthUser } from '@/types/auth';
 
-const API_URL =
-  process.env.NEXT_PUBLIC_SERVER_URL ||
-  'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com';
 
 // Axios instance
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/api`,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });

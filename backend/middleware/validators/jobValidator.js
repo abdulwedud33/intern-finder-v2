@@ -7,16 +7,13 @@ exports.validateCreateJob = [
   check('requirements', 'Requirements are required').notEmpty().trim().escape(),
   check('responsibilities', 'Responsibilities are required').notEmpty().trim().escape(),
   check('type', 'Job type is required').notEmpty().isIn([
-    'Full-time', 
-    'Part-time', 
-    'Contract', 
-    'Internship', 
-    'Temporary'
+    'remote', 
+    'onsite', 
+    'hybrid'
   ]),
   check('location', 'Location is required').notEmpty().trim().escape(),
   check('salary', 'Salary information is required').notEmpty().trim().escape(),
-  check('duration', 'Duration is required for temporary/contract positions')
-    .if((value, { req }) => ['Contract', 'Temporary', 'Internship'].includes(req.body.type))
+  check('duration', 'Duration is required')
     .notEmpty()
     .trim()
     .escape(),
@@ -42,19 +39,13 @@ exports.validateUpdateJob = [
   check('requirements', 'Requirements cannot be empty').optional().trim().escape(),
   check('responsibilities', 'Responsibilities cannot be empty').optional().trim().escape(),
   check('type', 'Invalid job type').optional().isIn([
-    'Full-time', 
-    'Part-time', 
-    'Contract', 
-    'Internship', 
-    'Temporary'
+    'remote', 
+    'onsite', 
+    'hybrid'
   ]),
   check('location', 'Location cannot be empty').optional().trim().escape(),
   check('salary', 'Salary cannot be empty').optional().trim().escape(),
-  check('duration', 'Duration is required for temporary/contract positions')
-    .if((value, { req }) => req.body.type && ['Contract', 'Temporary', 'Internship'].includes(req.body.type))
-    .notEmpty()
-    .trim()
-    .escape(),
+  check('duration', 'Duration cannot be empty').optional().trim().escape(),
   check('deadline', 'Invalid deadline format').optional().isISO8601(),
   check('isRemote', 'Remote status must be a boolean').optional().isBoolean(),
   check('status', 'Invalid status').optional().isIn(['draft', 'published', 'closed', 'filled']),
@@ -83,7 +74,7 @@ exports.checkJobOwnership = async (req, res, next) => {
     }
 
     // Check if user is the owner or admin
-    if (job.company.toString() !== req.user.company.toString() && req.user.role !== 'admin') {
+    if (job.companyId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to perform this action'

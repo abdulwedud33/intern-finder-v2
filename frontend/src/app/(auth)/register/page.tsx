@@ -533,7 +533,7 @@ export default function RegisterPage() {
       console.log('✅ All validations passed - submitting register data for role:', data.role);
       
       // Build FormData payload for file upload
-      const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com';
       const endpoint = `/api/auth/register/${data.role === 'intern' ? 'intern' : 'company'}`;
       
       const formData = new FormData();

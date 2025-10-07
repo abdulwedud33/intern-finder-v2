@@ -16,53 +16,29 @@ import { useUpdateJob } from "@/hooks/useJobManagement"
 import { useToast } from "@/components/ui/use-toast"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
-import { jobService } from "@/services/jobService"
+import { jobManagementService } from "@/services/jobManagementService"
 
 interface JobFormData {
   title: string
   description: string
   location: string
-  type: string
-  level: string
-  salaryMin: string
-  salaryMax: string
-  currency: string
-  period: string
+  type: 'remote' | 'onsite' | 'hybrid'
+  salary: string
+  duration: string
   requirements: string
   responsibilities: string
-  qualifications: string
-  applicationDeadline: string
-  isRemote: boolean
-  status: 'active' | 'draft' | 'closed'
+  benefits: string
+  deadline: string
+  startDate: string
+  status: 'draft' | 'published' | 'closed' | 'filled'
 }
 
-const employmentTypes = [
-  { value: "internship", label: "Internship" },
-  { value: "full-time", label: "Full-time" },
-  { value: "part-time", label: "Part-time" },
-  { value: "contract", label: "Contract" },
-  { value: "freelance", label: "Freelance" }
+const jobTypes = [
+  { value: "remote", label: "Remote" },
+  { value: "onsite", label: "On-site" },
+  { value: "hybrid", label: "Hybrid" }
 ]
 
-const jobLevels = [
-  { value: "entry", label: "Entry Level" },
-  { value: "mid", label: "Mid Level" },
-  { value: "senior", label: "Senior Level" },
-  { value: "executive", label: "Executive" }
-]
-
-const currencies = [
-  { value: "USD", label: "USD ($)" },
-  { value: "EUR", label: "EUR (€)" },
-  { value: "GBP", label: "GBP (£)" },
-  { value: "CAD", label: "CAD (C$)" }
-]
-
-const salaryPeriods = [
-  { value: "hourly", label: "Per Hour" },
-  { value: "monthly", label: "Per Month" },
-  { value: "yearly", label: "Per Year" }
-]
 
 export default function EditJobPage() {
   const params = useParams()
@@ -74,24 +50,21 @@ export default function EditJobPage() {
     title: "",
     description: "",
     location: "",
-    type: "internship",
-    level: "entry",
-    salaryMin: "",
-    salaryMax: "",
-    currency: "USD",
-    period: "yearly",
+    type: "remote",
+    salary: "",
+    duration: "",
     requirements: "",
     responsibilities: "",
-    qualifications: "",
-    applicationDeadline: "",
-    isRemote: false,
+    benefits: "",
+    deadline: "",
+    startDate: "",
     status: "draft"
   })
 
   // Fetch job data
   const { data: jobResponse, isLoading, error } = useQuery({
     queryKey: ['job', jobId],
-    queryFn: () => jobService.getJobById(jobId),
+    queryFn: () => jobManagementService.getJobById(jobId),
     enabled: !!jobId,
   })
 
@@ -107,17 +80,14 @@ export default function EditJobPage() {
         title: job.title || "",
         description: job.description || "",
         location: job.location || "",
-        type: job.type || "internship",
-        level: job.level || "entry",
-        salaryMin: job.salary?.min?.toString() || "",
-        salaryMax: job.salary?.max?.toString() || "",
-        currency: job.salary?.currency || "USD",
-        period: job.salary?.period || "yearly",
-        requirements: Array.isArray(job.requirements) ? job.requirements.join(", ") : job.requirements || "",
-        responsibilities: Array.isArray(job.responsibilities) ? job.responsibilities.join(", ") : job.responsibilities || "",
-        qualifications: Array.isArray(job.qualifications) ? job.qualifications.join(", ") : job.qualifications || "",
-        applicationDeadline: job.applicationDeadline ? new Date(job.applicationDeadline).toISOString().split('T')[0] : "",
-        isRemote: job.isRemote || false,
+        type: job.type || "remote",
+        salary: job.salary || "",
+        duration: job.duration || "",
+        requirements: job.requirements || "",
+        responsibilities: job.responsibilities || "",
+        benefits: job.benefits || "",
+        deadline: job.deadline ? new Date(job.deadline).toISOString().split('T')[0] : "",
+        startDate: job.startDate ? new Date(job.startDate).toISOString().split('T')[0] : "",
         status: job.status || "draft"
       })
     }
@@ -139,34 +109,44 @@ export default function EditJobPage() {
         description: formData.description,
         location: formData.location,
         type: formData.type,
-        level: formData.level,
-        salary: formData.salaryMin && formData.salaryMax ? {
-          min: parseInt(formData.salaryMin),
-          max: parseInt(formData.salaryMax),
-          currency: formData.currency,
-          period: formData.period
-        } : undefined,
-        requirements: formData.requirements.split(",").map(s => s.trim()).filter(Boolean),
-        responsibilities: formData.responsibilities.split(",").map(s => s.trim()).filter(Boolean),
-        qualifications: formData.qualifications.split(",").map(s => s.trim()).filter(Boolean),
-        applicationDeadline: formData.applicationDeadline || undefined,
-        isRemote: formData.isRemote,
+        salary: formData.salary,
+        duration: formData.duration,
+        requirements: formData.requirements,
+        responsibilities: formData.responsibilities,
+        benefits: formData.benefits || undefined,
+        deadline: formData.deadline || undefined,
+        startDate: formData.startDate || undefined,
         status: formData.status
       }
 
       await updateJobMutation.mutateAsync({ jobId, jobData: updateData })
       
       toast({
-        title: "Job updated successfully",
+        title: "🎉 Job Updated Successfully!",
         description: "Your job listing has been updated.",
+        duration: 5000,
       })
       
       router.push("/dashboard/client/jobListings")
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Job update error:", error);
+      
+      let errorMessage = "Please try again later.";
+      const errorTitle = "Failed to Update Job";
+      
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Failed to update job",
-        description: "Please try again later.",
+        title: `❌ ${errorTitle}`,
+        description: errorMessage,
         variant: "destructive",
+        duration: 7000,
       })
     }
   }
@@ -248,33 +228,17 @@ export default function EditJobPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="type">Employment Type *</Label>
+                  <Label htmlFor="type">Job Type *</Label>
                   <Select value={formData.type} onValueChange={(value) => handleInputChange("type", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {employmentTypes.map((type) => (
+                      {jobTypes.map((type) => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="level">Experience Level</Label>
-                  <Select value={formData.level} onValueChange={(value) => handleInputChange("level", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {jobLevels.map((level) => (
-                        <SelectItem key={level.value} value={level.value}>
-                          {level.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -289,80 +253,42 @@ export default function EditJobPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
                       <SelectItem value="closed">Closed</SelectItem>
+                      <SelectItem value="filled">Filled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="isRemote"
-                  checked={formData.isRemote}
-                  onCheckedChange={(checked) => handleInputChange("isRemote", checked)}
-                />
-                <Label htmlFor="isRemote">This is a remote position</Label>
               </div>
             </CardContent>
           </Card>
 
-          {/* Salary Information */}
+          {/* Salary and Duration Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Salary Information</CardTitle>
+              <CardTitle>Salary & Duration Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="salaryMin">Minimum Salary</Label>
+                  <Label htmlFor="salary">Salary *</Label>
                   <Input
-                    id="salaryMin"
-                    type="number"
-                    value={formData.salaryMin}
-                    onChange={(e) => handleInputChange("salaryMin", e.target.value)}
-                    placeholder="e.g. 50000"
+                    id="salary"
+                    value={formData.salary}
+                    onChange={(e) => handleInputChange("salary", e.target.value)}
+                    placeholder="e.g. $25-30/hour or $50,000-70,000/year"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="salaryMax">Maximum Salary</Label>
+                  <Label htmlFor="duration">Duration *</Label>
                   <Input
-                    id="salaryMax"
-                    type="number"
-                    value={formData.salaryMax}
-                    onChange={(e) => handleInputChange("salaryMax", e.target.value)}
-                    placeholder="e.g. 70000"
+                    id="duration"
+                    value={formData.duration}
+                    onChange={(e) => handleInputChange("duration", e.target.value)}
+                    placeholder="e.g. 3 months, 6 months, 1 year"
+                    required
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Currency</Label>
-                  <Select value={formData.currency} onValueChange={(value) => handleInputChange("currency", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map((currency) => (
-                        <SelectItem key={currency.value} value={currency.value}>
-                          {currency.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="period">Period</Label>
-                  <Select value={formData.period} onValueChange={(value) => handleInputChange("period", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {salaryPeriods.map((period) => (
-                        <SelectItem key={period.value} value={period.value}>
-                          {period.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             </CardContent>
@@ -375,39 +301,38 @@ export default function EditJobPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="requirements">Requirements</Label>
+                <Label htmlFor="requirements">Requirements *</Label>
                 <Textarea
                   id="requirements"
                   value={formData.requirements}
                   onChange={(e) => handleInputChange("requirements", e.target.value)}
-                  placeholder="List key requirements separated by commas (e.g. React experience, 2+ years, Bachelor's degree)"
-                  rows={3}
+                  placeholder="List the key requirements for this position..."
+                  rows={4}
+                  required
                 />
-                <p className="text-sm text-gray-500">Separate multiple requirements with commas</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="responsibilities">Responsibilities</Label>
+                <Label htmlFor="responsibilities">Responsibilities *</Label>
                 <Textarea
                   id="responsibilities"
                   value={formData.responsibilities}
                   onChange={(e) => handleInputChange("responsibilities", e.target.value)}
-                  placeholder="List key responsibilities separated by commas (e.g. Develop user interfaces, Collaborate with design team, Write clean code)"
-                  rows={3}
+                  placeholder="List the key responsibilities for this position..."
+                  rows={4}
+                  required
                 />
-                <p className="text-sm text-gray-500">Separate multiple responsibilities with commas</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="qualifications">Qualifications</Label>
+                <Label htmlFor="benefits">Benefits</Label>
                 <Textarea
-                  id="qualifications"
-                  value={formData.qualifications}
-                  onChange={(e) => handleInputChange("qualifications", e.target.value)}
-                  placeholder="List preferred qualifications separated by commas (e.g. TypeScript experience, UI/UX knowledge, Portfolio)"
+                  id="benefits"
+                  value={formData.benefits}
+                  onChange={(e) => handleInputChange("benefits", e.target.value)}
+                  placeholder="List any benefits or perks offered..."
                   rows={3}
                 />
-                <p className="text-sm text-gray-500">Separate multiple qualifications with commas</p>
               </div>
             </CardContent>
           </Card>
@@ -418,15 +343,27 @@ export default function EditJobPage() {
               <CardTitle>Application Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="applicationDeadline">Application Deadline</Label>
-                <Input
-                  id="applicationDeadline"
-                  type="date"
-                  value={formData.applicationDeadline}
-                  onChange={(e) => handleInputChange("applicationDeadline", e.target.value)}
-                />
-                <p className="text-sm text-gray-500">Leave empty for no deadline</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="deadline">Application Deadline</Label>
+                  <Input
+                    id="deadline"
+                    type="date"
+                    value={formData.deadline}
+                    onChange={(e) => handleInputChange("deadline", e.target.value)}
+                  />
+                  <p className="text-sm text-gray-500">Leave empty for no deadline</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => handleInputChange("startDate", e.target.value)}
+                  />
+                  <p className="text-sm text-gray-500">When the position starts</p>
+                </div>
               </div>
             </CardContent>
           </Card>

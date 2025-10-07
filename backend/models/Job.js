@@ -53,8 +53,8 @@ const JobSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'inactive', 'filled', 'cancelled'],
-    default: 'active'
+    enum: ['draft', 'published', 'closed', 'filled'],
+    default: 'draft'
   },
   views: {
     type: Number,

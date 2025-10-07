@@ -47,7 +47,7 @@ export default function LoginPage() {
       setIsLoading(true)
       
       // Use single unified login endpoint
-      const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+      const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || "https://intern-finder-backend-v2.onrender.com"
       console.log('Login: Using baseUrl:', baseUrl)
       
       const response = await fetch(`${baseUrl}/api/auth/login`, {

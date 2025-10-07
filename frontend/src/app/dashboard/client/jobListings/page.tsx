@@ -120,10 +120,12 @@ export default function JobListingsPage() {
                 <TableCell className="font-medium">{job.title}</TableCell>
                 <TableCell>
                   <Badge className={
-                    job.status === "active" 
+                    job.status === "published" 
                       ? "bg-green-100 text-green-800" 
                       : job.status === "closed"
                       ? "bg-red-100 text-red-800"
+                      : job.status === "filled"
+                      ? "bg-blue-100 text-blue-800"
                       : "bg-yellow-100 text-yellow-800"
                   }>
                     {job.status || "draft"}
@@ -166,7 +168,7 @@ export default function JobListingsPage() {
                           Edit Job
                         </Link>
                       </DropdownMenuItem>
-                      {job.status === "active" && (
+                      {job.status === "published" && (
                         <DropdownMenuItem onClick={() => handleCloseJob(job._id)}>
                           Close Job
                         </DropdownMenuItem>
