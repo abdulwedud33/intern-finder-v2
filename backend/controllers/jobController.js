@@ -89,10 +89,10 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
         .replace(/&#x27;/g, "'");
     }
     
-    // Create company object from stored companyName
+    // Create company object - use companyName if available, otherwise use a default
     jobObj.company = {
       _id: jobObj.companyId,
-      name: jobObj.companyName || "Company",
+      name: jobObj.companyName || "Tech Company", // Better default name
       logo: null,
       industry: null,
       companySize: null
