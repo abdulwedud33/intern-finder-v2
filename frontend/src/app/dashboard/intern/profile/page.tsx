@@ -34,6 +34,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useUploadProfilePhoto, useUploadResume } from "@/hooks/useFileUpload"
 import { useMyProfile, useUpdateProfile, useUploadProfilePicture, useUploadResume as useUploadResumeProfile } from "@/hooks/useInternProfile"
 import { EnhancedFileUpload } from "@/components/ui/enhanced-file-upload"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { LoadingPage } from "@/components/ui/loading-spinner"
 import { ErrorPage } from "@/components/ui/error-boundary"
 import { toast } from "sonner"
@@ -165,19 +166,10 @@ export default function ProfilePage() {
                     <DialogTitle>Update Profile Photo</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <EnhancedFileUpload
-                      onFileUploaded={(fileUrl, filename) => {
-                        // File is automatically uploaded and profile updated
-                        toast.success("Profile photo updated successfully!")
-                      }}
-                      currentFile={transformedProfile.photo}
-                      fileType="profile-photo"
-                      maxSize={5}
+                    <ImageUpload
+                      type="profile"
+                      currentImage={transformedProfile.profilePicture}
                       showPreview={true}
-                      showDownload={true}
-                      showDelete={true}
-                      accept="image/*"
-                      disabled={uploadProfilePhotoMutation.isPending}
                     />
                     <p className="text-sm text-gray-500">
                       Upload a professional photo. Max size: 5MB. Supported formats: JPG, PNG, GIF

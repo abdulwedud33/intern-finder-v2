@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { 
   Settings, 
   User, 
@@ -328,41 +329,19 @@ export default function ClientSettingsPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAccountSubmit} className="space-y-6">
-                  <div className="flex items-center space-x-6">
-                    <div className="relative">
-                      <Avatar className="h-20 w-20">
-                        <AvatarImage src={userData && isCompany(userData) ? userData.logo : undefined} alt={userData?.name} />
-                        <AvatarFallback className="bg-teal-500 text-white text-xl">
-                          {userData?.name?.charAt(0) || "C"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
-                        onClick={() => document.getElementById('avatar-upload')?.click()}
-                        disabled={isUploading}
-                      >
-                        {isUploading ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                        ) : (
-                          <Upload className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <input
-                        id="avatar-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                    </div>
+                  <div className="space-y-4">
                     <div>
-                      <h3 className="text-lg font-medium">Profile Picture</h3>
+                      <h3 className="text-lg font-medium">Company Logo</h3>
                       <p className="text-sm text-gray-500">
-                        Recommended: 200x200px, JPG, PNG or GIF
+                        Upload your company logo. Recommended: 200x200px, JPG, PNG or GIF
                       </p>
                     </div>
+                    <ImageUpload
+                      type="logo"
+                      currentImage={userData && isCompany(userData) ? userData.logo : undefined}
+                      showPreview={true}
+                      className="max-w-xs"
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

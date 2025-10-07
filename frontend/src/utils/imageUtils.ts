@@ -5,8 +5,8 @@
 const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com';
 
 // Default fallback images
-const DEFAULT_AVATAR = '/placeholder-user.jpg';
-const DEFAULT_LOGO = '/placeholder-logo.png';
+const DEFAULT_AVATAR = '/placeholder.svg?height=100&width=100&text=U';
+const DEFAULT_LOGO = '/placeholder.svg?height=100&width=100&text=C';
 
 /**
  * Converts a relative image path to a full URL
@@ -15,7 +15,7 @@ const DEFAULT_LOGO = '/placeholder-logo.png';
  */
 export const getImageUrl = (imagePath: string | undefined | null): string | undefined => {
   // If no image path provided, return undefined (will use fallback in component)
-  if (!imagePath) {
+  if (!imagePath || imagePath === 'no-logo.jpg' || imagePath === 'no-avatar.jpg') {
     return undefined;
   }
   

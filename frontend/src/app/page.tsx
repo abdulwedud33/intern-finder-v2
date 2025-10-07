@@ -12,7 +12,7 @@ import { useJobs } from "@/hooks/useJobs"
 import { useCompanies } from "@/hooks/useCompanies"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { useAuth } from "@/contexts/AuthContext"
-import { getImageUrl } from "@/utils/imageUtils"
+import { getImageUrl, getCompanyLogoUrl } from "@/utils/imageUtils"
 import { decodeHtmlEntities } from "@/utils/htmlUtils"
 
 // Import images
@@ -228,7 +228,7 @@ export default function Homepage() {
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
                           {job.company?.logo ? (
                             <Image
-                              src={getImageUrl(job.company.logo) || ""}
+                              src={getCompanyLogoUrl(job.company.logo)}
                               alt={`${job.company.name} logo`}
                               width={48}
                               height={48}

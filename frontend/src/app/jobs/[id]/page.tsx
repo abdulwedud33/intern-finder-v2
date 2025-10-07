@@ -29,10 +29,16 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
 
   // Helper function to validate and format logo URL
   const getValidLogoUrl = (logoUrl: string | undefined) => {
-    if (!logoUrl || logoUrl === "no-logo.jpg" || !logoUrl.startsWith("http")) {
+    if (!logoUrl || logoUrl === "no-logo.jpg") {
       return "/placeholder.svg?height=80&width=80&text=CO"
     }
-    return logoUrl
+    // If it's already a full URL, return as is
+    if (logoUrl.startsWith("http")) {
+      return logoUrl
+    }
+    // Otherwise, construct the full URL
+    const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com';
+    return `${API_URL}/uploads/${logoUrl}`
   }
 
   // Type guard to check if job has the expected properties
