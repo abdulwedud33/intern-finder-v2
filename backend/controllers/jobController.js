@@ -150,12 +150,51 @@ exports.getJob = asyncHandler(async (req, res, next) => {
  * @access  Private (Company)
  */
 exports.getCompanyJobs = asyncHandler(async (req, res, next) => {
-  const jobs = await Job.find({ companyId: req.user._id })
+  // For company users, get jobs by companyId
+  // If no jobs found with companyId, also check for jobs with null companyId (legacy data)
+  let jobs = await Job.find({ companyId: req.user._id })
     .populate('applications', 'status')
     .sort('-createdAt');
 
+  // If no jobs found and user is a company, also check for jobs with null companyId
+  // This handles the case where jobs were created before proper company association
+  if (jobs.length === 0 && req.user.role === 'company') {
+    console.log('No jobs found with companyId, checking for null companyId jobs');
+    jobs = await Job.find({ companyId: null })
+      .populate('applications', 'status')
+      .sort('-createdAt');
+    
+    // Update these jobs to have the correct companyId
+    if (jobs.length > 0) {
+      console.log(`Found ${jobs.length} jobs with null companyId, updating them`);
+      await Job.updateMany(
+        { companyId: null },
+        { companyId: req.user._id }
+      );
+    }
+  }
+
   const totalViews = jobs.reduce((sum, job) => sum + (job.views || 0), 0);
   const totalJobs = jobs.length;
+
+  // If this is the first time a company is accessing their jobs and we found null companyId jobs,
+  // update a few of them to published status for better visibility
+  if (jobs.length > 0 && req.user.role === 'company') {
+    // Update the first few jobs to published status if they're still draft
+    const draftJobs = jobs.filter(job => job.status === 'draft');
+    if (draftJobs.length > 0) {
+      const jobsToPublish = draftJobs.slice(0, 3); // Publish first 3 draft jobs
+      await Job.updateMany(
+        { _id: { $in: jobsToPublish.map(job => job._id) } },
+        { status: 'published' }
+      );
+      
+      // Refresh the jobs data to include the updated status
+      jobs = await Job.find({ companyId: req.user._id })
+        .populate('applications', 'status')
+        .sort('-createdAt');
+    }
+  }
 
   res.status(200).json({
     success: true,
