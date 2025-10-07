@@ -7,6 +7,11 @@ const JobSchema = new mongoose.Schema({
     required: [true, 'Please add a company ID'],
     index: true
   },
+  companyName: {
+    type: String,
+    required: [true, 'Please add company name'],
+    trim: true
+  },
   title: {
     type: String,
     required: [true, 'Please add a job title'],

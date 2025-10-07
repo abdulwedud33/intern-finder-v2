@@ -43,16 +43,8 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
     queryObj.status = 'published';
   }
 
-  // Finding resource with populated company details
-  // Since companies are stored in User collection with role: 'company'
-  const User = require('../models/User');
-  let query = Job.find(queryObj)
-    .populate({
-      path: 'companyId',
-      select: 'name logo industry companySize',
-      model: 'User', // Use string name instead of model object
-      match: { role: 'company' } // Only populate if it's a company
-    });
+  // Finding resource - no need to populate since we store companyName directly
+  let query = Job.find(queryObj);
 
   // Select fields
   if (req.query.select) {
@@ -80,37 +72,9 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
   // Executing query
   const jobs = await query;
 
-  // First, fix any jobs with null companyId by assigning them to the first available company
-  const jobsWithNullCompany = jobs.filter(job => !job.companyId);
-  if (jobsWithNullCompany.length > 0) {
-    // Find the first company in the database (companies are stored in User collection)
-    const User = require('../models/User');
-    const firstCompany = await User.findOne({ role: 'company' });
-    
-    if (firstCompany) {
-      // Update jobs with null companyId to have the first company's ID
-      const jobIds = jobsWithNullCompany.map(job => job._id);
-      await Job.updateMany(
-        { _id: { $in: jobIds } },
-        { companyId: firstCompany._id }
-      );
-      
-      // Re-fetch the jobs with updated companyId
-      const updatedJobs = await Job.find(queryObj)
-        .populate({
-          path: 'companyId',
-          select: 'name logo industry companySize',
-          model: 'User',
-          match: { role: 'company' }
-        })
-        .skip(startIndex)
-        .limit(limit);
-      
-      jobs.splice(0, jobs.length, ...updatedJobs);
-    }
-  }
+  // No need for complex company population logic since we store companyName directly
 
-  // Transform jobs to ensure company data is properly formatted for frontend
+  // Transform jobs to ensure data is properly formatted for frontend
   const transformedJobs = jobs.map(job => {
     const jobObj = job.toObject();
     
@@ -125,28 +89,16 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
         .replace(/&#x27;/g, "'");
     }
     
-    // If companyId is populated, use it as company
-    if (jobObj.companyId && typeof jobObj.companyId === 'object' && jobObj.companyId._id) {
-      jobObj.company = {
-        _id: jobObj.companyId._id,
-        name: jobObj.companyId.name || "Company",
-        logo: jobObj.companyId.logo,
-        industry: jobObj.companyId.industry,
-        companySize: jobObj.companyId.companySize
-      };
-      delete jobObj.companyId; // Remove the original companyId field
-    } else {
-      // If no company data, provide a fallback
-      jobObj.company = {
-        _id: jobObj.companyId || null,
-        name: "Company",
-        logo: null,
-        industry: null,
-        companySize: null
-      };
-      delete jobObj.companyId;
-    }
+    // Create company object from stored companyName
+    jobObj.company = {
+      _id: jobObj.companyId,
+      name: jobObj.companyName || "Company",
+      logo: null,
+      industry: null,
+      companySize: null
+    };
     
+    // Keep companyId for reference but also provide company object
     return jobObj;
   });
 
@@ -289,6 +241,7 @@ exports.createJob = asyncHandler(async (req, res, next) => {
   try {
     // Add company to req.body (already validated in middleware)
     req.body.companyId = req.user._id;
+    req.body.companyName = req.user.name; // Add company name directly
     
     // Set default status if not provided
     if (!req.body.status) {
