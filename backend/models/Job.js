@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const JobSchema = new mongoose.Schema({
   companyId: {
     type: mongoose.Schema.ObjectId,
-    ref: 'Company',
+    ref: 'User',
     required: [true, 'Please add a company ID'],
     index: true
   },

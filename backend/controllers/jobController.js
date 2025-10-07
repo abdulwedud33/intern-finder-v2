@@ -43,8 +43,13 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
     queryObj.status = 'published';
   }
 
-  // Finding resource - simple query without population
-  let query = Job.find(queryObj);
+  // Finding resource with company population
+  let query = Job.find(queryObj)
+    .populate({
+      path: 'companyId',
+      select: 'name email logo industry companySize',
+      match: { role: 'company' }
+    });
 
   // Select fields
   if (req.query.select) {
@@ -89,16 +94,27 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
         .replace(/&#x27;/g, "'");
     }
     
-    // Create company object - use companyName if available, otherwise use a default
-    jobObj.company = {
-      _id: jobObj.companyId,
-      name: jobObj.companyName || "Tech Company", // Better default name
-      logo: null,
-      industry: null,
-      companySize: null
-    };
+    // Create company object from populated data or fallback
+    if (jobObj.companyId && typeof jobObj.companyId === 'object' && jobObj.companyId._id) {
+      // Company data was populated
+      jobObj.company = {
+        _id: jobObj.companyId._id,
+        name: jobObj.companyId.name || jobObj.companyName || "Company",
+        logo: jobObj.companyId.logo || null,
+        industry: jobObj.companyId.industry || null,
+        companySize: jobObj.companyId.companySize || null
+      };
+    } else {
+      // Fallback to stored companyName
+      jobObj.company = {
+        _id: jobObj.companyId || null,
+        name: jobObj.companyName || "Company",
+        logo: null,
+        industry: null,
+        companySize: null
+      };
+    }
     
-    // Keep companyId for reference but also provide company object
     return jobObj;
   });
 
@@ -136,17 +152,53 @@ exports.getJob = asyncHandler(async (req, res, next) => {
   const job = await Job.findById(req.params.id)
     .populate({
       path: 'companyId',
-      select: 'name logo industry companySize website'
-    })
-    .populate({
-      path: 'skills',
-      select: 'name'
+      select: 'name email logo industry companySize website',
+      match: { role: 'company' }
     });
 
   if (!job) {
     return next(
       new ErrorResponse(`Job not found with id of ${req.params.id}`, 404)
     );
+  }
+
+  // Transform job data for frontend
+  const jobObj = job.toObject();
+  
+  // Fix HTML entity encoding in salary
+  if (jobObj.salary && typeof jobObj.salary === 'string') {
+    jobObj.salary = jobObj.salary
+      .replace(/&#x2F;/g, '/')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#x27;/g, "'");
+  }
+  
+  // Create company object from populated data or fallback
+  if (jobObj.companyId && typeof jobObj.companyId === 'object' && jobObj.companyId._id) {
+    // Company data was populated
+    jobObj.company = {
+      _id: jobObj.companyId._id,
+      name: jobObj.companyId.name || jobObj.companyName || "Company",
+      email: jobObj.companyId.email || null,
+      logo: jobObj.companyId.logo || null,
+      industry: jobObj.companyId.industry || null,
+      companySize: jobObj.companyId.companySize || null,
+      website: jobObj.companyId.website || null
+    };
+  } else {
+    // Fallback to stored companyName
+    jobObj.company = {
+      _id: jobObj.companyId || null,
+      name: jobObj.companyName || "Company",
+      email: null,
+      logo: null,
+      industry: null,
+      companySize: null,
+      website: null
+    };
   }
 
   // If user is an intern, check if they've already applied
@@ -157,16 +209,16 @@ exports.getJob = asyncHandler(async (req, res, next) => {
     });
     
     if (application) {
-      job.applied = true;
-      job.applicationStatus = application.status;
+      jobObj.applied = true;
+      jobObj.applicationStatus = application.status;
     } else {
-      job.applied = false;
+      jobObj.applied = false;
     }
   }
 
   res.status(200).json({
     success: true,
-    data: job
+    data: jobObj
   });
 });
 
@@ -180,6 +232,11 @@ exports.getCompanyJobs = asyncHandler(async (req, res, next) => {
   // If no jobs found with companyId, also check for jobs with null companyId (legacy data)
   let jobs = await Job.find({ companyId: req.user._id })
     .populate('applications', 'status')
+    .populate({
+      path: 'companyId',
+      select: 'name email logo industry companySize',
+      match: { role: 'company' }
+    })
     .sort('-createdAt');
 
   // If no jobs found and user is a company, also check for jobs with null companyId
@@ -200,32 +257,54 @@ exports.getCompanyJobs = asyncHandler(async (req, res, next) => {
     }
   }
 
-  const totalViews = jobs.reduce((sum, job) => sum + (job.views || 0), 0);
-  const totalJobs = jobs.length;
-
-  // If this is the first time a company is accessing their jobs and we found null companyId jobs,
-  // update a few of them to published status for better visibility
-  if (jobs.length > 0 && req.user.role === 'company') {
-    // Update the first few jobs to published status if they're still draft
-    const draftJobs = jobs.filter(job => job.status === 'draft');
-    if (draftJobs.length > 0) {
-      const jobsToPublish = draftJobs.slice(0, 3); // Publish first 3 draft jobs
-      await Job.updateMany(
-        { _id: { $in: jobsToPublish.map(job => job._id) } },
-        { status: 'published' }
-      );
-      
-      // Refresh the jobs data to include the updated status
-      jobs = await Job.find({ companyId: req.user._id })
-        .populate('applications', 'status')
-        .sort('-createdAt');
+  // Transform jobs to ensure company data is properly formatted
+  const transformedJobs = jobs.map(job => {
+    const jobObj = job.toObject();
+    
+    // Fix HTML entity encoding in salary
+    if (jobObj.salary && typeof jobObj.salary === 'string') {
+      jobObj.salary = jobObj.salary
+        .replace(/&#x2F;/g, '/')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#x27;/g, "'");
     }
-  }
+    
+    // Create company object from populated data or fallback
+    if (jobObj.companyId && typeof jobObj.companyId === 'object' && jobObj.companyId._id) {
+      // Company data was populated
+      jobObj.company = {
+        _id: jobObj.companyId._id,
+        name: jobObj.companyId.name || jobObj.companyName || "Company",
+        email: jobObj.companyId.email || null,
+        logo: jobObj.companyId.logo || null,
+        industry: jobObj.companyId.industry || null,
+        companySize: jobObj.companyId.companySize || null
+      };
+    } else {
+      // Fallback to stored companyName
+      jobObj.company = {
+        _id: jobObj.companyId || null,
+        name: jobObj.companyName || "Company",
+        email: null,
+        logo: null,
+        industry: null,
+        companySize: null
+      };
+    }
+    
+    return jobObj;
+  });
+
+  const totalViews = transformedJobs.reduce((sum, job) => sum + (job.views || 0), 0);
+  const totalJobs = transformedJobs.length;
 
   res.status(200).json({
     success: true,
     data: {
-      jobs,
+      jobs: transformedJobs,
       totalViews,
       totalJobs
     }
