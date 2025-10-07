@@ -216,8 +216,13 @@ const loginUser = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Please provide an email and password', 400));
   }
 
-  // 2. Find user by email
-  const user = await User.findOne({ email }).select('+password');
+  // 2. Find user by email - check both User and Company collections
+  let user = await User.findOne({ email }).select('+password');
+  
+  // If not found in User collection, check Company collection
+  if (!user) {
+    user = await Company.findOne({ email }).select('+password');
+  }
   
   if (!user) {
     return next(new ErrorResponse('Invalid credentials', 401));
