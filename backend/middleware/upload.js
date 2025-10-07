@@ -21,9 +21,8 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter
-const fileFilter = (req, file, cb) => {
-  // Allow images only
+// File filter for images only
+const imageFileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image')) {
     cb(null, true);
   } else {
@@ -31,19 +30,37 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Configure multer
-const upload = multer({
+// File filter for images and PDFs
+const mixedFileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image') || file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files and PDFs are allowed'), false);
+  }
+};
+
+// Configure multer for images only
+const uploadImages = multer({
   storage: storage,
-  fileFilter: fileFilter,
+  fileFilter: imageFileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB limit
   }
 });
 
-// Middleware for single file upload
+// Configure multer for images and PDFs
+const uploadMixed = multer({
+  storage: storage,
+  fileFilter: mixedFileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit for PDFs
+  }
+});
+
+// Middleware for single file upload (images only)
 const uploadSingle = (fieldName) => {
   return (req, res, next) => {
-    const uploadSingleFile = upload.single(fieldName);
+    const uploadSingleFile = uploadImages.single(fieldName);
     uploadSingleFile(req, res, (err) => {
       if (err) {
         console.error('Upload error:', err);
@@ -64,6 +81,8 @@ const uploadSingle = (fieldName) => {
 };
 
 module.exports = {
-  upload,
+  upload: uploadMixed, // Default to mixed uploads
+  uploadImages,
+  uploadMixed,
   uploadSingle
 };
