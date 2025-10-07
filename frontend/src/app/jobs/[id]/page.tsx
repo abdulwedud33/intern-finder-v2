@@ -79,137 +79,109 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
   if (!job || !isJobValid(job)) return <ErrorPage error={{ message: 'Job not found' }} />
 
   return (
-    <div className="bg-white min-h-screen">
-      {/* Top Header */}
-      <div className="bg-black py-4 text-center">
-        <h1 className="text-2xl font-semibold text-white">Job Details</h1>
-      </div>
-
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="bg-gray-50 min-h-screen">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row justify-between gap-6 mb-6">
-                  <div className="flex items-start gap-4">
-                    <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-                      {job.company?.logo ? (
-                        <Image
-                          src={getValidLogoUrl(job.company.logo)}
-                          alt={`${job.company.name} logo`}
-                          width={80}
-                          height={80}
-                          className="object-contain p-2"
-                        />
-                      ) : (
-                        <div className="text-2xl font-bold text-gray-400">
-                          {job.company?.name?.charAt(0) || 'C'}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h1 className="text-2xl font-semibold text-gray-900">{job.title}</h1>
-                      <Link 
-                        href={`/jobs/${resolvedParams.id}/${job.company?._id}`}
-                        className="text-gray-600 hover:text-teal-600 transition-colors duration-200"
-                      >
-                        {job.company?.name}
-                      </Link>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mt-2">
-                        <h2 className="text-xl font-semibold mb-4">Job Description</h2>
-                        <div className="prose max-w-none">
-                          <p>{job.description || 'No description provided.'}</p>
-                          
-                          {job.responsibilities && (
-                            <div className="mt-6">
-                              <h3 className="text-lg font-medium mb-2">Responsibilities</h3>
-                              {Array.isArray(job.responsibilities) ? (
-                                <ul className="list-disc pl-5 space-y-2">
-                                  {job.responsibilities.map((item: string, index: number) => (
-                                    <li key={index}>{item}</li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="text-gray-700 whitespace-pre-line">{job.responsibilities}</p>
-                              )}
-                            </div>
-                          )}
-                          
-                          {job.requirements && (
-                            <div className="mt-6">
-                              <h3 className="text-lg font-medium mb-2">Requirements</h3>
-                              {Array.isArray(job.requirements) ? (
-                                <ul className="list-disc pl-5 space-y-2">
-                                  {job.requirements.map((item: string, index: number) => (
-                                    <li key={index}>{item}</li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="text-gray-700 whitespace-pre-line">{job.requirements}</p>
-                              )}
-                            </div>
-                          )}
-                        </div>
+            {/* Job Header Card */}
+            <Card className="shadow-sm border-0 bg-white">
+              <CardContent className="p-8">
+                <div className="flex items-start gap-6">
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center shadow-sm">
+                    {job.company?.logo ? (
+                      <Image
+                        src={getValidLogoUrl(job.company.logo)}
+                        alt={`${job.company.name} logo`}
+                        width={64}
+                        height={64}
+                        className="object-contain p-2"
+                      />
+                    ) : (
+                      <div className="text-xl font-bold text-teal-600">
+                        {job.company?.name?.charAt(0) || 'C'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{job.title}</h1>
+                    <Link 
+                      href={`/jobs/${resolvedParams.id}/${job.company?._id}`}
+                      className="text-lg text-teal-600 hover:text-teal-700 transition-colors duration-200 font-medium"
+                    >
+                      {job.company?.name}
+                    </Link>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mt-3">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        <span>{job.isRemote ? 'Remote' : job.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4" />
+                        <span className="capitalize">{job.type}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        <span className="font-semibold text-green-600">{job.salary}</span>
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-4">
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => {
-                        // TODO: Implement save job functionality
-                        toast({
-                          title: 'Save Job',
-                          description: 'This feature will be implemented soon.'
-                        })
-                      }}
-                    >
-                      <Heart className="w-5 h-5" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => {
-                        // Implement share functionality
-                        if (navigator.share) {
-                          navigator.share({
-                            title: job.title,
-                            text: `Check out this job: ${job.title} at ${job.company?.name}`,
-                            url: window.location.href,
-                          }).catch(console.error);
-                        } else {
-                          navigator.clipboard.writeText(window.location.href);
-                          toast({
-                            title: 'Link copied to clipboard!',
-                            description: 'Share this job with others!',
-                          });
-                        }
-                      }}
-                    >
-                      <Share2 className="w-5 h-5" />
-                    </Button>
-                    <Button 
-                      className="bg-[#19C0A8] hover:bg-[#15a894] text-white disabled:bg-gray-400 disabled:cursor-not-allowed" 
-                      onClick={handleApply}
-                      disabled={!isIntern}
-                    >
-                      {!user ? 'Login to Apply' : isIntern ? 'Apply Now' : 'Intern Access Only'}
-                    </Button>
-                  </div>
                 </div>
-                
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4">
-                  <div className="text-teal-600 text-lg font-medium flex items-center">
-                    <DollarSign className="h-5 w-5 mr-1" />
-                    {job.salary 
-                      ? (typeof job.salary === 'string' 
-                          ? job.salary 
-                          : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}`)
-                      : 'Not specified'}
-                  </div>
+              </CardContent>
+            </Card>
+
+            {/* Job Description Card */}
+            <Card className="shadow-sm border-0 bg-white">
+              <CardContent className="p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Job Description</h2>
+                <div className="prose prose-gray max-w-none">
+                  <p className="text-gray-700 leading-relaxed text-lg">{job.description || 'No description provided.'}</p>
+                          
+                  {job.responsibilities && (
+                    <div className="mt-8">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <div className="w-1 h-6 bg-teal-500 rounded-full"></div>
+                        Responsibilities
+                      </h3>
+                      {Array.isArray(job.responsibilities) ? (
+                        <ul className="space-y-3">
+                          {job.responsibilities.map((item: string, index: number) => (
+                            <li key={index} className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-teal-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-gray-700">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="text-gray-700 whitespace-pre-line leading-relaxed">{job.responsibilities}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {job.requirements && (
+                    <div className="mt-8">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+                        Requirements
+                      </h3>
+                      {Array.isArray(job.requirements) ? (
+                        <ul className="space-y-3">
+                          {job.requirements.map((item: string, index: number) => (
+                            <li key={index} className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-gray-700">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="text-gray-700 whitespace-pre-line leading-relaxed">{job.requirements}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -218,102 +190,169 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <Card>
+            {/* Apply Card */}
+            <Card className="shadow-sm border-0 bg-white">
               <CardContent className="p-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to Apply?</h3>
+                  <p className="text-sm text-gray-600">Join our team and start your career journey</p>
+                </div>
+                
                 {!user ? (
                   <Button 
                     size="lg" 
-                    className="w-full bg-teal-600 hover:bg-teal-700 mb-4" 
+                    className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold py-3 mb-3 shadow-lg" 
                     onClick={handleApply}
                   >
                     Login to Apply
                   </Button>
                 ) : isIntern ? (
-                  <Button size="lg" className="w-full bg-teal-600 hover:bg-teal-700 mb-4" asChild>
+                  <Button size="lg" className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold py-3 mb-3 shadow-lg" asChild>
                     <Link href={`/jobs/${resolvedParams.id}/apply`}>Apply Now</Link>
                   </Button>
                 ) : (
-                  <Button size="lg" className="w-full bg-gray-400 text-white mb-4" disabled>
+                  <Button size="lg" className="w-full bg-gray-400 text-white font-semibold py-3 mb-3" disabled>
                     Intern Access Only
                   </Button>
                 )}
-                <Button variant="outline" size="lg" className="w-full">
-                  Save Job
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="w-full" 
-                  asChild
-                >
-                  <Link href={`/jobs/${resolvedParams.id}/${job.company?._id}`}>
-                    View Company
-                  </Link>
-                </Button>
+                
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1">
+                    <Heart className="w-4 h-4 mr-2" />
+                    Save
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: job.title,
+                          text: `Check out this job: ${job.title} at ${job.company?.name}`,
+                          url: window.location.href,
+                        }).catch(console.error);
+                      } else {
+                        navigator.clipboard.writeText(window.location.href);
+                        toast({
+                          title: 'Link copied to clipboard!',
+                          description: 'Share this job with others!',
+                        });
+                      }
+                    }}
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Job Overview</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Job Type</p>
-                    <p className="font-medium">{job.type || 'Full-time'}</p>
+            {/* Job Overview Card */}
+            <Card className="shadow-sm border-0 bg-white">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">Job Overview</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Briefcase className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Job Type</p>
+                        <p className="font-semibold text-gray-900 capitalize">{job.type || 'Full-time'}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Experience</p>
-                    <p className="font-medium capitalize">{job.level || 'Not specified'}</p>
+                  
+                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <MapPin className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Location</p>
+                        <p className="font-semibold text-gray-900">{job.isRemote ? 'Remote' : job.location || 'Not specified'}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Salary</p>
-                    <p className="font-medium">
-                      {job.salary 
-                        ? (typeof job.salary === 'string' 
-                          ? job.salary 
-                          : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}`)
-                        : 'Not specified'}
-                    </p>
+                  
+                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <DollarSign className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Salary</p>
+                        <p className="font-semibold text-gray-900">
+                          {job.salary 
+                            ? (typeof job.salary === 'string' 
+                              ? job.salary 
+                              : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}`)
+                            : 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Location</p>
-                    <p className="font-medium">{job.isRemote ? 'Remote' : job.location || 'Not specified'}</p>
+                  
+                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <User className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Experience Level</p>
+                        <p className="font-semibold text-gray-900 capitalize">{job.level || 'Not specified'}</p>
+                      </div>
+                    </div>
                   </div>
+                  
                   {job.deadline && (
-                    <div>
-                      <p className="text-sm text-gray-500">Application Deadline</p>
-                      <p className="font-medium">
-                        {new Date(job.deadline).toLocaleDateString()}
-                      </p>
+                    <div className="flex items-center justify-between py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                          <Calendar className="w-4 h-4 text-red-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Application Deadline</p>
+                          <p className="font-semibold text-gray-900">
+                            {new Date(job.deadline).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
-             <Card>
-              <CardHeader>
-                <CardTitle>Send a Message</CardTitle>
-              </CardHeader>
-              <CardContent>
+            {/* Contact Card */}
+            <Card className="shadow-sm border-0 bg-white">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Have Questions?</h3>
+                <p className="text-sm text-gray-600 mb-4">Get in touch with the hiring team</p>
                 <form className="space-y-4">
-                  <input
-                    type="text"
-                    placeholder="Your Name"
-                    className="w-full px-4 py-2 border rounded-md text-sm"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Your Email"
-                    className="w-full px-4 py-2 border rounded-md text-sm"
-                  />
-                  <textarea
-                    placeholder="Message"
-                    rows={4}
-                    className="w-full px-4 py-2 border rounded-md text-sm"
-                  />
-                  <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700">
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Your Name"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="email"
+                      placeholder="Your Email"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <textarea
+                      placeholder="Your message..."
+                      rows={4}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold py-3">
                     Send Message
                   </Button>
                 </form>
