@@ -81,6 +81,17 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
   const transformedJobs = jobs.map(job => {
     const jobObj = job.toObject();
     
+    // Fix HTML entity encoding in salary
+    if (jobObj.salary && typeof jobObj.salary === 'string') {
+      jobObj.salary = jobObj.salary
+        .replace(/&#x2F;/g, '/')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#x27;/g, "'");
+    }
+    
     // If companyId is populated, use it as company
     if (jobObj.companyId && typeof jobObj.companyId === 'object') {
       jobObj.company = {

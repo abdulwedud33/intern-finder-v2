@@ -77,17 +77,32 @@ export const jobService = {
     
     // Transform the response to ensure company data is properly formatted
     if (response.data && response.data.data) {
-      response.data.data = response.data.data.map((job: any) => ({
-        ...job,
-        company: job.company || {
-          _id: job.companyId || null,
-          name: "Company",
-          logo: null,
-          industry: null,
-          companySize: null
-        },
-        companyId: undefined // Remove companyId to avoid confusion
-      }));
+      response.data.data = response.data.data.map((job: any) => {
+        // Fix HTML entity encoding in salary
+        let fixedSalary = job.salary;
+        if (fixedSalary && typeof fixedSalary === 'string') {
+          fixedSalary = fixedSalary
+            .replace(/&#x2F;/g, '/')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#x27;/g, "'");
+        }
+        
+        return {
+          ...job,
+          salary: fixedSalary,
+          company: job.company || {
+            _id: job.companyId || null,
+            name: "Company",
+            logo: null,
+            industry: null,
+            companySize: null
+          },
+          companyId: undefined // Remove companyId to avoid confusion
+        };
+      });
     }
     
     return response.data;
