@@ -135,7 +135,7 @@ export default function JobListingsPage() {
                   {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : "—"}
                 </TableCell>
                 <TableCell className="text-gray-600">
-                  {job.applicationDeadline ? new Date(job.applicationDeadline).toLocaleDateString() : "—"}
+                  {job.deadline ? new Date(job.deadline).toLocaleDateString() : "—"}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">{job.type || "—"}</Badge>

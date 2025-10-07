@@ -271,11 +271,11 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                     <p className="text-sm text-gray-500">Location</p>
                     <p className="font-medium">{job.isRemote ? 'Remote' : job.location || 'Not specified'}</p>
                   </div>
-                  {job.applicationDeadline && (
+                  {job.deadline && (
                     <div>
                       <p className="text-sm text-gray-500">Application Deadline</p>
                       <p className="font-medium">
-                        {new Date(job.applicationDeadline).toLocaleDateString()}
+                        {new Date(job.deadline).toLocaleDateString()}
                       </p>
                     </div>
                   )}

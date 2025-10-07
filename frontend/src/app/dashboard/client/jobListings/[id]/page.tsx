@@ -321,13 +321,13 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                   </div>
                 )}
 
-                {job.applicationDeadline && (
+                {job.deadline && (
                   <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-600">Application Deadline</p>
                       <p className="font-medium">
-                        {new Date(job.applicationDeadline).toLocaleDateString()}
+                        {new Date(job.deadline).toLocaleDateString()}
                       </p>
                     </div>
                   </div>

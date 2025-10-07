@@ -25,7 +25,7 @@ export interface Job {
   requirements?: string[];
   responsibilities?: string[];
   qualifications?: string[];
-  applicationDeadline?: string;
+  deadline?: string;
   status: 'active' | 'closed' | 'draft';
   createdAt: string;
   updatedAt: string;
