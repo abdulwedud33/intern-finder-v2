@@ -7,14 +7,12 @@ import { Separator } from "@/components/ui/separator"
 import { MapPin, Clock, DollarSign, Share2, Heart, Briefcase } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useJobById, useJobs, type Job } from "@/hooks/useJobs"
+import { useJobById, type Job } from "@/hooks/useJobs"
 import { useAuth } from "@/contexts/AuthContext"
 import { LoadingPage } from "@/components/ui/loading-spinner"
 import { ErrorPage } from "@/components/ui/error-boundary"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
-
-const RELATED_JOBS_COUNT = 3
 
 interface JobDetailPageProps {
   params: { id: string }
@@ -24,7 +22,6 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
   const router = useRouter()
   const { toast } = useToast()
   const { job, loading, error } = useJobById(params.id)
-  const { jobs: allJobs = [] } = useJobs({ limit: 20 })
   const { user } = useAuth()
 
   // Check if user is an intern
@@ -42,23 +39,6 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
   const isJobValid = (job: any): job is Job => {
     return job && typeof job === 'object' && '_id' in job
   }
-
-  // Get related jobs from the same company (max 3)
-  const getRelatedJobs = () => {
-    if (!job || !allJobs.length) return []
-    
-    const currentJobId = job._id
-    const currentCompanyId = job.company?._id
-    
-    // Get jobs from the same company only
-    const sameCompanyJobs = allJobs
-      .filter(j => j._id !== currentJobId && j.company?._id === currentCompanyId)
-      .slice(0, RELATED_JOBS_COUNT)
-    
-    return sameCompanyJobs
-  }
-
-  const relatedJobs = getRelatedJobs()
 
   const handleApply = () => {
     if (!user) {
@@ -326,75 +306,6 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
           </div>
         </div>
 
-        {/* Recent Jobs from Same Company */}
-        <div className="mt-16">
-          <h2 className="text-xl font-semibold text-gray-900 mb-1">Recent Jobs from {job.company?.name}</h2>
-          <p className="text-sm text-gray-600 mb-6">
-            Other opportunities from the same company.
-          </p>
-          <div className="space-y-4">
-            {relatedJobs.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                <p>No other jobs from this company found.</p>
-                <p className="text-sm mt-2">Check back later for more opportunities from {job.company?.name}.</p>
-              </div>
-            ) : (
-              relatedJobs.map((relatedJob: any) => (
-              <Card key={relatedJob._id} className="border p-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-                      {relatedJob.company?.logo ? (
-                        <Image
-                          src={relatedJob.company.logo}
-                          alt={`${relatedJob.company.name} logo`}
-                          width={48}
-                          height={48}
-                          className="object-contain p-2"
-                        />
-                      ) : (
-                        <div className="text-2xl font-bold text-gray-400">
-                          {relatedJob.company?.name?.charAt(0) || 'C'}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <Badge className="mb-1">{relatedJob.type || "Full-time"}</Badge>
-                      <h3 className="text-lg font-semibold text-gray-900">{relatedJob.title}</h3>
-                      <Link 
-                        href={`/jobs/${params.id}/${relatedJob.company?._id}`}
-                        className="text-sm text-gray-600 hover:text-teal-600 transition-colors duration-200"
-                      >
-                        {relatedJob.company?.name}
-                      </Link>
-                      <div className="flex flex-wrap gap-3 text-sm text-gray-500 mt-1">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {relatedJob.createdAt ? new Date(relatedJob.createdAt).toDateString() : "Recently"}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {relatedJob.isRemote ? "Remote" : relatedJob.location}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4" />
-                          {relatedJob.salary 
-                            ? `$${relatedJob.salary.min.toLocaleString()} - $${relatedJob.salary.max.toLocaleString()} ${relatedJob.salary.currency}`
-                            : "Competitive"
-                          }
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <Button size="sm" variant="outline" className="text-teal-300 self-start md:self-auto" asChild>
-                    <Link href={`/jobs/${relatedJob._id}`}>Job Details</Link>
-                  </Button>
-                </div>
-              </Card>
-              ))
-            )}
-          </div>
-        </div>
       </div>
     </div>
   )
