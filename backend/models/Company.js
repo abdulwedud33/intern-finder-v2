@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { User } = require('./User');
 
 // Define the Company schema
 const companySchema = new mongoose.Schema({
@@ -178,9 +177,14 @@ companySchema.methods.calculateProfileCompletion = function() {
 
 // Create the Company model as a discriminator of User
 // Ensure User model is registered first
-if (!mongoose.models.User) {
-  console.error('User model not registered when creating Company model');
+let Company;
+if (mongoose.models.User) {
+  const { User } = require('./User');
+  Company = User.discriminator('company', companySchema);
+} else {
+  // Fallback: create a standalone Company model if User is not available
+  console.warn('User model not registered, creating standalone Company model');
+  Company = mongoose.model('Company', companySchema);
 }
-const Company = User.discriminator('company', companySchema);
 
 module.exports = Company;

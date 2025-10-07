@@ -33,11 +33,11 @@ const apiRoutes = require('./routes/apiRoutes');
 // Import other route files as needed
 
 // Import models to ensure they are registered with Mongoose
-// Load base models first
+// Load base models first - User must be loaded before Company (discriminator)
 require('./models/User');
-require('./models/Company');
 require('./models/Intern');
-// Load dependent models
+require('./models/Company');
+// Load dependent models that reference the base models
 require('./models/Job');
 require('./models/Application');
 require('./models/Interview');
