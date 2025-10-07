@@ -79,7 +79,7 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
   if (!job || !isJobValid(job)) return <ErrorPage error={{ message: 'Job not found' }} />
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 min-h-screen mt-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -331,39 +331,7 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                 </div>
               </CardContent>
             </Card>
-            {/* Contact Card */}
-            <Card className="shadow-sm border-0 bg-white">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Have Questions?</h3>
-                <p className="text-sm text-gray-600 mb-4">Get in touch with the hiring team</p>
-                <form className="space-y-4">
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="Your Name"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="email"
-                      placeholder="Your Email"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <textarea
-                      placeholder="Your message..."
-                      rows={4}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-                    />
-                  </div>
-                  <Button type="submit" className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold py-3">
-                    Send Message
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            
           </div>
         </div>
 

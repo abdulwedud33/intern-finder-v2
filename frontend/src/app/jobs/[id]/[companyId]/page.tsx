@@ -1,5 +1,6 @@
 "use client"
 
+import { use } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -30,18 +31,20 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
+import { getImageUrl } from "@/utils/imageUtils"
 
 interface CompanyDetailPageProps {
-  params: { 
+  params: Promise<{ 
     id: string
     companyId: string 
-  }
+  }>
 }
 
 export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
+  const resolvedParams = use(params)
   const router = useRouter()
   const { user } = useAuth()
-  const { company, loading, error } = useCompanyById(params.companyId)
+  const { company, loading, error } = useCompanyById(resolvedParams.companyId)
   
   // Get jobs from this company
   const { jobs: companyJobs } = useJobs({ 
@@ -49,7 +52,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
   })
 
   // Filter jobs by this company
-  const filteredJobs = companyJobs.filter(job => job.company?._id === params.companyId)
+  const filteredJobs = companyJobs.filter(job => job.company?._id === resolvedParams.companyId)
 
   // Check if user is an intern
   const isIntern = user?.role === 'intern'
@@ -75,7 +78,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
             </Button>
             <div className="flex items-center gap-4">
               <Avatar className="w-16 h-16">
-                <AvatarImage src={company.logo || ""} alt={`${company.name} Logo`} />
+                <AvatarImage src={getImageUrl(company.logo) || ""} alt={`${company.name} Logo`} />
                 <AvatarFallback className="text-xl">
                   {company.name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -297,7 +300,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Jobs at {company.name}</h2>
               <Link 
-                href={`/jobs?company=${company._id}`}
+                href={`/jobs?company=${resolvedParams.companyId}`}
                 className="text-teal-600 hover:text-teal-700 font-medium"
               >
                 View All Jobs
@@ -313,7 +316,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                         <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                           {job.company?.logo ? (
                             <Image
-                              src={job.company.logo}
+                              src={getImageUrl(job.company.logo) || "/placeholder.svg"}
                               alt={`${job.company.name} logo`}
                               width={40}
                               height={40}
@@ -345,7 +348,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                           <DollarSign className="h-4 w-4" />
                           {typeof job.salary === 'string' 
                             ? job.salary 
-                            : `${job.salary?.min?.toLocaleString()} - ${job.salary?.max?.toLocaleString()}`}
+                            : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}`}
                         </div>
                       )}
                     </div>
