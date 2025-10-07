@@ -129,6 +129,31 @@ exports.getCompanies = asyncHandler(async (req, res, next) => {
   // Parse query and add role filter for companies
   let queryObj = JSON.parse(queryStr);
   queryObj.role = 'company';
+  
+  // Also check for companies in the User collection (for backward compatibility)
+  const User = require('../models/User');
+  const userCompanies = await User.find({ role: 'company' }).select('name email logo industry companySize');
+  
+  // If we found companies in User collection, add them to the results
+  if (userCompanies.length > 0) {
+    const transformedUserCompanies = userCompanies.map(user => ({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      logo: user.logo,
+      industry: user.industry,
+      companySize: user.companySize,
+      role: 'company'
+    }));
+    
+    res.status(200).json({
+      success: true,
+      count: transformedUserCompanies.length,
+      pagination: {},
+      data: transformedUserCompanies
+    });
+    return;
+  }
 
   let query = Company.find(queryObj)
     .select('-password -resetPasswordToken -resetPasswordExpire -emailVerificationToken -emailVerificationExpire');

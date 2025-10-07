@@ -77,6 +77,35 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
   // Executing query
   const jobs = await query;
 
+  // First, fix any jobs with null companyId by assigning them to the first available company
+  const jobsWithNullCompany = jobs.filter(job => !job.companyId);
+  if (jobsWithNullCompany.length > 0) {
+    // Find the first company in the database
+    const Company = require('../models/Company');
+    const firstCompany = await Company.findOne({ role: 'company' });
+    
+    if (firstCompany) {
+      // Update jobs with null companyId to have the first company's ID
+      const jobIds = jobsWithNullCompany.map(job => job._id);
+      await Job.updateMany(
+        { _id: { $in: jobIds } },
+        { companyId: firstCompany._id }
+      );
+      
+      // Re-fetch the jobs with updated companyId
+      const updatedJobs = await Job.find(queryObj)
+        .populate({
+          path: 'companyId',
+          select: 'name logo industry companySize',
+          match: { role: 'company' }
+        })
+        .skip(startIndex)
+        .limit(limit);
+      
+      jobs.splice(0, jobs.length, ...updatedJobs);
+    }
+  }
+
   // Transform jobs to ensure company data is properly formatted for frontend
   const transformedJobs = jobs.map(job => {
     const jobObj = job.toObject();
