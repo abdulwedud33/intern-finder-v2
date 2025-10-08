@@ -28,6 +28,12 @@ import Link from "next/link"
 import Image from "next/image"
 import { getImageUrl } from "@/utils/imageUtils"
 
+// Helper function to clean URL prefixes
+const cleanUrl = (url: string): string => {
+  if (!url) return ''
+  return url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
+}
+
 interface CompanyDetailPageProps {
   params: { id: string }
 }
@@ -140,7 +146,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                           rel="noopener noreferrer"
                           className="font-medium text-teal-600 hover:text-teal-700 flex items-center gap-1"
                         >
-                          {company.website.replace(/^https?:\/\//, '')}
+                          {cleanUrl(company.website)}
                           <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
@@ -214,7 +220,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                         className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
                       >
                         <Linkedin className="h-5 w-5" />
-                        LinkedIn
+                        {cleanUrl(company.socialMedia?.linkedin || company.social?.linkedin || '')}
                       </a>
                     )}
                     {company.socialMedia?.twitter && (
@@ -225,7 +231,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                         className="flex items-center gap-2 text-blue-400 hover:text-blue-500"
                       >
                         <Twitter className="h-5 w-5" />
-                        Twitter
+                        {cleanUrl(company.socialMedia.twitter)}
                       </a>
                     )}
                     {company.socialMedia?.facebook && (
@@ -236,7 +242,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                         className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
                       >
                         <Facebook className="h-5 w-5" />
-                        Facebook
+                        {cleanUrl(company.socialMedia.facebook)}
                       </a>
                     )}
                     {(company.socialMedia?.github || company.social?.github) && (
@@ -247,7 +253,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                         className="flex items-center gap-2 text-gray-800 hover:text-gray-900"
                       >
                         <Globe className="h-5 w-5" />
-                        GitHub
+                        {cleanUrl(company.socialMedia?.github || company.social?.github || '')}
                       </a>
                     )}
                     {(company.socialMedia?.website || company.social?.portfolio) && (
@@ -258,7 +264,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                         className="flex items-center gap-2 text-green-600 hover:text-green-700"
                       >
                         <Globe className="h-5 w-5" />
-                        Portfolio
+                        {cleanUrl(company.socialMedia?.website || company.social?.portfolio || '')}
                       </a>
                     )}
                   </div>
