@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Search, MapPin, Building, Globe } from "lucide-react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useCompanies, type Company } from "@/hooks/useCompanies"
-import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
 import { getImageUrl } from "@/utils/imageUtils"
 import { useState } from "react"
@@ -18,7 +17,10 @@ export default function CompanyPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [locationQuery, setLocationQuery] = useState("")
 
-  // Fetch companies with search filters only
+  // State to track if search has been performed
+  const [hasSearched, setHasSearched] = useState(false)
+
+  // Fetch companies - show all by default, only filter when searched
   const { 
     companies, 
     loading, 
@@ -28,15 +30,28 @@ export default function CompanyPage() {
     updateFilters 
   } = useCompanies({ 
     limit: 12,
-    search: searchQuery || undefined,
-    location: locationQuery || undefined
+    search: hasSearched ? (searchQuery || undefined) : undefined,
+    location: hasSearched ? (locationQuery || undefined) : undefined
   })
 
   // Handle search
   const handleSearch = () => {
+    setHasSearched(true)
     updateFilters({
       search: searchQuery || undefined,
       location: locationQuery || undefined,
+      page: 1
+    })
+  }
+
+  // Handle clear search - show all companies again
+  const handleClearSearch = () => {
+    setSearchQuery("")
+    setLocationQuery("")
+    setHasSearched(false)
+    updateFilters({
+      search: undefined,
+      location: undefined,
       page: 1
     })
   }
@@ -47,7 +62,9 @@ export default function CompanyPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-gray-600 font-bold text-3xl mt-1">Browse Companies</h1>
-          <p className="text-gray-500 mt-1">{total} companies found</p>
+          <p className="text-gray-500 mt-1">
+            {hasSearched ? `${total} companies found` : `${total} companies available`}
+          </p>
         </div>
       </div>
       <hr />
@@ -74,21 +91,30 @@ export default function CompanyPage() {
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           />
         </div>
-        <Button 
-          className="bg-teal-500 hover:bg-teal-600 w-full sm:w-auto"
-          onClick={handleSearch}
-        >
-          Search
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            className="bg-teal-500 hover:bg-teal-600 w-full sm:w-auto"
+            onClick={handleSearch}
+          >
+            Search
+          </Button>
+          {hasSearched && (
+            <Button 
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={handleClearSearch}
+            >
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
       <hr />
 
       {/* Companies Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-          {[...Array(6)].map((_, i) => (
-            <LoadingCard key={i} />
-          ))}
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
         </div>
       ) : error ? (
         <ErrorDisplay error={error} title="Failed to load companies" />

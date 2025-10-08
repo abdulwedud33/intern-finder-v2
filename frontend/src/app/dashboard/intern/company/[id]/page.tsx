@@ -20,7 +20,7 @@ import {
   Facebook
 } from "lucide-react"
 import { useCompanyById } from "@/hooks/useCompanies"
-import { useJobs } from "@/hooks/useJobs"
+import { useJobsByCompany } from "@/hooks/useJobs"
 import { LoadingPage } from "@/components/ui/loading-spinner"
 import { ErrorPage } from "@/components/ui/error-boundary"
 import { useRouter } from "next/navigation"
@@ -37,13 +37,9 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
   const { company, loading, error } = useCompanyById(params.id)
   
   // Get jobs from this company
-  const { jobs: companyJobs } = useJobs({ 
-    limit: 6,
-    // We'll need to add company filter to the backend or filter client-side
+  const { jobs: companyJobs, loading: jobsLoading } = useJobsByCompany(params.id, { 
+    limit: 6
   })
-
-  // Filter jobs by this company
-  const filteredJobs = companyJobs.filter(job => job.company?._id === params.id)
 
   if (loading) return <LoadingPage />
   if (error) return <ErrorPage error={{ message: error.toString() }} />
@@ -202,16 +198,17 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
             )}
 
             {/* Social Media */}
-            {company.socialMedia && (
+            {(company.socialMedia || company.social) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Social Media</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex gap-4">
-                    {company.socialMedia.linkedin && (
+                  <div className="flex gap-4 flex-wrap">
+                    {/* Check both social structures */}
+                    {(company.socialMedia?.linkedin || company.social?.linkedin) && (
                       <a 
-                        href={company.socialMedia.linkedin} 
+                        href={company.socialMedia?.linkedin || company.social?.linkedin} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
@@ -220,7 +217,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                         LinkedIn
                       </a>
                     )}
-                    {company.socialMedia.twitter && (
+                    {company.socialMedia?.twitter && (
                       <a 
                         href={company.socialMedia.twitter} 
                         target="_blank" 
@@ -231,7 +228,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                         Twitter
                       </a>
                     )}
-                    {company.socialMedia.facebook && (
+                    {company.socialMedia?.facebook && (
                       <a 
                         href={company.socialMedia.facebook} 
                         target="_blank" 
@@ -240,6 +237,28 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                       >
                         <Facebook className="h-5 w-5" />
                         Facebook
+                      </a>
+                    )}
+                    {(company.socialMedia?.github || company.social?.github) && (
+                      <a 
+                        href={company.socialMedia?.github || company.social?.github} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-gray-800 hover:text-gray-900"
+                      >
+                        <Globe className="h-5 w-5" />
+                        GitHub
+                      </a>
+                    )}
+                    {(company.socialMedia?.website || company.social?.portfolio) && (
+                      <a 
+                        href={company.socialMedia?.website || company.social?.portfolio} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-green-600 hover:text-green-700"
+                      >
+                        <Globe className="h-5 w-5" />
+                        Portfolio
                       </a>
                     )}
                   </div>
@@ -279,7 +298,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Active Jobs</span>
-                  <Badge variant="secondary">{filteredJobs.length}</Badge>
+                  <Badge variant="secondary">{companyJobs.length}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Company Size</span>
@@ -301,7 +320,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
         </div>
 
         {/* Recent Jobs from this Company */}
-        {filteredJobs.length > 0 && (
+        {companyJobs.length > 0 && (
           <div className="mt-12">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
@@ -315,7 +334,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredJobs.slice(0, 6).map((job: any) => (
+              {companyJobs.slice(0, 6).map((job: any) => (
                 <Card key={job._id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">

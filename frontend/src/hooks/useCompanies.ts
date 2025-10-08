@@ -13,9 +13,17 @@ export interface Company {
   website?: string;
   logo?: string;
   socialMedia?: {
+    website?: string;
     linkedin?: string;
     twitter?: string;
     facebook?: string;
+    instagram?: string;
+    github?: string;
+  };
+  social?: {
+    linkedin?: string;
+    portfolio?: string;
+    github?: string;
   };
   contact?: {
     phone?: string;

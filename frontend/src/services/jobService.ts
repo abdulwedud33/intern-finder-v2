@@ -116,8 +116,43 @@ export const jobService = {
 
   // Get jobs by company
   async getJobsByCompany(companyId: string, filters: Omit<JobFilters, 'company'> = {}): Promise<JobSearchResponse> {
-    const companyFilters = { ...filters, company: companyId };
-    return this.getJobs(companyFilters);
+    const params = new URLSearchParams();
+    
+    // Add filters to query params
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        if (Array.isArray(value)) {
+          value.forEach(v => params.append(key, v));
+        } else {
+          params.append(key, value.toString());
+        }
+      }
+    });
+
+    const response = await api.get(`/jobs/company/${companyId}?${params.toString()}`);
+    
+    // Transform the response to ensure company data is properly formatted
+    if (response.data && response.data.data) {
+      response.data.data = response.data.data.map((job: any) => {
+        // Fix HTML entity encoding in salary
+        const fixedSalary = decodeHtmlEntities(job.salary);
+        
+        return {
+          ...job,
+          salary: fixedSalary,
+          company: job.company || {
+            _id: job.companyId || null,
+            name: job.companyName || "Company",
+            logo: null,
+            industry: null,
+            companySize: null
+          }
+          // Keep companyId and companyName for fallback usage
+        };
+      });
+    }
+    
+    return response.data;
   },
 
   // Get jobs in radius (if needed)
