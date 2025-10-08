@@ -48,7 +48,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/components/ui/use-toast"
-import { useMyProfile, useUpdateProfile } from "@/hooks/useInternProfile"
+import { useQuery } from "@tanstack/react-query"
 import Image from "next/image"
 
 // Type definitions
@@ -59,10 +59,8 @@ type UserData = {
   location?: string;
   bio?: string;
   profilePicture?: string;
-  coverImage?: string;
   linkedin?: string;
   github?: string;
-  twitter?: string;
   instagram?: string;
   portfolio?: string;
   user?: {
@@ -85,7 +83,6 @@ type ProfileFormData = {
   linkedin: string;
   github: string;
   twitter: string;
-  instagram: string;
   portfolio: string;
 };
 
@@ -128,15 +125,41 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile")
   const [isSaving, setIsSaving] = useState(false)
   
-  // Fetch real user profile data
-  const { data: profileData, isLoading, error: profileError } = useMyProfile()
-  const updateProfileMutation = useUpdateProfile()
+  // Fetch current user data from auth endpoint
+  const { data: userData, isLoading, error: userError } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const token = localStorage.getItem('token')
+      console.log('Making API call to /api/auth/me with token:', !!token)
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      console.log('API response status:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API error response:', errorText)
+        throw new Error(`Failed to fetch user data: ${response.status} ${errorText}`)
+      }
+      
+      const data = await response.json()
+      console.log('API response data:', data)
+      return data
+    },
+    enabled: !!user,
+    retry: false
+  })
   
   // Debug logging
   console.log('Settings page - Auth user:', user)
-  console.log('Settings page - Profile data:', profileData)
+  console.log('Settings page - User data:', userData)
   console.log('Settings page - Loading:', isLoading)
-  console.log('Settings page - Error:', profileError)
+  console.log('Settings page - Error:', userError)
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -153,9 +176,11 @@ export default function SettingsPage() {
     linkedin: "",
     github: "",
     twitter: "",
-    instagram: "",
     portfolio: ""
   })
+
+  // Debug logging for form data
+  console.log('Settings page - Form data:', formData)
   
   const [passwordData, setPasswordData] = useState<PasswordFormData>({
     currentPassword: "",
@@ -192,8 +217,8 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  // Show loading state
-  if (authLoading || isLoading) {
+  // Show loading state only for auth, not for profile API
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -205,37 +230,36 @@ export default function SettingsPage() {
   }
 
   // Show error state but still allow editing with basic user data
-  if (profileError && !user) {
+  if (userError && !user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Profile</h2>
-          <p className="text-gray-600 mb-4">Failed to load your profile data: {profileError.message}</p>
+          <p className="text-gray-600 mb-4">Failed to load your profile data: {userError.message}</p>
           <Button onClick={() => window.location.reload()}>Retry</Button>
         </div>
       </div>
     )
   }
 
-  // Load user data when profile data changes
+  // Load user data when userData changes
   useEffect(() => {
-    if (profileData?.data) {
-      const profile = profileData.data
-      console.log('Profile data:', profile) // Debug log
+    if (userData?.data) {
+      const currentUser = userData.data
+      console.log('Current user data:', currentUser) // Debug log
       setFormData({
-        name: profile.name || user?.name || "",
-        email: profile.email || user?.email || "",
-        phone: profile.phone || user?.phone || "",
-        location: profile.location || "",
-        bio: (profile as any).about || "", // Backend uses 'about' field
-        linkedin: profile.social?.linkedin || (profile as any).linkedinUrl || "",
-        github: profile.social?.github || (profile as any).githubUrl || "",
+        name: currentUser.name || "",
+        email: currentUser.email || "",
+        phone: currentUser.phone || "",
+        location: currentUser.location || "",
+        bio: currentUser.about || "", // Backend uses 'about' field
+        linkedin: currentUser.social?.linkedin || "",
+        github: currentUser.social?.github || "",
         twitter: "",
-        instagram: "",
-        portfolio: (profile.social as any)?.portfolio || (profile as any).portfolioUrl || profile.website || ""
+        portfolio: currentUser.social?.portfolio || currentUser.website || ""
       })
     } else if (user) {
-      // Fallback to user data from auth context - always load this
+      // Fallback to user data from auth context
       console.log('Using fallback user data:', user) // Debug log
       setFormData(prev => ({
         name: user.name || prev.name || "",
@@ -250,7 +274,7 @@ export default function SettingsPage() {
         portfolio: prev.portfolio || ""
       }))
     }
-  }, [profileData, user])
+  }, [userData, user])
 
   // Handle form changes
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -311,16 +335,33 @@ export default function SettingsPage() {
         }
       }
       
-      await updateProfileMutation.mutateAsync(updateData)
-      
-      setSuccess("Profile updated successfully!")
-      toast({
-        title: "Success",
-        description: "Your profile has been updated.",
+      // Update using auth endpoint
+      const response = await fetch('http://localhost:5000/api/auth/updatedetails', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updateData)
       })
+      
+      if (response.ok) {
+        setSuccess("Profile updated successfully!")
+        toast({
+          title: "Success",
+          description: "Your profile has been updated.",
+        })
+      } else {
+        throw new Error('Failed to update profile')
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to update profile"
       setError(errorMessage)
+      toast({
+        title: "Update Failed",
+        description: "Could not update profile. Please try again.",
+        variant: "destructive"
+      })
     } finally {
       setIsSaving(false)
     }
@@ -418,20 +459,6 @@ export default function SettingsPage() {
       </div>
             <p className="text-gray-600">Manage your account settings and preferences</p>
             
-            {/* Show warning if profile API failed but we have basic user data */}
-            {profileError && user && (
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
-                  <div>
-                    <p className="text-sm text-yellow-800">
-                      <strong>Limited Profile Data:</strong> Some profile information couldn't be loaded from the server. 
-                      You can still edit your basic information below.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
         {/* Alerts */}
@@ -491,7 +518,7 @@ export default function SettingsPage() {
                     <Label className="text-sm font-medium text-gray-700">Profile Photo</Label>
                     <div className="mt-3 flex items-center gap-6">
                       <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
-                        <AvatarImage src={profileData?.data?.avatar || "/placeholder-user.jpg"} alt="Profile" />
+                        <AvatarImage src={userData?.data?.avatar || "/placeholder-user.jpg"} alt="Profile" />
                         <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xl font-bold">
                           {formData.name.split(" ").map((n: string) => n[0]).join("")}
                       </AvatarFallback>

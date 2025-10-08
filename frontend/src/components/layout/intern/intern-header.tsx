@@ -38,7 +38,7 @@ export function InternHeader() {
           <Link
             href="/dashboard/intern"
             className={cn(
-              "hover:text-green-400 transition-colors",
+              "hover:text-teal-400 transition-colors",
               pathname.startsWith("/dashboard/intern") ? "font-bold text-teal-600" : "text-white"
             )}
           >
@@ -280,16 +280,16 @@ export function InternHeader() {
 
           {/* Navigation Links */}
           <nav className="flex ml-6 flex-col gap-3 space-y-2">
-            <Link href="/" onClick={() => setIsOpen(false)} className="text-white hover:text-green-400">
+            <Link href="/" onClick={() => setIsOpen(false)} className="text-white hover:text-teal-400">
               Home
             </Link>
-            <Link href="/dashboard/intern" onClick={() => setIsOpen(false)} className="text-white hover:text-green-400">
+            <Link href="/dashboard/intern" onClick={() => setIsOpen(false)} className="text-white hover:text-teal-400">
               Dashboard
             </Link>
-            <Link href="/jobs" onClick={() => setIsOpen(false)} className="text-white hover:text-green-400">
+            <Link href="/jobs" onClick={() => setIsOpen(false)} className="text-white hover:text-teal-400">
               Jobs
             </Link>
-            <Link href="/about" onClick={() => setIsOpen(false)} className="text-white hover:text-green-400">
+            <Link href="/about" onClick={() => setIsOpen(false)} className="text-white hover:text-teal-400">
               About
             </Link>
            

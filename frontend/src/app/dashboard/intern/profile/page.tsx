@@ -32,7 +32,8 @@ import {
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
 import { useUploadProfilePhoto, useUploadResume } from "@/hooks/useFileUpload"
-import { useMyProfile, useUpdateProfile, useUploadProfilePicture, useUploadResume as useUploadResumeProfile } from "@/hooks/useInternProfile"
+import { useUpdateProfile, useUploadProfilePicture, useUploadResume as useUploadResumeProfile } from "@/hooks/useInternProfile"
+import { useQuery } from "@tanstack/react-query"
 import { EnhancedFileUpload } from "@/components/ui/enhanced-file-upload"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { LoadingPage } from "@/components/ui/loading-spinner"
@@ -53,8 +54,36 @@ export default function ProfilePage() {
   const [isAddingExperience, setIsAddingExperience] = useState(false)
   const [activeTab, setActiveTab] = useState("overview")
   
-  // Real data hooks
-  const { data: profileData, isLoading: profileLoading, error: profileError } = useMyProfile()
+  // Real data hooks - use simple auth endpoint
+  const { data: profileData, isLoading: profileLoading, error: profileError } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const token = localStorage.getItem('token')
+      console.log('Making API call to /api/auth/me with token:', !!token)
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      console.log('API response status:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API error response:', errorText)
+        throw new Error(`Failed to fetch user data: ${response.status} ${errorText}`)
+      }
+      
+      const data = await response.json()
+      console.log('API response data:', data)
+      return data
+    },
+    enabled: !!user,
+    retry: false
+  })
+  
   const updateProfileMutation = useUpdateProfile()
   const uploadProfilePhotoMutation = useUploadProfilePicture()
   const uploadResumeMutation = useUploadResumeProfile()
@@ -77,22 +106,22 @@ export default function ProfilePage() {
   }
 
   if (authLoading || profileLoading) return <LoadingPage />
-  if (profileError) return <ErrorPage error={{ message: profileError.toString() }} />
-  if (!profileData?.data) return <ErrorPage error={{ message: 'Profile not found' }} />
+  if (profileError && !user) return <ErrorPage error={{ message: profileError.toString() }} />
+  // Don't show error if we have user data from auth context as fallback
 
-  const profile: any = profileData.data
+  const profile: any = profileData?.data || user
 
   // Transform backend data to match frontend expectations
   const transformedProfile: any = {
-    name: profile.name || user?.name || "John Doe",
-    email: profile.email || user?.email || "john.doe@example.com",
-    title: profile.headline || "Frontend Developer",
-    location: profile.location || "San Francisco, CA",
-    bio: profile.bio || "Passionate frontend developer with 3+ years of experience building modern web applications. I love creating beautiful, responsive interfaces that provide exceptional user experiences.",
-    profilePicture: profile.avatar || user?.avatar || "/placeholder-user.jpg",
-    coverImage: "/images/hero-section-bg.jpg",
-    skills: profile.skills?.map((skill: any) => skill.name) || ["React", "TypeScript", "Next.js", "Tailwind CSS", "Node.js", "Python", "Figma", "Git"],
-    experiences: profile.experience?.map((exp: any, index: number) => ({
+    name: profile?.name || user?.name || "John Doe",
+    email: profile?.email || user?.email || "john.doe@example.com",
+    title: profile?.role === 'intern' ? 'Intern' : profile?.role === 'company' ? 'Company' : profile?.headline || "User",
+    location: profile?.location || "Location not specified",
+    bio: profile?.about || "No bio provided yet.",
+    profilePicture: profile?.avatar || user?.avatar || "/placeholder-user.jpg",
+    coverImage: null, // Remove background image
+    skills: profile?.skills?.map((skill: any) => skill.name) || ["React", "TypeScript", "Next.js", "Tailwind CSS", "Node.js", "Python", "Figma", "Git"],
+    experiences: profile?.experience?.map((exp: any, index: number) => ({
       id: exp._id || index + 1,
       title: exp.title,
       company: exp.company,
@@ -109,32 +138,26 @@ export default function ProfilePage() {
     })) || [],
     projects: [], // Projects would need to be added to the backend model
     socialLinks: {
-      linkedin: profile.social?.linkedin || profile.linkedinUrl || "https://linkedin.com/in/johndoe",
-      github: profile.social?.github || profile.githubUrl || "https://github.com/johndoe",
-      portfolio: profile.portfolioUrl || "https://johndoe.dev",
-      twitter: profile.social?.twitter || "https://twitter.com/johndoe"
+      linkedin: profile?.social?.linkedin || "",
+      github: profile?.social?.github || "",
+      portfolio: profile?.social?.portfolio || profile?.website || "",
+      twitter: ""
     },
     stats: {
-      profileViews: 1247, // This would come from analytics API
-      applications: 23, // This would come from applications API
-      interviews: 8, // This would come from interviews API
-      offers: 3 // This would come from applications API
+      profileViews: 0, // This would come from analytics API
+      applications: 0, // This would come from applications API
+      interviews: 0, // This would come from interviews API
+      offers: 0 // This would come from applications API
     }
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Cover Image & Profile Header */}
+      {/* Profile Header with Color Background */}
       <div className="relative">
-        <div className="h-64 md:h-80 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 relative overflow-hidden">
-          <Image
-            src={transformedProfile.coverImage}
-            alt="Cover"
-            fill
-            className="object-cover opacity-20"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-      </div>
+        <div className="h-34 rounded-md md:h-50 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        </div>
 
         {/* Profile Info Overlay */}
         <div className="relative -mt-20 px-4 sm:px-6 lg:px-8">
@@ -183,9 +206,9 @@ export default function ProfilePage() {
               <div className="flex-1 text-white">
                 <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold mb-2">{transformedProfile.name}</h1>
-                    <p className="text-xl text-blue-100 mb-2">{transformedProfile.title}</p>
-                    <div className="flex items-center gap-2 text-blue-100">
+                    <h1 className="text-3xl  font-bold mb-2">{transformedProfile.name}</h1>
+                    <p className="text-xl text-teal-500 mb-2">{transformedProfile.title}</p>
+                    <div className="flex items-center gap-2 text-black">
                       <MapPin className="h-4 w-4" />
                       <span>{transformedProfile.location}</span>
                     </div>
@@ -207,15 +230,13 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-              </div>
+      </div>
               
       <div className="px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Stats Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-8">
+            {/* Stats Cards - Full Width */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="text-center p-4 hover:shadow-lg transition-shadow">
                   <div className="text-2xl font-bold text-blue-600">{transformedProfile.stats.profileViews}</div>
                   <div className="text-sm text-gray-600">Profile Views</div>
@@ -376,8 +397,52 @@ export default function ProfilePage() {
                   </Card>
                 </TabsContent>
               </Tabs>
-                      </div>
-                      
+            </div>
+
+            {/* Quick Actions - Full Width */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Resume</h4>
+                  <EnhancedFileUpload
+                    onFileUploaded={(fileUrl, filename) => {
+                      // File is automatically uploaded and profile updated
+                      toast.success("Resume updated successfully!")
+                    }}
+                    currentFile={transformedProfile.resume}
+                    fileType="resume"
+                    maxSize={10}
+                    showPreview={false}
+                    showDownload={true}
+                    showDelete={true}
+                    accept=".pdf,.doc,.docx"
+                    disabled={uploadResumeMutation.isPending}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Upload your latest resume. Max size: 10MB
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button className="w-full" variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Resume
+                  </Button>
+                  <Button className="w-full" variant="outline">
+                    <Heart className="h-4 w-4 mr-2" />
+                    Save Profile
+                  </Button>
+                  <Button className="w-full" variant="outline">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share Profile
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Contact Information */}
@@ -450,51 +515,6 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
-
-              {/* Quick Actions */}
-          <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Resume</h4>
-                    <EnhancedFileUpload
-                      onFileUploaded={(fileUrl, filename) => {
-                        // File is automatically uploaded and profile updated
-                        toast.success("Resume updated successfully!")
-                      }}
-                      currentFile={transformedProfile.resume}
-                      fileType="resume"
-                      maxSize={10}
-                      showPreview={false}
-                      showDownload={true}
-                      showDelete={true}
-                      accept=".pdf,.doc,.docx"
-                      disabled={uploadResumeMutation.isPending}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Upload your latest resume. Max size: 10MB
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Button className="w-full" variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Resume
-                    </Button>
-                    <Button className="w-full" variant="outline">
-                      <Heart className="h-4 w-4 mr-2" />
-                      Save Profile
-                    </Button>
-                    <Button className="w-full" variant="outline">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share Profile
-                    </Button>
-                </div>
-            </CardContent>
-          </Card>
-            </div>
           </div>
         </div>
       </div>
@@ -562,7 +582,6 @@ export default function ProfilePage() {
     </div>
   )
 }
-
 // Profile Edit Form Component
 function ProfileEditForm({ profile, onSave, onCancel }: { 
   profile: any; 

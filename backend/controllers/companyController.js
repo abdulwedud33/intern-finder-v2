@@ -130,92 +130,54 @@ exports.getCompanies = asyncHandler(async (req, res, next) => {
   let queryObj = JSON.parse(queryStr);
   queryObj.role = 'company';
   
-  // Look for companies in the Company collection (standalone model)
-  const companyResults = await Company.find(queryObj)
-    .select('-password -resetPasswordToken -resetPasswordExpire -emailVerificationToken -emailVerificationExpire');
+  // Add search functionality
+  if (req.query.search) {
+    queryObj.$or = [
+      { name: { $regex: req.query.search, $options: 'i' } },
+      { description: { $regex: req.query.search, $options: 'i' } }
+    ];
+  }
   
-  // If we found companies, return them
-  if (companyResults.length > 0) {
-    // Apply pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const paginatedCompanies = companyResults.slice(startIndex, endIndex);
-    
-    // Pagination result
-    const pagination = {};
-    if (endIndex < companyResults.length) {
-      pagination.next = {
-        page: page + 1,
-        limit
-      };
-    }
-    if (startIndex > 0) {
-      pagination.prev = {
-        page: page - 1,
-        limit
-      };
-    }
-    
-    res.status(200).json({
-      success: true,
-      count: paginatedCompanies.length,
-      pagination,
-      data: paginatedCompanies
-    });
-    return;
+  // Add location search
+  if (req.query.location) {
+    queryObj.headquarters = { $regex: req.query.location, $options: 'i' };
   }
-
-  let query = Company.find(queryObj)
-    .select('-password -resetPasswordToken -resetPasswordExpire -emailVerificationToken -emailVerificationExpire');
-
-  // Select fields
-  if (req.query.select) {
-    const fields = req.query.select.split(',').join(' ');
-    query = query.select(fields);
-  }
-
-  // Sort
-  if (req.query.sort) {
-    const sortBy = req.query.sort.split(',').join(' ');
-    query = query.sort(sortBy);
-  } else {
-    query = query.sort('-createdAt');
-  }
-
+  
   // Pagination
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 10;
+  
+  // Look for companies in the Company collection (standalone model)
+  const companyResults = await Company.find(queryObj)
+    .select('-password -resetPasswordToken -resetPasswordExpire -emailVerificationToken -emailVerificationExpire')
+    .sort('-createdAt');
+  
+  // Apply pagination
   const startIndex = (page - 1) * limit;
   const endIndex = page * limit;
-  const total = await Company.countDocuments(queryObj);
-
-  query = query.skip(startIndex).limit(limit);
-
-  // Execute query
-  const companies = await query;
-
+  const paginatedCompanies = companyResults.slice(startIndex, endIndex);
+  
   // Pagination result
   const pagination = {};
-
-  if (endIndex < total) {
+  if (endIndex < companyResults.length) {
     pagination.next = {
       page: page + 1,
       limit
     };
   }
-
   if (startIndex > 0) {
     pagination.prev = {
       page: page - 1,
       limit
     };
   }
-
+  
   res.status(200).json({
     success: true,
-    count: companies.length,
+    count: paginatedCompanies.length,
+    total: companyResults.length,
     pagination,
-    data: companies
+    data: paginatedCompanies
   });
 });
 

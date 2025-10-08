@@ -3,33 +3,22 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Search, Filter, MapPin, Building, Users, Globe } from "lucide-react"
+import { Search, MapPin, Building, Globe } from "lucide-react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useCompanies, type Company } from "@/hooks/useCompanies"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
 import { getImageUrl } from "@/utils/imageUtils"
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import Link from "next/link"
 
-const INDUSTRY_FILTERS = [
-  'Technology', 'Business Service', 'Real Estate', 'Consumer Service', 
-  'Non-profit', 'Logistics', 'Healthcare', 'Construction', 
-  'Telecommunications', 'Manufacturing', 'Food & Beverage', 'Marketing'
-]
-
-const COMPANY_SIZE_FILTERS = [
-  '1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'
-]
+// Removed industry and company size filters as requested
 
 export default function CompanyPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [locationQuery, setLocationQuery] = useState("")
-  const [selectedIndustry, setSelectedIndustry] = useState("")
-  const [selectedSize, setSelectedSize] = useState("")
 
-  // Fetch companies with filters
+  // Fetch companies with search filters only
   const { 
     companies, 
     loading, 
@@ -40,9 +29,7 @@ export default function CompanyPage() {
   } = useCompanies({ 
     limit: 12,
     search: searchQuery || undefined,
-    location: locationQuery || undefined,
-    industry: selectedIndustry || undefined,
-    companySize: selectedSize || undefined
+    location: locationQuery || undefined
   })
 
   // Handle search
@@ -50,28 +37,6 @@ export default function CompanyPage() {
     updateFilters({
       search: searchQuery || undefined,
       location: locationQuery || undefined,
-      industry: selectedIndustry || undefined,
-      companySize: selectedSize || undefined,
-      page: 1
-    })
-  }
-
-  // Handle industry filter
-  const handleIndustryFilter = (industry: string) => {
-    const newIndustry = selectedIndustry === industry ? "" : industry
-    setSelectedIndustry(newIndustry)
-    updateFilters({
-      industry: newIndustry || undefined,
-      page: 1
-    })
-  }
-
-  // Handle size filter
-  const handleSizeFilter = (size: string) => {
-    const newSize = selectedSize === size ? "" : size
-    setSelectedSize(newSize)
-    updateFilters({
-      companySize: newSize || undefined,
       page: 1
     })
   }
@@ -117,45 +82,6 @@ export default function CompanyPage() {
         </Button>
       </div>
       <hr />
-
-      {/* Filter Tags */}
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2 text-sm">
-          <Filter className="h-4 w-4 text-gray-600" />
-          <span className="text-gray-600 whitespace-nowrap">Industry:</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {INDUSTRY_FILTERS.map((industry) => (
-            <Button
-              key={industry}
-              variant={selectedIndustry === industry ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleIndustryFilter(industry)}
-              className={selectedIndustry === industry ? "bg-teal-500 hover:bg-teal-600" : ""}
-            >
-              {industry}
-            </Button>
-          ))}
-        </div>
-        
-        <div className="flex items-center space-x-2 text-sm">
-          <Users className="h-4 w-4 text-gray-600" />
-          <span className="text-gray-600 whitespace-nowrap">Company Size:</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {COMPANY_SIZE_FILTERS.map((size) => (
-            <Button
-              key={size}
-              variant={selectedSize === size ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleSizeFilter(size)}
-              className={selectedSize === size ? "bg-teal-500 hover:bg-teal-600" : ""}
-            >
-              {size}
-            </Button>
-          ))}
-        </div>
-      </div>
 
       {/* Companies Grid */}
       {loading ? (
@@ -205,20 +131,10 @@ export default function CompanyPage() {
                   {company.description || "No description available."}
                 </p>
                 <div className="space-y-2">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Building className="h-4 w-4 mr-2" />
-                    <span className="truncate">{company.industry || "Not specified"}</span>
-                  </div>
                   {company.headquarters && (
                     <div className="flex items-center text-sm text-gray-500">
                       <MapPin className="h-4 w-4 mr-2" />
                       <span className="truncate">{company.headquarters}</span>
-                    </div>
-                  )}
-                  {company.companySize && (
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Users className="h-4 w-4 mr-2" />
-                      <span className="truncate">{company.companySize} employees</span>
                     </div>
                   )}
                   {company.website && (
