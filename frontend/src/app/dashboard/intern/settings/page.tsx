@@ -48,6 +48,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/components/ui/use-toast"
+import { useMyProfile, useUpdateProfile } from "@/hooks/useInternProfile"
 import Image from "next/image"
 
 // Type definitions
@@ -125,8 +126,17 @@ export default function SettingsPage() {
   const { toast } = useToast()
   
   const [activeTab, setActiveTab] = useState("profile")
-  const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  
+  // Fetch real user profile data
+  const { data: profileData, isLoading, error: profileError } = useMyProfile()
+  const updateProfileMutation = useUpdateProfile()
+  
+  // Debug logging
+  console.log('Settings page - Auth user:', user)
+  console.log('Settings page - Profile data:', profileData)
+  console.log('Settings page - Loading:', isLoading)
+  console.log('Settings page - Error:', profileError)
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -134,7 +144,7 @@ export default function SettingsPage() {
   })
   
   // Form data states
-  const [profileData, setProfileData] = useState<ProfileFormData>({
+  const [formData, setFormData] = useState<ProfileFormData>({
     name: "",
     email: "",
     phone: "",
@@ -182,58 +192,70 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  // Load user data on mount
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        setIsLoading(true)
-        // Mock data - replace with actual API call
-        const mockUserData: UserData = {
-          name: user?.name || "John Doe",
-          email: user?.email || "john.doe@example.com",
-          phone: "+1 (555) 123-4567",
-          location: "San Francisco, CA",
-          bio: "Passionate frontend developer with 3+ years of experience building modern web applications.",
-          profilePicture: "/placeholder-user.jpg",
-          linkedin: "https://linkedin.com/in/johndoe",
-          github: "https://github.com/johndoe",
-          twitter: "https://twitter.com/johndoe",
-          instagram: "https://instagram.com/johndoe",
-          portfolio: "https://johndoe.dev"
-        }
-          
-          setProfileData({
-          name: mockUserData.name || "",
-          email: mockUserData.email || "",
-          phone: mockUserData.phone || "",
-          location: mockUserData.location || "",
-          bio: mockUserData.bio || "",
-          linkedin: mockUserData.linkedin || "",
-          github: mockUserData.github || "",
-          twitter: mockUserData.twitter || "",
-          instagram: mockUserData.instagram || "",
-          portfolio: mockUserData.portfolio || ""
-        })
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to load user data"
-        setError(errorMessage)
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive"
-        })
-      } finally {
-        setIsLoading(false)
-      }
-    }
+  // Show loading state
+  if (authLoading || isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    )
+  }
 
-    loadUserData()
-  }, [user, toast])
+  // Show error state but still allow editing with basic user data
+  if (profileError && !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Profile</h2>
+          <p className="text-gray-600 mb-4">Failed to load your profile data: {profileError.message}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Load user data when profile data changes
+  useEffect(() => {
+    if (profileData?.data) {
+      const profile = profileData.data
+      console.log('Profile data:', profile) // Debug log
+      setFormData({
+        name: profile.name || user?.name || "",
+        email: profile.email || user?.email || "",
+        phone: profile.phone || user?.phone || "",
+        location: profile.location || "",
+        bio: (profile as any).about || "", // Backend uses 'about' field
+        linkedin: profile.social?.linkedin || (profile as any).linkedinUrl || "",
+        github: profile.social?.github || (profile as any).githubUrl || "",
+        twitter: "",
+        instagram: "",
+        portfolio: (profile.social as any)?.portfolio || (profile as any).portfolioUrl || profile.website || ""
+      })
+    } else if (user) {
+      // Fallback to user data from auth context - always load this
+      console.log('Using fallback user data:', user) // Debug log
+      setFormData(prev => ({
+        name: user.name || prev.name || "",
+        email: user.email || prev.email || "",
+        phone: user.phone || prev.phone || "",
+        location: prev.location || "",
+        bio: prev.bio || "",
+        linkedin: prev.linkedin || "",
+        github: prev.github || "",
+        twitter: "",
+        instagram: "",
+        portfolio: prev.portfolio || ""
+      }))
+    }
+  }, [profileData, user])
 
   // Handle form changes
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target
-    setProfileData(prev => ({
+    setFormData(prev => ({
       ...prev,
       [id]: value
     }))
@@ -276,22 +298,29 @@ export default function SettingsPage() {
     setSuccess(null)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Prepare data for API call
+      const updateData = {
+        name: formData.name,
+        about: formData.bio, // Backend expects 'about' field
+        location: formData.location,
+        website: formData.portfolio,
+        social: {
+          linkedin: formData.linkedin,
+          github: formData.github,
+          portfolio: formData.portfolio
+        }
+      }
+      
+      await updateProfileMutation.mutateAsync(updateData)
       
       setSuccess("Profile updated successfully!")
-        toast({
-          title: "Success",
-          description: "Your profile has been updated.",
+      toast({
+        title: "Success",
+        description: "Your profile has been updated.",
       })
     } catch (err) {
-      const errorMessage = "Failed to update profile"
+      const errorMessage = err instanceof Error ? err.message : "Failed to update profile"
       setError(errorMessage)
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      })
     } finally {
       setIsSaving(false)
     }
@@ -387,8 +416,23 @@ export default function SettingsPage() {
             </div>
             <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
       </div>
-          <p className="text-gray-600">Manage your account settings and preferences</p>
-        </div>
+            <p className="text-gray-600">Manage your account settings and preferences</p>
+            
+            {/* Show warning if profile API failed but we have basic user data */}
+            {profileError && user && (
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
+                  <div>
+                    <p className="text-sm text-yellow-800">
+                      <strong>Limited Profile Data:</strong> Some profile information couldn't be loaded from the server. 
+                      You can still edit your basic information below.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
         {/* Alerts */}
         {error && (
@@ -447,9 +491,9 @@ export default function SettingsPage() {
                     <Label className="text-sm font-medium text-gray-700">Profile Photo</Label>
                     <div className="mt-3 flex items-center gap-6">
                       <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
-                        <AvatarImage src={profileData.profilePicture || "/placeholder-user.jpg"} alt="Profile" />
+                        <AvatarImage src={profileData?.data?.avatar || "/placeholder-user.jpg"} alt="Profile" />
                         <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xl font-bold">
-                          {profileData.name.split(" ").map((n: string) => n[0]).join("")}
+                          {formData.name.split(" ").map((n: string) => n[0]).join("")}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
@@ -470,7 +514,7 @@ export default function SettingsPage() {
                       <Label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</Label>
                     <Input 
                       id="name" 
-                      value={profileData.name} 
+                      value={formData.name} 
                       onChange={handleProfileChange}
                         className="mt-2" 
                       required 
@@ -481,7 +525,7 @@ export default function SettingsPage() {
                     <Input 
                       id="email" 
                       type="email" 
-                      value={profileData.email} 
+                      value={formData.email} 
                       onChange={handleProfileChange}
                         className="mt-2" 
                       required 
@@ -491,7 +535,7 @@ export default function SettingsPage() {
                       <Label htmlFor="phone" className="text-sm font-medium text-gray-700">Phone Number</Label>
                     <Input 
                       id="phone" 
-                      value={profileData.phone} 
+                      value={formData.phone} 
                         onChange={handleProfileChange}
                         className="mt-2" 
                         placeholder="+1 (555) 123-4567"
@@ -501,7 +545,7 @@ export default function SettingsPage() {
                       <Label htmlFor="location" className="text-sm font-medium text-gray-700">Location</Label>
                       <Input 
                         id="location" 
-                        value={profileData.location} 
+                        value={formData.location} 
                         onChange={handleProfileChange}
                         className="mt-2" 
                         placeholder="City, State"
@@ -513,7 +557,7 @@ export default function SettingsPage() {
                     <Label htmlFor="bio" className="text-sm font-medium text-gray-700">Bio</Label>
                     <textarea
                       id="bio"
-                      value={profileData.bio}
+                      value={formData.bio}
                       onChange={handleProfileChange}
                       className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       rows={4}
@@ -526,74 +570,63 @@ export default function SettingsPage() {
                   {/* Social Links */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-4">Social Links</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="linkedin" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Linkedin className="h-4 w-4 text-blue-600" />
-                          LinkedIn
-                        </Label>
-                        <Input 
-                          id="linkedin" 
-                          value={profileData.linkedin} 
-                          onChange={handleProfileChange}
-                          className="mt-2" 
-                          placeholder="https://linkedin.com/in/username"
-                        />
+                    {formData.linkedin || formData.github || formData.portfolio ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {formData.linkedin && (
+                          <div>
+                            <Label htmlFor="linkedin" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                              <Linkedin className="h-4 w-4 text-blue-600" />
+                              LinkedIn
+                            </Label>
+                            <Input 
+                              id="linkedin" 
+                              value={formData.linkedin} 
+                              onChange={handleProfileChange}
+                              className="mt-2" 
+                              placeholder="https://linkedin.com/in/username"
+                            />
+                          </div>
+                        )}
+                        {formData.github && (
+                          <div>
+                            <Label htmlFor="github" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                              <Github className="h-4 w-4 text-gray-800" />
+                              GitHub
+                            </Label>
+                            <Input 
+                              id="github" 
+                              value={formData.github} 
+                              onChange={handleProfileChange}
+                              className="mt-2" 
+                              placeholder="https://github.com/username"
+                            />
+                          </div>
+                        )}
+                        {formData.portfolio && (
+                          <div className="md:col-span-2">
+                            <Label htmlFor="portfolio" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                              <Globe className="h-4 w-4 text-teal-600" />
+                              Portfolio Website
+                            </Label>
+                            <Input 
+                              id="portfolio" 
+                              value={formData.portfolio} 
+                              onChange={handleProfileChange}
+                              className="mt-2" 
+                              placeholder="https://yourportfolio.com"
+                            />
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <Label htmlFor="github" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Github className="h-4 w-4 text-gray-800" />
-                          GitHub
-                        </Label>
-                        <Input 
-                          id="github" 
-                          value={profileData.github} 
-                          onChange={handleProfileChange}
-                          className="mt-2" 
-                          placeholder="https://github.com/username"
-                        />
+                    ) : (
+                      <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+                        <Globe className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p className="text-lg font-medium mb-2">No Social Links</p>
+                        <p className="text-sm">No social links were provided during registration.</p>
+                        <p className="text-sm">Contact support if you need to add social links to your profile.</p>
                       </div>
-                      <div>
-                        <Label htmlFor="twitter" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Twitter className="h-4 w-4 text-blue-400" />
-                          Twitter
-                        </Label>
-                        <Input 
-                          id="twitter" 
-                          value={profileData.twitter} 
-                          onChange={handleProfileChange}
-                          className="mt-2" 
-                          placeholder="https://twitter.com/username"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="instagram" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Instagram className="h-4 w-4 text-pink-600" />
-                          Instagram
-                        </Label>
-                        <Input 
-                          id="instagram" 
-                          value={profileData.instagram} 
-                          onChange={handleProfileChange}
-                          className="mt-2" 
-                          placeholder="https://instagram.com/username"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label htmlFor="portfolio" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Globe className="h-4 w-4 text-teal-600" />
-                          Portfolio Website
-                        </Label>
-                        <Input 
-                          id="portfolio" 
-                          value={profileData.portfolio} 
-                          onChange={handleProfileChange}
-                          className="mt-2" 
-                          placeholder="https://yourportfolio.com"
-                        />
-                      </div>
+                    )}
                   </div>
-                </div>
 
                   <div className="flex justify-end space-x-3 pt-4">
                   <Button 

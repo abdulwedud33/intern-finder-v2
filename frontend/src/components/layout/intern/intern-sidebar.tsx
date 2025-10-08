@@ -76,9 +76,9 @@ const link2= [
             href={item.href}
             onClick={() => setIsOpen(false)}
             className={cn(
-              "flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors",
+              "flex items-center gap-3 px-4 py-2",
               isActive
-                ? "bg-blue-50 text-teal-800 border-r-2 border-l-2 border-teal-700"
+                ? "bg-blue-50 text-teal-800 rounded-lg border-r-2 border-l-2 border-teal-700"
                 : "text-gray-700 hover:bg-teal-100 hover:text-teal-500"
             )}
           >

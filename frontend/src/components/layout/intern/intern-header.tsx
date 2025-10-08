@@ -22,17 +22,17 @@ export function InternHeader() {
   const { user, logout } = useAuth()
 
   return (
-    <header className="*:bg-gray-900 text-white px-6 py-4">
+    <header className="bg-gray-900 text-white px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Logo and Brand */}
         <div className="flex items-center space-x-2">
-          <User className="w-6 h-6 text-teal-800" />
+          <User className="w-6 h-6 text-teal-700" />
           <span className="text-md font-semibold">INTERN FINDER</span>
         </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <Link href="/" className="text-white hover:text-green-400 transition-colors">
+          <Link href="/" className="text-white hover:text-teal-400 transition-colors">
             Home
           </Link>
           <Link
@@ -44,14 +44,11 @@ export function InternHeader() {
           >
             Dashboard
           </Link>
-          <Link href="/jobs" className="text-white hover:text-green-400 transition-colors">
+          <Link href="/jobs" className="text-white hover:text-teal-400 transition-colors">
             Jobs
           </Link>
-          <Link href="/about" className="text-white hover:text-green-400 transition-colors">
+          <Link href="/about" className="text-white hover:text-teal-400 transition-colors">
             About
-          </Link>
-          <Link href="/contact" className="text-white hover:text-green-400 transition-colors">
-            Contact
           </Link>
         </nav>
 
@@ -196,7 +193,7 @@ export function InternHeader() {
       {/* Mobile Menu Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          className="fixed inset-0 bg-opacity-50 z-40 md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -282,7 +279,7 @@ export function InternHeader() {
           )}
 
           {/* Navigation Links */}
-          <nav className="flex flex-col gap-3 space-y-2">
+          <nav className="flex ml-6 flex-col gap-3 space-y-2">
             <Link href="/" onClick={() => setIsOpen(false)} className="text-white hover:text-green-400">
               Home
             </Link>
@@ -293,11 +290,9 @@ export function InternHeader() {
               Jobs
             </Link>
             <Link href="/about" onClick={() => setIsOpen(false)} className="text-white hover:text-green-400">
-              About Us
+              About
             </Link>
-            <Link href="/contact" onClick={() => setIsOpen(false)} className="text-white hover:text-green-400">
-              Contact Us
-            </Link>
+           
           </nav>
         </div>
       </div>

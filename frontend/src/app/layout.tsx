@@ -10,7 +10,7 @@ import { AuthProvider } from "@/contexts/AuthContext"
 
 
 export const metadata: Metadata = {
-  title: "InternFinder - Find Top Talent Jobs Today",
+  title: "INTERN FINDER - Find Top Talent Jobs Today",
   description: "Connect talented professionals with amazing job opportunities",
 }
 
