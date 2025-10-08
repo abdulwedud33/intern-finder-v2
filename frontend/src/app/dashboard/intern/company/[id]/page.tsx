@@ -28,10 +28,19 @@ import Link from "next/link"
 import Image from "next/image"
 import { getImageUrl } from "@/utils/imageUtils"
 
-// Helper function to clean URL prefixes
+// Helper function to clean URL prefixes for display
 const cleanUrl = (url: string): string => {
   if (!url) return ''
   return url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
+}
+
+// Helper function to ensure URL has proper protocol for href
+const ensureAbsoluteUrl = (url: string): string => {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  return `https://${url}`
 }
 
 interface CompanyDetailPageProps {
@@ -141,7 +150,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                       <div>
                         <p className="text-sm text-gray-500">Website</p>
                         <a 
-                          href={company.website} 
+                          href={ensureAbsoluteUrl(company.website)} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="font-medium text-teal-600 hover:text-teal-700 flex items-center gap-1"
@@ -214,7 +223,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                     {/* Check both social structures */}
                     {(company.socialMedia?.linkedin || company.social?.linkedin) && (
                       <a 
-                        href={company.socialMedia?.linkedin || company.social?.linkedin} 
+                        href={ensureAbsoluteUrl(company.socialMedia?.linkedin || company.social?.linkedin || '')} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
@@ -225,7 +234,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                     )}
                     {company.socialMedia?.twitter && (
                       <a 
-                        href={company.socialMedia.twitter} 
+                        href={ensureAbsoluteUrl(company.socialMedia.twitter)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-blue-400 hover:text-blue-500"
@@ -236,7 +245,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                     )}
                     {company.socialMedia?.facebook && (
                       <a 
-                        href={company.socialMedia.facebook} 
+                        href={ensureAbsoluteUrl(company.socialMedia.facebook)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
@@ -247,7 +256,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                     )}
                     {(company.socialMedia?.github || company.social?.github) && (
                       <a 
-                        href={company.socialMedia?.github || company.social?.github} 
+                        href={ensureAbsoluteUrl(company.socialMedia?.github || company.social?.github || '')} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-gray-800 hover:text-gray-900"
@@ -258,7 +267,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                     )}
                     {(company.socialMedia?.website || company.social?.portfolio) && (
                       <a 
-                        href={company.socialMedia?.website || company.social?.portfolio} 
+                        href={ensureAbsoluteUrl(company.socialMedia?.website || company.social?.portfolio || '')} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-green-600 hover:text-green-700"
@@ -288,7 +297,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                 </Button>
                 {company.website && (
                   <Button variant="outline" className="w-full" asChild>
-                    <a href={company.website} target="_blank" rel="noopener noreferrer">
+                    <a href={ensureAbsoluteUrl(company.website)} target="_blank" rel="noopener noreferrer">
                       Visit Website
                     </a>
                   </Button>
