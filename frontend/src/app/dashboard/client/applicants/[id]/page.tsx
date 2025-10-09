@@ -37,7 +37,8 @@ import {
   Send,
   Video,
   Mic,
-  Camera
+  Camera,
+  RefreshCw
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -101,12 +102,27 @@ export default function ApplicantDetailsPage() {
         const response = await applicationService.getApplication(applicationId)
         console.log('Application response:', response)
         return response
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching application:', err)
+        console.error('Error status:', err.response?.status)
+        console.error('Error data:', err.response?.data)
+        
+        // If it's a 500 error, it might be due to backend not being updated yet
+        if (err.response?.status === 500) {
+          console.log('Backend might not be updated yet. This is expected if you haven\'t pushed the changes.')
+        }
+        
         throw err
       }
     },
-    enabled: !!applicationId
+    enabled: !!applicationId,
+    retry: (failureCount, error: any) => {
+      // Don't retry on 500 errors as they're likely backend issues
+      if (error?.response?.status === 500) {
+        return false
+      }
+      return failureCount < 3
+    }
   })
 
   // Transform the application data to match the expected structure
@@ -305,20 +321,46 @@ export default function ApplicantDetailsPage() {
     console.log('Error state - applicantData:', applicantData)
     console.log('Error state - applicationResponse:', applicationResponse)
     
+    const isServerError = error && (error as any)?.response?.status === 500
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Applicant Not Found</h2>
-          <p className="text-gray-600 mb-4">The applicant you're looking for doesn't exist or you don't have permission to view it.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            {isServerError ? 'Server Error' : 'Applicant Not Found'}
+          </h2>
+          <p className="text-gray-600 mb-4">
+            {isServerError 
+              ? 'There was a server error while loading the applicant details. This might be due to recent backend updates.'
+              : 'The applicant you\'re looking for doesn\'t exist or you don\'t have permission to view it.'
+            }
+          </p>
           <p className="text-sm text-gray-500 mb-4">Application ID: {applicationId}</p>
           {error && (
-            <p className="text-sm text-red-500 mb-4">Error: {error.message || error.toString()}</p>
+            <div className="text-sm text-red-500 mb-4 p-3 bg-red-50 rounded-lg">
+              <p className="font-medium">Error Details:</p>
+              <p>Status: {(error as any)?.response?.status || 'Unknown'}</p>
+              <p>Message: {error.message || error.toString()}</p>
+              {isServerError && (
+                <p className="text-xs text-gray-600 mt-2">
+                  💡 This error should be resolved once the backend updates are deployed.
+                </p>
+              )}
+            </div>
           )}
-          <Button onClick={() => window.history.back()} variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Go Back
-          </Button>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => window.history.back()} variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
+            {isServerError && (
+              <Button onClick={() => window.location.reload()} variant="default">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     )
