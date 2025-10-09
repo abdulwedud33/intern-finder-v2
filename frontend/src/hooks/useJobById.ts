@@ -13,9 +13,12 @@ export const useJobById = (jobId: string) => {
       setLoading(true);
       setError(null);
       
+      console.log('Fetching job with ID:', jobId);
       const data = await jobService.getJobById(jobId);
+      console.log('Job data received:', data);
       setJob(data);
     } catch (err: unknown) {
+      console.error('Full error object:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch job';
       setError(errorMessage);
       console.error('Error fetching job:', errorMessage);

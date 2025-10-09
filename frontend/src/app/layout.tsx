@@ -12,6 +12,9 @@ import { AuthProvider } from "@/contexts/AuthContext"
 export const metadata: Metadata = {
   title: "INTERN FINDER - Find Top Talent Jobs Today",
   description: "Connect talented professionals with amazing job opportunities",
+  icons: {
+    icon: "/favicon.io/icon.png",
+  },
 }
 
 export default function RootLayout({

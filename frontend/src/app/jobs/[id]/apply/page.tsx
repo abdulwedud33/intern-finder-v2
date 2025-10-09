@@ -68,7 +68,7 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
       queryClient.invalidateQueries({ queryKey: ["myApplications"] })
       // Delay redirect to allow user to see the success message
       setTimeout(() => {
-        router.push(`/jobs/${listingId}`)
+        router.push(`/dashboard/intern/applications`)
       }, 2500)
     },
     onError: (error: unknown) => {
@@ -138,6 +138,10 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">Failed to load job details</p>
+          {jobError && (
+            <p className="text-sm text-gray-500 mb-4">Error: {jobError.toString()}</p>
+          )}
+          <p className="text-sm text-gray-500 mb-4">Job ID: {listingId}</p>
           <Button asChild>
             <Link href={`/jobs/${listingId}`}>Back to Job</Link>
           </Button>
