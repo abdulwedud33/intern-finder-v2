@@ -2,6 +2,11 @@ import type React from "react"
 import { ClientHeader } from "@/components/layout/client/client-header"
 import { ClientSidebar } from "@/components/layout/client/client-sidebar"
 
+const metadata = {
+  title: "Client Dashboard",
+  description: "Client Dashboard",
+}
+
 export default function ClientLayout({
   children,
 }: {

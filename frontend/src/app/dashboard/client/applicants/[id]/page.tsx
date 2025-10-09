@@ -730,7 +730,7 @@ export default function ApplicantDetailsPage() {
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={note.avatar} alt={note.author} />
                           <AvatarFallback className="bg-blue-100 text-blue-700">
-                            {note.author.split(" ").map(n => n[0]).join("")}
+                            {note.author.split(" ").map((n: string) => n[0]).join("")}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
@@ -849,7 +849,7 @@ export default function ApplicantDetailsPage() {
                             <Avatar className="h-12 w-12">
                               <AvatarImage src="/placeholder-user.jpg" alt={interview.interviewer} />
                               <AvatarFallback className="bg-purple-100 text-purple-700">
-                                {interview.interviewer.split(" ").map(n => n[0]).join("")}
+                                {interview.interviewer.split(" ").map((n: string) => n[0]).join("")}
                               </AvatarFallback>
                             </Avatar>
                 <div>

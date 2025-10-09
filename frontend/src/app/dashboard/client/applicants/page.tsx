@@ -391,7 +391,8 @@ export default function ApplicantsPage() {
 
   const applications = useMemo(() => {
     const data = (applicationsData as any)?.data || []
-    return data.map((app: any) => ({
+    console.log('Raw applications data:', applicationsData)
+    console.log('Mapped applications:', data.map((app: any) => ({
       _id: app._id,
       job: {
         _id: app.jobId?._id || '',
@@ -417,7 +418,7 @@ export default function ApplicantsPage() {
       updatedAt: app.updatedAt,
       rating: app.rating || null, // Only show if available from backend
       matchScore: app.matchScore || null // Only show if available from backend
-    }))
+    })))
   }, [applicationsData])
 
   // Filter applications
@@ -450,6 +451,8 @@ export default function ApplicantsPage() {
 
   // Calculate real stats from applications data
   const realStats = useMemo(() => {
+    console.log('Final applications array:', applications)
+    console.log('Applications count:', applications.length)
     const totalApplications = applications.length
     const interviews = applications.filter((app: any) => app.status === 'interview').length
     const hired = applications.filter((app: any) => app.status === 'accepted').length

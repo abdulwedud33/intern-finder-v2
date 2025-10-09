@@ -2,6 +2,11 @@ import type React from "react"
 import { InternHeader } from "@/components/layout/intern/intern-header"
 import { InternSidebar } from "@/components/layout/intern/intern-sidebar"
 
+const metadata = {
+  title: "Intern Dashboard",
+  description: "Intern Dashboard",
+}
+
 export default function InternLayout({
   children,
 }: {
