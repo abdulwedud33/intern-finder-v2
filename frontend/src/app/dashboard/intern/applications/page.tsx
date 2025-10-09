@@ -7,7 +7,6 @@ import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Calendar, Search, Filter, MoreHorizontal, Clock, MapPin, Video, Phone, User, AlertCircle, CheckCircle, XCircle } from "lucide-react"
-import { useEffect } from "react"
 import { useMyApplications } from "@/hooks/useApplications"
 import { useMyInterviews } from "@/hooks/useInterviews"
 import { LoadingCard } from "@/components/ui/loading-spinner"
@@ -24,97 +23,11 @@ export default function ApplicationsPage() {
   console.log('Applications loading:', isLoading)
   
   // Handle different possible response structures from the backend
-  let applications = (data as any)?.data || (data as any)?.applications || data || []
+  const applications = (data as any)?.data || (data as any)?.applications || data || []
   const interviews = (interviewsData as any)?.data || []
-  
-  // If no applications found but we know one exists from precheck, create a mock application
-  if (applications.length === 0) {
-    // Check if we have precheck data that shows an application exists
-    const precheckData = localStorage.getItem('precheckData')
-    if (precheckData) {
-      try {
-        const parsed = JSON.parse(precheckData)
-        if (parsed.success && parsed.data.hasApplied) {
-          // Create a mock application from the precheck data
-          const mockApplication = {
-            _id: 'mock-' + Date.now(),
-            jobId: {
-              _id: parsed.data.job.id,
-              title: parsed.data.job.title,
-              company: {
-                _id: 'mock-company',
-                name: parsed.data.job.companyName,
-                logo: null
-              }
-            },
-            internId: {
-              _id: user?.id || 'mock-intern',
-              name: user?.name || 'Current User',
-              email: user?.email || 'user@example.com'
-            },
-            status: 'under_review',
-            coverLetter: 'Application submitted successfully',
-            resume: 'Resume uploaded',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            isMockApplication: true // Flag to identify this as a mock application
-          }
-          applications = [mockApplication]
-          console.log('Created mock application from precheck data:', mockApplication)
-        }
-      } catch (error) {
-        console.error('Error parsing precheck data:', error)
-      }
-    }
-  }
   
   console.log('Processed applications:', applications)
   
-  // Debug information from backend
-  const debugInfo = (data as any)?.debug
-  console.log('Backend Debug Info:', debugInfo)
-  
-  // If debug info is not available (deployed backend), make a direct API call
-  useEffect(() => {
-    if (!debugInfo && data && (data as any).success) {
-      console.log('Making direct API call for debug info...')
-      fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/applications/me`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-      .then(res => res.json())
-      .then(debugData => {
-        console.log('Direct API Debug Data:', debugData)
-        
-        // If still no applications, try to check what happens when we apply
-        if (debugData.count === 0) {
-          console.log('No applications found. Checking if we can apply to a job...')
-          
-          // Try to apply to the same job that gave "already applied" message
-          // This will help us understand what's happening
-          fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/applications/precheck/68e4f46e0927d3e02082b09a`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          })
-          .then(res => res.json())
-          .then(precheckData => {
-            console.log('Precheck Data:', precheckData)
-            console.log('Precheck Data Details:', JSON.stringify(precheckData, null, 2))
-            
-            // Store precheck data in localStorage for mock application creation
-            if (precheckData.success && precheckData.data.hasApplied) {
-              localStorage.setItem('precheckData', JSON.stringify(precheckData))
-              console.log('Stored precheck data in localStorage for mock application')
-            }
-          })
-          .catch(err => console.error('Precheck Error:', err))
-        }
-      })
-      .catch(err => console.error('Debug API Error:', err))
-    }
-  }, [debugInfo, data])
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -125,40 +38,12 @@ export default function ApplicationsPage() {
           <p className="text-gray-600 font-bold my-1">Keep it up</p>
           <p className="text-sm text-gray-500">Here is your recent applications</p>
         </div>
-        <div className="flex items-center space-x-4">
-          {applications.length === 0 && (
-            <button
-              onClick={() => {
-                // Force refresh by clearing cache and reloading
-                localStorage.removeItem('precheckData')
-                window.location.reload()
-              }}
-              className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-            >
-              Refresh Applications
-            </button>
-          )}
-          <div className="flex items-center space-x-2 border-2 p-2 rounded-md text-sm text-gray-600">
-            <Calendar className="h-4 w-4" />
-            <span>Recent</span>
-          </div>
+        <div className="flex items-center space-x-2 border-2 p-2 rounded-md text-sm text-gray-600">
+          <Calendar className="h-4 w-4" />
+          <span>Recent</span>
         </div>
       </div>
 
-      {/* Mock Data Notice */}
-      {applications.some((app: any) => app.isMockApplication) && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="h-5 w-5 text-yellow-600" />
-            <div>
-              <h4 className="font-medium text-yellow-800">Displaying Mock Application Data</h4>
-              <p className="text-sm text-yellow-700">
-                The backend is not returning your applications correctly. This is temporary mock data based on your successful application submission.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Status Tabs */}
       <div className="flex items-center space-x-6 border-b">
@@ -348,11 +233,6 @@ export default function ApplicationsPage() {
                                     <StatusIcon className="h-3 w-3 mr-1" />
                                     {status.charAt(0).toUpperCase() + status.slice(1)}
                                   </Badge>
-                                  {app.isMockApplication && (
-                                    <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 border">
-                                      Mock Data
-                                    </Badge>
-                                  )}
                                 </div>
                               </div>
 

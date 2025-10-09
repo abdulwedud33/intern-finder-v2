@@ -21,7 +21,7 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
   }
 
   // Get company profile for the current user
-  const company = await User.findOne({ user: req.user.id, role: 'company' });
+  const company = await User.findOne({ _id: req.user.id, role: 'company' });
   
   if (!company) {
     return next(new ErrorResponse('Company profile not found', 404));
@@ -194,7 +194,7 @@ exports.getMyInterviews = asyncHandler(async (req, res, next) => {
   }
   
   // Get intern profile for the current user
-  const intern = await User.findOne({ user: req.user.id, role: 'intern' });
+  const intern = await User.findOne({ _id: req.user.id, role: 'intern' });
   
   if (!intern) {
     return next(new ErrorResponse('Intern profile not found', 404));
@@ -261,12 +261,12 @@ exports.getInterview = asyncHandler(async (req, res, next) => {
   
   // Check if user is authorized to view this interview
   if (req.user.role === 'company') {
-    const company = await User.findOne({ user: req.user.id, role: 'company' });
+    const company = await User.findOne({ _id: req.user.id, role: 'company' });
     if (!company || interview.company.toString() !== company._id.toString()) {
       return next(new ErrorResponse('Not authorized to view this interview', 403));
     }
   } else if (req.user.role === 'intern') {
-    const intern = await User.findOne({ user: req.user.id, role: 'intern' });
+    const intern = await User.findOne({ _id: req.user.id, role: 'intern' });
     if (!intern || interview.intern.toString() !== intern._id.toString()) {
       return next(new ErrorResponse('Not authorized to view this interview', 403));
     }
@@ -307,10 +307,10 @@ exports.updateInterview = asyncHandler(async (req, res, next) => {
   let isAuthorized = false;
   
   if (req.user.role === 'company') {
-    const company = await User.findOne({ user: req.user.id, role: 'company' });
+    const company = await User.findOne({ _id: req.user.id, role: 'company' });
     isAuthorized = company && interview.company._id.toString() === company._id.toString();
   } else if (req.user.role === 'intern') {
-    const intern = await User.findOne({ user: req.user.id, role: 'intern' });
+    const intern = await User.findOne({ _id: req.user.id, role: 'intern' });
     isAuthorized = intern && interview.intern._id.toString() === intern._id.toString();
   } else if (req.user.role === 'admin') {
     isAuthorized = true;
@@ -408,7 +408,7 @@ exports.submitFeedback = asyncHandler(async (req, res, next) => {
   }
   
   // Get company profile for the current user
-  const company = await User.findOne({ user: req.user.id, role: 'company' });
+  const company = await User.findOne({ _id: req.user.id, role: 'company' });
   
   if (!company) {
     return next(new ErrorResponse('Company profile not found', 404));
