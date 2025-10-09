@@ -256,7 +256,16 @@ export default function ApplicantDetailsPage() {
       resume: app.resume || '',
       interviews: [], // TODO: Fetch from interview service
       notes: [], // TODO: Fetch from notes service
-      assignedTo: [] // TODO: Fetch from assignment service
+      assignedTo: [], // TODO: Fetch from assignment service
+      documents: [
+        {
+          id: 'resume',
+          name: 'Resume',
+          type: 'pdf',
+          url: app.resume || '',
+          uploadedAt: app.createdAt
+        }
+      ]
     }
   }, [applicationResponse])
 
@@ -326,7 +335,7 @@ export default function ApplicantDetailsPage() {
 
   // Review mutations and data
   const createReviewMutation = useCreateInternReview()
-  const { data: reviewsData, isLoading: reviewsLoading } = useReviewsForTarget(application?.data?.id || '', 'intern')
+  const { data: reviewsData, isLoading: reviewsLoading } = useReviewsForTarget(applicationId, 'intern')
 
   const handleStageUpdate = (newStage: string) => {
     updateStageMutation.mutate(newStage)
@@ -351,7 +360,7 @@ export default function ApplicantDetailsPage() {
   const handleSubmitReview = (data: any) => {
     createReviewMutation.mutate({
       internId: applicationId,
-      jobId: application?.data?.appliedJob || '',
+      jobId: applicantData?.appliedJob || '',
       data: {
         rating: data.rating,
         feedback: data.content
@@ -432,7 +441,7 @@ export default function ApplicantDetailsPage() {
                   <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-white shadow-lg">
                     <AvatarImage src={applicantData.avatar} alt={applicantData.name} />
                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xl font-bold">
-                      {applicantData.name.split(" ").map(n => n[0]).join("")}
+                      {applicantData.name.split(" ").map((n: string) => n[0]).join("")}
                   </AvatarFallback>
                 </Avatar>
                   <h3 className="font-bold text-xl text-gray-900">{applicantData.name}</h3>
@@ -661,7 +670,7 @@ export default function ApplicantDetailsPage() {
                     <div>
                       <p className="text-sm font-medium text-gray-600 mb-2">Technical Skills</p>
                       <div className="flex flex-wrap gap-2">
-                        {applicantData.professionalInfo.skills.map((skill, index) => (
+                        {applicantData.professionalInfo.skills.map((skill: string, index: number) => (
                           <Badge key={index} variant="secondary" className="px-3 py-1">
                               {skill}
                             </Badge>
@@ -922,7 +931,7 @@ export default function ApplicantDetailsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                      {applicantData.documents.map((doc) => (
+                      {applicantData.documents.map((doc: any) => (
                         <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
                           <div className="flex items-center gap-4">
                             <div className="p-2 bg-orange-100 rounded-lg">
@@ -1075,11 +1084,11 @@ export default function ApplicantDetailsPage() {
               <DialogTitle>Write Performance Review</DialogTitle>
             </DialogHeader>
             <ReviewForm
-              targetId={application?.data?.id || ''}
-              targetName={application?.data?.name || 'Candidate'}
+              targetId={applicantData?.id || ''}
+              targetName={applicantData?.name || 'Candidate'}
               targetType="Intern"
-              jobId={application?.data?.appliedJob}
-              jobTitle={application?.data?.appliedJob}
+              jobId={applicantData?.appliedJob}
+              jobTitle={applicantData?.appliedJob}
               onSubmit={handleSubmitReview}
               onCancel={() => setIsReviewDialogOpen(false)}
               mode="create"
