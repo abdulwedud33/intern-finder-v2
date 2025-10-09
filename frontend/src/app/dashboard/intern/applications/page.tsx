@@ -1,12 +1,14 @@
 "use client"
 
+import { useState, useMemo } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { Calendar, Search, Filter, MoreHorizontal, Clock, MapPin, Video, Phone, User, AlertCircle, CheckCircle, XCircle } from "lucide-react"
+import { Calendar, Search, Filter, MoreHorizontal, Clock, MapPin, Video, Phone, User, AlertCircle, CheckCircle, XCircle, ExternalLink } from "lucide-react"
 import { useMyApplications } from "@/hooks/useApplications"
 import { useMyInterviews } from "@/hooks/useInterviews"
 import { LoadingCard } from "@/components/ui/loading-spinner"
@@ -17,16 +19,53 @@ export default function ApplicationsPage() {
   const { data, isLoading, error } = useMyApplications()
   const { data: interviewsData, isLoading: interviewsLoading } = useMyInterviews()
   
-  // Debug logging
-  console.log('Applications data:', data)
-  console.log('Applications error:', error)
-  console.log('Applications loading:', isLoading)
+  // State for search and filtering
+  const [searchTerm, setSearchTerm] = useState("")
+  const [activeTab, setActiveTab] = useState("all")
   
   // Handle different possible response structures from the backend
   const applications = (data as any)?.data || (data as any)?.applications || data || []
   const interviews = (interviewsData as any)?.data || []
   
-  console.log('Processed applications:', applications)
+  // Filter applications based on search term and active tab
+  const filteredApplications = useMemo(() => {
+    let filtered = applications.filter((app: any) => {
+      const job = app.jobId || app.job || {}
+      const company = job.companyId || job.company || {}
+      const jobTitle = job.title || "Position"
+      const companyName = company.name || "Company"
+      const status = app.status || "applied"
+      
+      // Search filter
+      const matchesSearch = searchTerm === "" || 
+        jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        status.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      // Status tab filter
+      let matchesTab = true
+      switch (activeTab) {
+        case "pending":
+          matchesTab = status.toLowerCase() === "applied" || status.toLowerCase() === "reviewed"
+          break
+        case "interview":
+          matchesTab = status.toLowerCase().includes("interview") || status.toLowerCase() === "shortlisted"
+          break
+        case "accepted":
+          matchesTab = status.toLowerCase() === "hired" || status.toLowerCase() === "accepted"
+          break
+        case "rejected":
+          matchesTab = status.toLowerCase() === "rejected"
+          break
+        default:
+          matchesTab = true
+      }
+      
+      return matchesSearch && matchesTab
+    })
+    
+    return filtered
+  }, [applications, searchTerm, activeTab])
   
   return (
     <div className="space-y-6">
@@ -47,17 +86,54 @@ export default function ApplicationsPage() {
 
       {/* Status Tabs */}
       <div className="flex items-center space-x-6 border-b">
-        <button className="pb-2 border-b-2 border-blue-500 text-blue-600 font-medium">
-          All ({Array.isArray(applications) ? applications.length : 0})
+        <button 
+          onClick={() => setActiveTab("all")}
+          className={`pb-2 border-b-2 font-medium transition-colors ${
+            activeTab === "all" 
+              ? "border-blue-500 text-blue-600" 
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          All ({applications.length})
         </button>
-        <button className="pb-2 text-gray-500 hover:text-gray-700">
-          Pending ({Array.isArray(applications) ? applications.filter((app: any) => (app.status || app.stage || 'pending').toLowerCase() === 'pending').length : 0})
+        <button 
+          onClick={() => setActiveTab("pending")}
+          className={`pb-2 border-b-2 font-medium transition-colors ${
+            activeTab === "pending" 
+              ? "border-blue-500 text-blue-600" 
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Pending ({applications.filter((app: any) => {
+            const status = app.status || "applied"
+            return status.toLowerCase() === "applied" || status.toLowerCase() === "reviewed"
+          }).length})
         </button>
-        <button className="pb-2 text-gray-500 hover:text-gray-700">
-          Interview ({Array.isArray(applications) ? applications.filter((app: any) => (app.status || app.stage || '').toLowerCase().includes('interview')).length : 0})
+        <button 
+          onClick={() => setActiveTab("interview")}
+          className={`pb-2 border-b-2 font-medium transition-colors ${
+            activeTab === "interview" 
+              ? "border-blue-500 text-blue-600" 
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Interview ({applications.filter((app: any) => {
+            const status = app.status || "applied"
+            return status.toLowerCase().includes("interview") || status.toLowerCase() === "shortlisted"
+          }).length})
         </button>
-        <button className="pb-2 text-gray-500 hover:text-gray-700">
-          Accepted ({Array.isArray(applications) ? applications.filter((app: any) => (app.status || app.stage || '').toLowerCase() === 'accepted').length : 0})
+        <button 
+          onClick={() => setActiveTab("accepted")}
+          className={`pb-2 border-b-2 font-medium transition-colors ${
+            activeTab === "accepted" 
+              ? "border-blue-500 text-blue-600" 
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Accepted ({applications.filter((app: any) => {
+            const status = app.status || "applied"
+            return status.toLowerCase() === "hired" || status.toLowerCase() === "accepted"
+          }).length})
         </button>
       </div>
 
@@ -122,7 +198,12 @@ export default function ApplicationsPage() {
             <div className="flex items-center space-x-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input placeholder="Search" className="pl-10 w-64" />
+                <Input 
+                  placeholder="Search applications..." 
+                  className="pl-10 w-64" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
               <Button variant="outline" size="sm">
                 <Filter className="h-4 w-4 mr-2" />
@@ -140,14 +221,18 @@ export default function ApplicationsPage() {
             <div className="text-center py-8 text-gray-500">
               No applications found. Start applying to jobs to see them here!
             </div>
+          ) : filteredApplications.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No applications match your current filters. Try adjusting your search or tab selection.
+            </div>
           ) : (
             <>
               {/* Enhanced Application Cards */}
               <div className="space-y-4 mt-4">
-                {applications.map((app: any, idx: number) => {
+                {filteredApplications.map((app: any, idx: number) => {
                   // Handle the new data structure from backend
-                  const job = app.job || {}
-                  const company = job.company || {}
+                  const job = app.jobId || app.job || {}
+                  const company = job.companyId || job.company || {}
                   const companyName = company.name || "Company"
                   const jobTitle = job.title || "Position"
                   const applicationDate = app.createdAt || app.appliedAt || app.dateApplied
@@ -220,8 +305,22 @@ export default function ApplicationsPage() {
                             <div className="flex-1">
                               <div className="flex items-start justify-between mb-2">
                                 <div>
-                                  <h3 className="font-semibold text-gray-900 text-lg">{jobTitle}</h3>
-                                  <p className="text-gray-600 font-medium">{companyName}</p>
+                                  <Link 
+                                    href={`/jobs/${job._id || job.id}`}
+                                    className="hover:text-blue-600 transition-colors"
+                                  >
+                                    <h3 className="font-semibold text-gray-900 text-lg hover:text-blue-600 transition-colors">
+                                      {jobTitle}
+                                    </h3>
+                                  </Link>
+                                  <Link 
+                                    href={`/dashboard/intern/company/${company._id || company.id}`}
+                                    className="hover:text-blue-600 transition-colors"
+                                  >
+                                    <p className="text-gray-600 font-medium hover:text-blue-600 transition-colors">
+                                      {companyName}
+                                    </p>
+                                  </Link>
                                   <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                                     <MapPin className="h-3 w-3" />
                                     {job.location || "Remote"}
@@ -318,9 +417,17 @@ export default function ApplicationsPage() {
                             </div>
                           </div>
                           
-                          <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center space-x-2">
+                            <Link href={`/jobs/${job._id || job.id}`}>
+                              <Button variant="outline" size="sm" className="text-xs">
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                View Job
+                              </Button>
+                            </Link>
+                            <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

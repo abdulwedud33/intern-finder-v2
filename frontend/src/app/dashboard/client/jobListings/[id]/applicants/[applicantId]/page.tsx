@@ -7,6 +7,7 @@ import {
   Star,
   Calendar,
   Mail,
+  Phone,
   MapPin,
   Globe,
   Linkedin,
@@ -21,7 +22,8 @@ import {
   GraduationCap,
   Award,
   FileText,
-  RefreshCw
+  RefreshCw,
+  Video
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"

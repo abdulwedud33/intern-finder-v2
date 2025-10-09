@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -55,6 +55,7 @@ const getStatusBadge = (status: string) => {
 
 export default function JobApplicantsPage() {
   const params = useParams()
+  const router = useRouter()
   const jobId = params.id as string
   const queryClient = useQueryClient()
   const { toast } = useToast()
@@ -126,7 +127,7 @@ export default function JobApplicantsPage() {
 
   const handleViewApplication = (applicationId: string) => {
     // Navigate to the detailed application view within job listings structure
-    window.open(`/dashboard/client/jobListings/${jobId}/applicants/${applicationId}`, '_blank')
+    router.push(`/dashboard/client/jobListings/${jobId}/applicants/${applicationId}`)
   }
 
   if (jobLoading || applicationsLoading) {
@@ -295,14 +296,16 @@ export default function JobApplicantsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
+                          <Link href={`/dashboard/client/jobListings/${jobId}/applicants/${application._id}`}>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleViewApplication(application._id)}
                           >
                             <Eye className="h-4 w-4 mr-1" />
-                            View
+                            View Details
                           </Button>
+                          </Link>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm">
