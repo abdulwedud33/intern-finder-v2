@@ -47,8 +47,7 @@ exports.getJobs = asyncHandler(async (req, res, next) => {
   let query = Job.find(queryObj)
     .populate({
       path: 'companyId',
-      select: 'name email logo industry companySize',
-      match: { role: 'company' }
+      select: 'name email logo industry companySize'
     });
 
   // Select fields
@@ -152,8 +151,7 @@ exports.getJob = asyncHandler(async (req, res, next) => {
   const job = await Job.findById(req.params.id)
     .populate({
       path: 'companyId',
-      select: 'name email logo industry companySize website',
-      match: { role: 'company' }
+      select: 'name email logo industry companySize website'
     });
 
   if (!job) {
