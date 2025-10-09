@@ -172,50 +172,6 @@ exports.getMyApplications = asyncHandler(async (req, res, next) => {
   });
 });
 
-/**
- * @desc    Get single application
- * @route   GET /api/v1/applications/:id
- * @access  Private (Application owner or company)
- */
-exports.getApplication = asyncHandler(async (req, res, next) => {
-  const application = await Application.findById(req.params.id)
-    .populate({
-      path: 'internId',
-      select: 'name email phone photo'
-    })
-    .populate({
-      path: 'jobId',
-      select: 'title description requirements'
-    })
-    .populate({
-      path: 'companyId',
-      select: 'name logo'
-    });
-
-  if (!application) {
-    return next(
-      new ErrorResponse(`No application found with the id of ${req.params.id}`, 404)
-    );
-  }
-
-  // Make sure user is application owner or company
-  if (
-    application.internId._id.toString() !== req.user.id &&
-    application.companyId._id.toString() !== req.user.id
-  ) {
-    return next(
-      new ErrorResponse(
-        `User ${req.user.id} is not authorized to access this application`,
-        401
-      )
-    );
-  }
-
-  res.status(200).json({
-    success: true,
-    data: application
-  });
-});
 
 /**
  * @desc    Update application status
@@ -241,7 +197,7 @@ exports.updateApplicationStatus = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure the application belongs to the company
-  if (application.company.toString() !== req.user._id.toString()) {
+  if (application.companyId.toString() !== req.user.id.toString()) {
     return next(
       new ErrorResponse(
         `User ${req.user.id} is not authorized to update this application`,
@@ -266,11 +222,11 @@ exports.updateApplicationStatus = asyncHandler(async (req, res, next) => {
   // Populate the response
   application = await application
     .populate({
-      path: 'user',
+      path: 'internId',
       select: 'name email'
     })
     .populate({
-      path: 'job',
+      path: 'jobId',
       select: 'title'
     })
     .execPopulate();
@@ -299,7 +255,7 @@ exports.deleteApplication = asyncHandler(async (req, res, next) => {
 
   // Make sure user is application owner or admin
   if (
-    application.user.toString() !== req.user.id &&
+    application.internId.toString() !== req.user.id &&
     req.user.role !== 'admin'
   ) {
     return next(
@@ -330,13 +286,13 @@ exports.getCompanyApplicationStats = asyncHandler(async (req, res, next) => {
   }
 
   // Get jobs created by the company
-  const jobs = await Job.find({ company: req.user.id }).select('_id');
+  const jobs = await Job.find({ companyId: req.user.id }).select('_id');
   const jobIds = jobs.map(job => job._id);
 
   // Get application stats
   const stats = await Application.aggregate([
     {
-      $match: { job: { $in: jobIds } }
+      $match: { jobId: { $in: jobIds } }
     },
     {
       $group: {
@@ -353,7 +309,7 @@ exports.getCompanyApplicationStats = asyncHandler(async (req, res, next) => {
   });
 
   // Get total applications
-  const totalApplications = await Application.countDocuments({ job: { $in: jobIds } });
+  const totalApplications = await Application.countDocuments({ jobId: { $in: jobIds } });
 
   res.status(200).json({
     success: true,
@@ -378,7 +334,7 @@ exports.getMyApplicationStats = asyncHandler(async (req, res, next) => {
   // Get application stats
   const stats = await Application.aggregate([
     {
-      $match: { user: new mongoose.Types.ObjectId(req.user.id) }
+      $match: { internId: new mongoose.Types.ObjectId(req.user.id) }
     },
     {
       $group: {
@@ -395,7 +351,7 @@ exports.getMyApplicationStats = asyncHandler(async (req, res, next) => {
   });
 
   // Get total applications
-  const totalApplications = await Application.countDocuments({ user: req.user.id });
+  const totalApplications = await Application.countDocuments({ internId: req.user.id });
 
   res.status(200).json({
     success: true,
@@ -441,23 +397,6 @@ exports.checkApplicationAccess = asyncHandler(async (req, res, next) => {
   next();
 });
 
-// @desc      Get all applications for the logged-in intern
-// @route     GET /api/applications/interns
-// @access    Private (Interns only)
-exports.getMyApplications = asyncHandler(async (req, res, next) => {
-  const applications = await Application.find({ user: req.user.id })
-    .populate({
-      path: 'listing',
-      select: 'title companyName status deadline'
-    })
-    .sort('-createdAt');
-
-  res.status(200).json({
-    success: true,
-    count: applications.length,
-    data: applications,
-  });
-});
 
 // @desc      Get single application by ID
 // @route     GET /api/applications/:id

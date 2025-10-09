@@ -3,12 +3,11 @@ const {
   createApplication,
   getCompanyApplications,
   getMyApplications,
-  getApplication,
+  getApplicationById,
   updateApplicationStatus,
   deleteApplication,
   getCompanyApplicationStats,
   getMyApplicationStats,
-  checkApplicationAccess,
   preCheckJob
 } = require('../controllers/applicationController');
 const { protect, authorize } = require('../middleware/authMiddleware');
@@ -35,8 +34,7 @@ router.get('/precheck/:jobId', authorize('intern'), preCheckJob);
 
 // Application CRUD operations
 router.route('/:id')
-  .all(checkApplicationAccess)  // Apply to all routes with :id
-  .get(getApplication)
+  .get(getApplicationById)
   .delete(deleteApplication);
 
 // Status update route
