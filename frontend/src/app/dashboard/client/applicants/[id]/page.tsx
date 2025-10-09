@@ -530,35 +530,6 @@ export default function ApplicantDetailsPage() {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
-            <Card className="shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Send Message
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full justify-start"
-                  onClick={() => setIsReviewDialogOpen(true)}
-                >
-                  <Star className="h-4 w-4 mr-2" />
-                  Write Review
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Resume
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  <Video className="h-4 w-4 mr-2" />
-                  Video Call
-                </Button>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Main Content */}

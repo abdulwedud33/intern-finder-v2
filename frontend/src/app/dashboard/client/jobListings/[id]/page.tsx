@@ -136,7 +136,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`/jobs/${jobId}`}>
+                <Link href={`/dashboard/client/jobListings/${jobId}`}>
                   <Eye className="h-4 w-4 mr-2" />
                   View Public Job
                 </Link>
@@ -369,7 +369,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                     View Applicants
                   </Button>
                 </Link>
-                <Link href={`/jobs/${jobId}`} className="block">
+                <Link href={`/dashboard/client/jobListings/${jobId}`} className="block">
                   <Button variant="outline" className="w-full justify-start">
                     <Eye className="h-4 w-4 mr-2" />
                     View Public Job

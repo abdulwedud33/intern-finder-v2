@@ -20,8 +20,8 @@ import { ErrorDisplay } from "@/components/ui/error-boundary"
 
 type Application = {
   _id: string
-  job: { _id: string; title: string; company: { _id: string; name: string } }
-  user: { _id: string; name: string; email: string; profilePictureUrl?: string }
+  jobId: { _id: string; title: string; companyId: { _id: string; name: string } }
+  internId: { _id: string; name: string; email: string; avatar?: string }
   status: 'applied' | 'reviewed' | 'shortlisted' | 'rejected' | 'hired'
   coverLetter?: string
   createdAt: string
@@ -94,10 +94,10 @@ export default function JobApplicantsPage() {
   // Process applications data
   const applications = useMemo(() => {
     if (!applicationsData?.data) return []
-    return applicationsData.data.map((app: Application) => ({
+    return applicationsData.data.map((app: any) => ({
       _id: app._id,
-      job: app.job,
-      user: app.user,
+      jobId: app.jobId,
+      internId: app.internId,
       status: app.status,
       coverLetter: app.coverLetter,
       createdAt: app.createdAt,
@@ -107,8 +107,8 @@ export default function JobApplicantsPage() {
 
   // Filter applications based on search term
   const filteredApplications = applications.filter((application: Application) =>
-    application.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    application.user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    application.internId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    application.internId.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   // Group applications by status for pipeline view
@@ -259,19 +259,19 @@ export default function JobApplicantsPage() {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
                             <AvatarImage 
-                              src={application.user.profilePictureUrl || "/placeholder.svg"} 
-                              alt={application.user.name} 
+                              src={application.internId.avatar || "/placeholder.svg"} 
+                              alt={application.internId.name} 
                             />
                             <AvatarFallback>
-                              {application.user.name
+                              {application.internId.name
                                 .split(" ")
-                                .map((n) => n[0])
+                                .map((n: string) => n[0])
                                 .join("")}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{application.user.name}</p>
-                            <p className="text-sm text-gray-500">{application.user.email}</p>
+                            <p className="font-medium">{application.internId.name}</p>
+                            <p className="text-sm text-gray-500">{application.internId.email}</p>
                           </div>
                         </div>
                       </TableCell>
@@ -343,19 +343,19 @@ export default function JobApplicantsPage() {
                       <div className="flex items-center gap-3 mb-2">
                         <Avatar className="h-8 w-8">
                           <AvatarImage 
-                            src={application.user.profilePictureUrl || "/placeholder.svg"} 
-                            alt={application.user.name} 
+                            src={application.internId.avatar || "/placeholder.svg"} 
+                            alt={application.internId.name} 
                           />
                           <AvatarFallback className="text-xs">
-                            {application.user.name
+                            {application.internId.name
                               .split(" ")
-                              .map((n) => n[0])
+                              .map((n: string) => n[0])
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{application.user.name}</p>
-                          <p className="text-xs text-gray-500 truncate">{application.user.email}</p>
+                          <p className="font-medium text-sm truncate">{application.internId.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{application.internId.email}</p>
                         </div>
                       </div>
                       <div className="text-xs text-gray-500 mb-2">
