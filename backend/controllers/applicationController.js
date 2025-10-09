@@ -119,7 +119,15 @@ exports.getMyApplications = asyncHandler(async (req, res, next) => {
   }
 
   console.log('getMyApplications - User ID:', req.user.id);
+  console.log('getMyApplications - User ID type:', typeof req.user.id);
   console.log('getMyApplications - User role:', req.user.role);
+  
+  // Debug: Check what applications exist in the database
+  const allApplications = await Application.find({});
+  console.log('getMyApplications - All applications in DB:', allApplications.length);
+  allApplications.forEach(app => {
+    console.log(`  App ID: ${app._id}, Intern ID: ${app.internId}, Job ID: ${app.jobId}`);
+  });
   
   // Find all applications for the intern
   const applications = await Application.find({ internId: req.user.id })
@@ -136,10 +144,25 @@ exports.getMyApplications = asyncHandler(async (req, res, next) => {
   console.log('getMyApplications - Found applications:', applications.length);
   console.log('getMyApplications - Applications:', applications);
 
+  // Debug information to help identify the issue
+  const debugInfo = {
+    userId: req.user.id,
+    userIdType: typeof req.user.id,
+    userRole: req.user.role,
+    totalApplicationsInDB: allApplications.length,
+    applicationsFound: applications.length,
+    allApplicationInternIds: allApplications.map(app => ({
+      appId: app._id,
+      internId: app.internId,
+      internIdType: typeof app.internId
+    }))
+  };
+
   res.status(200).json({
     success: true,
     count: applications.length,
-    data: applications
+    data: applications,
+    debug: debugInfo // Temporary debug info
   });
 });
 

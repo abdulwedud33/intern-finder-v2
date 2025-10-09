@@ -27,6 +27,10 @@ export default function ApplicationsPage() {
   const interviews = (interviewsData as any)?.data || []
   
   console.log('Processed applications:', applications)
+  
+  // Debug information from backend
+  const debugInfo = (data as any)?.debug
+  console.log('Backend Debug Info:', debugInfo)
   return (
     <div className="space-y-6">
       {/* Header */}
