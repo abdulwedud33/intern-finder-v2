@@ -173,7 +173,7 @@ export default function ApplicantDetailsPage() {
       },
       professionalInfo: {
         aboutMe: intern?.aboutMe || intern?.about || '',
-        experience: intern?.experience || '',
+        experience: intern?.experience || [],
         currentJob: intern?.currentJob || '',
         experienceYears: intern?.experienceYears || '',
         education: intern?.education || '',
@@ -660,7 +660,48 @@ export default function ApplicantDetailsPage() {
                       </div>
                     <div>
                       <p className="text-sm font-medium text-gray-600 mb-2">Experience</p>
-                      <p className="text-sm text-gray-700">{applicantData.professionalInfo.experience}</p>
+                      {Array.isArray(applicantData.professionalInfo.experience) && applicantData.professionalInfo.experience.length > 0 ? (
+                        <div className="space-y-3">
+                          {applicantData.professionalInfo.experience.map((exp: any, index: number) => (
+                            <div key={index} className="border-l-2 border-blue-200 pl-3">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-medium text-gray-900">{exp.title || exp.position || 'Position'}</h4>
+                                <span className="text-xs text-gray-500">
+                                  {exp.startDate ? new Date(exp.startDate).getFullYear() : ''} - {exp.isCurrent ? 'Present' : (exp.endDate ? new Date(exp.endDate).getFullYear() : '')}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600">{exp.company || exp.organization || 'Company'}</p>
+                              {exp.location && (
+                                <p className="text-xs text-gray-500">{exp.location}</p>
+                              )}
+                              {exp.description && (
+                                <p className="text-sm text-gray-700 mt-1">{exp.description}</p>
+                              )}
+                              {exp.skills && exp.skills.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {exp.skills.slice(0, 3).map((skill: any, skillIndex: number) => (
+                                    <Badge key={skillIndex} variant="outline" className="text-xs">
+                                      {typeof skill === 'string' ? skill : skill.name || skill}
+                                    </Badge>
+                                  ))}
+                                  {exp.skills.length > 3 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{exp.skills.length - 3} more
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-700">
+                          {typeof applicantData.professionalInfo.experience === 'string' 
+                            ? applicantData.professionalInfo.experience 
+                            : 'No experience listed'
+                          }
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-600 mb-2">Education</p>
