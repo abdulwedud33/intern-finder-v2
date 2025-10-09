@@ -424,8 +424,8 @@ exports.getApplicationById = asyncHandler(async (req, res, next) => {
   }
 
   // Check permissions
-  const isOwner = application.internId._id.toString() === req.user.id;
-  const isCompanyOwner = application.jobId?.companyId?._id.toString() === req.user.id;
+  const isOwner = application.internId?._id?.toString() === req.user.id;
+  const isCompanyOwner = application.jobId?.companyId?._id?.toString() === req.user.id;
   
   if (!isOwner && !isCompanyOwner) {
     return next(
