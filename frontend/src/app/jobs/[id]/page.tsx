@@ -26,6 +26,12 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
   const { job, loading, error } = useJobById(resolvedParams.id)
   const { user } = useAuth()
 
+  // Debug: Log job data to see what's available
+  console.log('Job data:', job)
+  console.log('Company ID:', job?.companyId)
+  console.log('Company object:', job?.company)
+  console.log('Company _id:', job?.company?._id)
+
   // Check if user is an intern
   const isIntern = user?.role === 'intern'
 
@@ -105,12 +111,18 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                   </div>
                   <div className="flex-1">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">{job.title}</h1>
-                    <Link 
-                      href={`/jobs/${resolvedParams.id}/${job.companyId || job.company?._id}`}
-                      className="text-lg text-teal-600 hover:text-teal-700 transition-colors duration-200 font-medium"
-                    >
-                      {job.company?.name || job.companyName}
-                    </Link>
+                    {(job.companyId || job.company?._id) ? (
+                      <Link 
+                        href={`/jobs/${resolvedParams.id}/${job.companyId || job.company?._id}`}
+                        className="text-lg text-teal-600 hover:text-teal-700 transition-colors duration-200 font-medium"
+                      >
+                        {job.company?.name || job.companyName}
+                      </Link>
+                    ) : (
+                      <span className="text-lg text-gray-600 font-medium">
+                        {job.company?.name || job.companyName || 'Company Information Not Available'}
+                      </span>
+                    )}
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mt-3">
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />

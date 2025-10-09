@@ -24,7 +24,7 @@ import {
   Clock
 } from "lucide-react"
 import { useCompanyById } from "@/hooks/useCompanies"
-import { useJobs } from "@/hooks/useJobs"
+import { useJobsByCompany } from "@/hooks/useJobs"
 import { LoadingPage } from "@/components/ui/loading-spinner"
 import { ErrorPage } from "@/components/ui/error-boundary"
 import { useRouter } from "next/navigation"
@@ -32,6 +32,21 @@ import Link from "next/link"
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
 import { getImageUrl } from "@/utils/imageUtils"
+
+// Helper function to clean URL prefixes for display
+const cleanUrl = (url: string): string => {
+  if (!url) return ''
+  return url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
+}
+
+// Helper function to ensure URL has proper protocol for href
+const ensureAbsoluteUrl = (url: string): string => {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  return `https://${url}`
+}
 
 interface CompanyDetailPageProps {
   params: Promise<{ 
@@ -47,12 +62,9 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
   const { company, loading, error } = useCompanyById(resolvedParams.companyId)
   
   // Get jobs from this company
-  const { jobs: companyJobs } = useJobs({ 
-    limit: 6,
+  const { jobs: companyJobs, loading: jobsLoading } = useJobsByCompany(resolvedParams.companyId, { 
+    limit: 6
   })
-
-  // Filter jobs by this company
-  const filteredJobs = companyJobs.filter(job => job.company?._id === resolvedParams.companyId)
 
   // Check if user is an intern
   const isIntern = user?.role === 'intern'
@@ -151,12 +163,12 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                       <div>
                         <p className="text-sm text-gray-500">Website</p>
                         <a 
-                          href={company.website} 
+                          href={ensureAbsoluteUrl(company.website)} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="font-medium text-teal-600 hover:text-teal-700 flex items-center gap-1"
                         >
-                          Visit Website
+                          {cleanUrl(company.website)}
                           <ExternalLink className="h-4 w-4" />
                         </a>
                       </div>
@@ -192,44 +204,67 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
             </Card>
 
             {/* Social Media Links */}
-            {company.socialMedia && (
+            {(company.socialMedia || company.social) && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Follow Us</CardTitle>
+                  <CardTitle>Social Media</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex gap-4">
-                    {company.socialMedia.linkedin && (
-                      <a
-                        href={company.socialMedia.linkedin}
-                        target="_blank"
+                  <div className="flex gap-4 flex-wrap">
+                    {/* Check both social structures */}
+                    {(company.socialMedia?.linkedin || company.social?.linkedin) && (
+                      <a 
+                        href={ensureAbsoluteUrl(company.socialMedia?.linkedin || company.social?.linkedin || '')} 
+                        target="_blank" 
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
+                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
                       >
                         <Linkedin className="h-5 w-5" />
-                        LinkedIn
+                        {cleanUrl(company.socialMedia?.linkedin || company.social?.linkedin || '')}
                       </a>
                     )}
-                    {company.socialMedia.twitter && (
-                      <a
-                        href={company.socialMedia.twitter}
-                        target="_blank"
+                    {company.socialMedia?.twitter && (
+                      <a 
+                        href={ensureAbsoluteUrl(company.socialMedia.twitter)} 
+                        target="_blank" 
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-gray-600 hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-2 text-blue-400 hover:text-blue-500"
                       >
                         <Twitter className="h-5 w-5" />
-                        Twitter
+                        {cleanUrl(company.socialMedia.twitter)}
                       </a>
                     )}
-                    {company.socialMedia.facebook && (
-                      <a
-                        href={company.socialMedia.facebook}
-                        target="_blank"
+                    {company.socialMedia?.facebook && (
+                      <a 
+                        href={ensureAbsoluteUrl(company.socialMedia.facebook)} 
+                        target="_blank" 
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
+                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
                       >
                         <Facebook className="h-5 w-5" />
-                        Facebook
+                        {cleanUrl(company.socialMedia.facebook)}
+                      </a>
+                    )}
+                    {(company.socialMedia?.github || company.social?.github) && (
+                      <a 
+                        href={ensureAbsoluteUrl(company.socialMedia?.github || company.social?.github || '')} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-gray-800 hover:text-gray-900"
+                      >
+                        <Globe className="h-5 w-5" />
+                        {cleanUrl(company.socialMedia?.github || company.social?.github || '')}
+                      </a>
+                    )}
+                    {(company.socialMedia?.website || company.social?.portfolio) && (
+                      <a 
+                        href={ensureAbsoluteUrl(company.socialMedia?.website || company.social?.portfolio || '')} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-green-600 hover:text-green-700"
+                      >
+                        <Globe className="h-5 w-5" />
+                        {cleanUrl(company.socialMedia?.website || company.social?.portfolio || '')}
                       </a>
                     )}
                   </div>
@@ -280,7 +315,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-teal-600">{filteredJobs.length}</p>
+                  <p className="text-2xl font-bold text-teal-600">{companyJobs.length}</p>
                   <p className="text-sm text-gray-500">Active Jobs</p>
                 </div>
                 {company.companySize && (
@@ -295,7 +330,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
         </div>
 
         {/* Company Jobs */}
-        {filteredJobs.length > 0 && (
+        {companyJobs.length > 0 && (
           <div className="mt-12">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Jobs at {company.name}</h2>
@@ -308,7 +343,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredJobs.slice(0, 6).map((job: any) => (
+              {companyJobs.slice(0, 6).map((job: any) => (
                 <Card key={job._id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
