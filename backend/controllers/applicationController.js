@@ -43,6 +43,13 @@ exports.createApplication = asyncHandler(async (req, res, next) => {
   }
 
   // Create the application
+  console.log('createApplication - Creating application with:');
+  console.log('  jobId:', jobId);
+  console.log('  companyId:', job.companyId);
+  console.log('  internId:', req.user.id);
+  console.log('  coverLetter:', coverLetter || '');
+  console.log('  resume:', resumePath);
+  
   const application = await Application.create({
     jobId: jobId,
     companyId: job.companyId,
@@ -51,6 +58,8 @@ exports.createApplication = asyncHandler(async (req, res, next) => {
     resume: resumePath,
     status: 'under_review'
   });
+  
+  console.log('createApplication - Application created:', application);
 
   // Populate the intern and job details
   await application.populate([
@@ -109,6 +118,9 @@ exports.getMyApplications = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Only interns can view their applications', 403));
   }
 
+  console.log('getMyApplications - User ID:', req.user.id);
+  console.log('getMyApplications - User role:', req.user.role);
+  
   // Find all applications for the intern
   const applications = await Application.find({ internId: req.user.id })
     .populate({
@@ -120,6 +132,9 @@ exports.getMyApplications = asyncHandler(async (req, res, next) => {
       select: 'name logo'
     })
     .sort({ createdAt: -1 });
+
+  console.log('getMyApplications - Found applications:', applications.length);
+  console.log('getMyApplications - Applications:', applications);
 
   res.status(200).json({
     success: true,
