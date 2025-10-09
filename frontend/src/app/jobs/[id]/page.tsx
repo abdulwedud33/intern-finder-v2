@@ -35,6 +35,20 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
   // Check if user is an intern
   const isIntern = user?.role === 'intern'
 
+  // Helper function to get company ID
+  const getCompanyId = (job: any) => {
+    // If companyId is an object (populated), extract _id
+    if (typeof job.companyId === 'object' && job.companyId?._id) {
+      return job.companyId._id
+    }
+    // If companyId is a string, use it directly
+    if (typeof job.companyId === 'string') {
+      return job.companyId
+    }
+    // Fallback to company._id
+    return job.company?._id || 'no-company'
+  }
+
   // Helper function to validate and format logo URL
   const getValidLogoUrl = (logoUrl: string | undefined) => {
     if (!logoUrl || logoUrl === "no-logo.jpg") {
@@ -117,7 +131,7 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                   <div className="flex-1">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">{job.title}</h1>
                     <Link 
-                      href={`/jobs/${resolvedParams.id}/${job.companyId || job.company?._id || 'no-company'}`}
+                      href={`/jobs/${resolvedParams.id}/${getCompanyId(job)}`}
                       className="text-lg text-teal-600 hover:text-teal-700 transition-colors duration-200 font-medium"
                     >
                       {job.company?.name || job.companyName || 'Company'}
