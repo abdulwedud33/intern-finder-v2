@@ -64,114 +64,7 @@ import { useCreateInternReview, useReviewsForTarget } from "@/hooks/useReviews"
 import { ReviewForm, ReviewCard, StarRatingDisplay } from "@/components/reviews/ReviewForm"
 import { applicationService } from "@/services/applicationService"
 
-// Mock data for demonstration
-const mockApplicantData = {
-  id: "1",
-  name: "Sarah Johnson",
-  role: "Frontend Developer",
-  avatar: "/placeholder-user.jpg",
-  rating: 4.8,
-  appliedJob: "Senior Frontend Developer",
-  appliedDate: "2024-01-15",
-  stage: "Interview",
-  stageProgress: 60,
-  matchScore: 92,
-  contact: {
-    email: "sarah.johnson@email.com",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    linkedin: "https://linkedin.com/in/sarahjohnson",
-    github: "https://github.com/sarahjohnson",
-    website: "https://sarahjohnson.dev"
-  },
-  personalInfo: {
-    fullName: "Sarah Johnson",
-    age: "28",
-    gender: "Female",
-    dateOfBirth: "1995-03-15",
-    language: "English, Spanish",
-    address: "123 Main St, San Francisco, CA 94102"
-  },
-  professionalInfo: {
-    aboutMe: "Passionate frontend developer with 5+ years of experience building modern web applications. I love creating beautiful, responsive interfaces that provide exceptional user experiences. I'm always eager to learn new technologies and collaborate with talented teams.",
-    experience: "5+ years in frontend development with expertise in React, TypeScript, and modern CSS frameworks. Led multiple projects from conception to deployment, working closely with design and backend teams.",
-    currentJob: "Senior Frontend Developer at TechCorp",
-    experienceYears: "5",
-    education: "Bachelor of Computer Science - Stanford University",
-    skills: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Node.js", "GraphQL", "Figma", "Git"],
-    portfolio: "https://sarahjohnson.dev/portfolio"
-  },
-  interviews: [
-    {
-      id: 1,
-      interviewer: "John Smith",
-      date: "2024-01-20",
-      time: "10:00 AM - 11:00 AM",
-      type: "Technical Interview",
-      status: "Scheduled",
-      location: "Virtual Meeting",
-      notes: "Focus on React and TypeScript skills"
-    },
-    {
-      id: 2,
-      interviewer: "Maria Garcia",
-      date: "2024-01-18",
-      time: "2:00 PM - 3:00 PM",
-      type: "HR Interview",
-      status: "Completed",
-      location: "Office",
-      notes: "Cultural fit and team collaboration"
-    }
-  ],
-  notes: [
-    {
-      id: 1,
-      author: "John Smith",
-      avatar: "/placeholder-user.jpg",
-      date: "2024-01-18",
-      time: "2:30 PM",
-      text: "Excellent technical skills and great communication. Strong candidate for the role.",
-      replies: 2
-    },
-    {
-      id: 2,
-      author: "Maria Garcia",
-      avatar: "/placeholder-user.jpg",
-      date: "2024-01-17",
-      time: "10:15 AM",
-      text: "Very professional and enthusiastic. Would be a great addition to the team.",
-      replies: 0
-    }
-  ],
-  assignedTo: [
-    {
-      name: "John Smith",
-      role: "Technical Lead",
-      avatar: "/placeholder-user.jpg"
-    },
-    {
-      name: "Maria Garcia",
-      role: "HR Manager",
-      avatar: "/placeholder-user.jpg"
-    }
-  ],
-  documents: [
-    {
-      id: 1,
-      name: "Resume - Sarah Johnson.pdf",
-      type: "Resume",
-      size: "2.3 MB",
-      uploaded: "2024-01-15"
-    },
-    {
-      id: 2,
-      name: "Portfolio - Sarah Johnson.pdf",
-      type: "Portfolio",
-      size: "5.1 MB",
-      uploaded: "2024-01-15"
-    }
-  ]
-}
+// No mock data - all data comes from backend API
 
 export default function ApplicantDetailsPage() {
   const params = useParams()
@@ -220,7 +113,7 @@ export default function ApplicantDetailsPage() {
       id: app._id,
       name: intern?.name || 'Unknown Applicant',
       role: job?.title || 'Position',
-      avatar: intern?.photo || intern?.avatar || '/placeholder-user.jpg',
+      avatar: intern?.photo || intern?.avatar || '/placeholder.svg',
       rating: app.rating || null,
       appliedJob: job?.title || 'Position',
       appliedDate: app.createdAt,
@@ -847,7 +740,7 @@ export default function ApplicantDetailsPage() {
                         <div key={interview.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
                           <div className="flex items-center gap-4">
                             <Avatar className="h-12 w-12">
-                              <AvatarImage src="/placeholder-user.jpg" alt={interview.interviewer} />
+                              <AvatarImage src="/placeholder.svg" alt={interview.interviewer} />
                               <AvatarFallback className="bg-purple-100 text-purple-700">
                                 {interview.interviewer.split(" ").map((n: string) => n[0]).join("")}
                               </AvatarFallback>

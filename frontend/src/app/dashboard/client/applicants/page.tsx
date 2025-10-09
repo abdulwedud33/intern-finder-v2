@@ -392,7 +392,8 @@ export default function ApplicantsPage() {
   const applications = useMemo(() => {
     const data = (applicationsData as any)?.data || []
     console.log('Raw applications data:', applicationsData)
-    console.log('Mapped applications:', data.map((app: any) => ({
+    
+    const mappedApplications = data.map((app: any) => ({
       _id: app._id,
       job: {
         _id: app.jobId?._id || '',
@@ -418,7 +419,10 @@ export default function ApplicantsPage() {
       updatedAt: app.updatedAt,
       rating: app.rating || null, // Only show if available from backend
       matchScore: app.matchScore || null // Only show if available from backend
-    })))
+    }))
+    
+    console.log('Mapped applications:', mappedApplications)
+    return mappedApplications
   }, [applicationsData])
 
   // Filter applications
