@@ -17,9 +17,16 @@ export default function ApplicationsPage() {
   const { data, isLoading, error } = useMyApplications()
   const { data: interviewsData, isLoading: interviewsLoading } = useMyInterviews()
   
+  // Debug logging
+  console.log('Applications data:', data)
+  console.log('Applications error:', error)
+  console.log('Applications loading:', isLoading)
+  
   // Handle different possible response structures from the backend
   const applications = (data as any)?.data || (data as any)?.applications || data || []
   const interviews = (interviewsData as any)?.data || []
+  
+  console.log('Processed applications:', applications)
   return (
     <div className="space-y-6">
       {/* Header */}

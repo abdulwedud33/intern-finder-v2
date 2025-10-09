@@ -360,16 +360,12 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
                   <form onSubmit={handleSubmit} className="space-y-8">
                     <div className="space-y-6">
                       <div className="border-b pb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Application Information</h3>
-                        <p className="text-sm text-gray-600">Tell us why you're interested in this position</p>
+                        <h3 className="text-lg font-semibold text-gray-900">Application Information and Professional Information</h3>
+                        <p className="text-sm text-gray-600">Tell us why you're interested in this position and Tell us about your background and motivation</p>
                       </div>
                     </div>
 
                     <div className="space-y-6">
-                      <div className="border-b pb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Professional Information</h3>
-                        <p className="text-sm text-gray-600">Tell us about your background and motivation</p>
-                      </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="coverLetter" className="text-sm font-medium">
@@ -390,7 +386,7 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
 
                       <div className="space-y-2">
                         <Label htmlFor="resume" className="text-sm font-medium">
-                          Resume (Optional)
+                          Resume (Required)
                         </Label>
                         <div className="space-y-3">
                           {!formData.resume ? (
