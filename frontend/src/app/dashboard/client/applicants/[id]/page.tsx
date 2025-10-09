@@ -96,7 +96,15 @@ export default function ApplicantDetailsPage() {
   const { data: applicationResponse, isLoading, error } = useQuery({
     queryKey: ["application", applicationId], 
     queryFn: async () => {
-      return await applicationService.getApplication(applicationId)
+      console.log('Fetching application with ID:', applicationId)
+      try {
+        const response = await applicationService.getApplication(applicationId)
+        console.log('Application response:', response)
+        return response
+      } catch (err) {
+        console.error('Error fetching application:', err)
+        throw err
+      }
     },
     enabled: !!applicationId
   })
@@ -293,12 +301,20 @@ export default function ApplicantDetailsPage() {
   }
 
   if (error || !applicantData) {
+    console.log('Error state - error:', error)
+    console.log('Error state - applicantData:', applicantData)
+    console.log('Error state - applicationResponse:', applicationResponse)
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Applicant Not Found</h2>
           <p className="text-gray-600 mb-4">The applicant you're looking for doesn't exist or you don't have permission to view it.</p>
+          <p className="text-sm text-gray-500 mb-4">Application ID: {applicationId}</p>
+          {error && (
+            <p className="text-sm text-red-500 mb-4">Error: {error.message || error.toString()}</p>
+          )}
           <Button onClick={() => window.history.back()} variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Go Back
