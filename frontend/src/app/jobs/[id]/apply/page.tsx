@@ -151,6 +151,17 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
     )
   }
 
+  // Helper function to normalize requirements to array format
+  const normalizeRequirements = (requirements: any): string[] => {
+    if (!requirements) return []
+    if (Array.isArray(requirements)) return requirements
+    if (typeof requirements === 'string') {
+      // Split by common delimiters and clean up
+      return requirements.split(/[,;|\n]/).map(req => req.trim()).filter(req => req.length > 0)
+    }
+    return []
+  }
+
   const jobData = {
     title: job.title || "",
     company: job.company?.name || "",
@@ -161,7 +172,7 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
       : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}/${job.salary?.period || ''}`) : "",
     applicants: 0, // This would need to be fetched separately
     description: job.description || "",
-    requirements: job.requirements || [],
+    requirements: normalizeRequirements(job.requirements),
   }
 
   const handleInputChange = (field: string, value: string) => {
@@ -293,11 +304,15 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
                     </div>
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm">Key Requirements</h4>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        {jobData.requirements.map((req: string, index: number) => (
-                          <li key={index}>• {req}</li>
-                        ))}
-                      </ul>
+                      {jobData.requirements && jobData.requirements.length > 0 ? (
+                        <ul className="text-sm text-gray-600 space-y-1">
+                          {jobData.requirements.map((req: string, index: number) => (
+                            <li key={index}>• {req}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">No specific requirements listed</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
