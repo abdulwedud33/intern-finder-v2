@@ -48,6 +48,7 @@ import { useCompanyApplications, useUpdateApplicationStatus } from "@/hooks/useA
 import { useToast } from "@/components/ui/use-toast"
 import { format } from "date-fns"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 // Types
 type Application = {
@@ -125,7 +126,12 @@ function ApplicationCard({ application, onAction }: { application: Application; 
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h4 className="font-semibold text-gray-900">{internName}</h4>
+              <Link 
+                href={`/dashboard/client/applicants/${application._id}`}
+                className="font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
+              >
+                {internName}
+              </Link>
               <p className="text-sm text-gray-600">
                 {application.job?.title || 'Position'} at {application.job?.company?.name || 'Company'}
               </p>
@@ -453,11 +459,14 @@ export default function ApplicantsPage() {
   // Mutations
   const updateStatusMutation = useUpdateApplicationStatus()
 
+  // Router for navigation
+  const router = useRouter()
+
   // Handlers
   const handleAction = (action: string, application: Application) => {
     switch (action) {
       case 'view':
-        window.open(`/dashboard/client/applicants/${application._id}`, '_blank')
+        router.push(`/dashboard/client/applicants/${application._id}`)
         break
       case 'schedule':
         setSelectedApplication(application)
@@ -819,7 +828,12 @@ export default function ApplicantsPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                              <div className="font-medium text-gray-900">{application.user.name}</div>
+                              <Link 
+                                href={`/dashboard/client/applicants/${application._id}`}
+                                className="font-medium text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
+                              >
+                                {application.user.name}
+                              </Link>
                               <div className="text-sm text-gray-500">{application.user.email}</div>
                               {application.user.location && (
                                 <div className="text-xs text-gray-400 flex items-center gap-1">
