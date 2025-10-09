@@ -42,6 +42,7 @@ export function useReviewsForTarget(targetId: string, type: 'all' | 'company' | 
     queryKey: ['reviewsForTarget', targetId, type],
     queryFn: () => reviewService.getReviewsForTarget(targetId, type),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!targetId && targetId !== 'no-user' && targetId !== 'temp', // Only run if we have a valid targetId
   });
 }
 
