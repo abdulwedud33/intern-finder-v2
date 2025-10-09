@@ -125,6 +125,17 @@ export default function ApplicantDetailsPage() {
     }
   })
 
+  // Helper function to get stage progress
+  const getStageProgress = (status: string) => {
+    switch (status) {
+      case 'under_review': return 25
+      case 'interview': return 50
+      case 'accepted': return 100
+      case 'rejected': return 0
+      default: return 25
+    }
+  }
+
   // Transform the application data to match the expected structure
   const applicantData = useMemo(() => {
     if (!applicationResponse?.data) return null
@@ -185,17 +196,6 @@ export default function ApplicantDetailsPage() {
       ]
     }
   }, [applicationResponse])
-
-  // Helper function to get stage progress
-  const getStageProgress = (status: string) => {
-    switch (status) {
-      case 'under_review': return 25
-      case 'interview': return 50
-      case 'accepted': return 100
-      case 'rejected': return 0
-      default: return 25
-    }
-  }
 
   // Real mutations
   const updateStageMutation = useMutation({
