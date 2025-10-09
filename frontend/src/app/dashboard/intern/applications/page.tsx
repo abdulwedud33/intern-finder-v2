@@ -45,6 +45,24 @@ export default function ApplicationsPage() {
       .then(res => res.json())
       .then(debugData => {
         console.log('Direct API Debug Data:', debugData)
+        
+        // If still no applications, try to check what happens when we apply
+        if (debugData.count === 0) {
+          console.log('No applications found. Checking if we can apply to a job...')
+          
+          // Try to apply to the same job that gave "already applied" message
+          // This will help us understand what's happening
+          fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/applications/precheck/68e4f46e0927d3e02082b09a`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          })
+          .then(res => res.json())
+          .then(precheckData => {
+            console.log('Precheck Data:', precheckData)
+          })
+          .catch(err => console.error('Precheck Error:', err))
+        }
       })
       .catch(err => console.error('Debug API Error:', err))
     }
