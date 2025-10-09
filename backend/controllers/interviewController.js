@@ -2,7 +2,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 const Interview = require('../models/Interview');
 const Application = require('../models/Application');
-const User = require('../models/User');
+const { User } = require('../models/User');
 const Company = require('../models/Company');
 const { isValidObjectId } = require('mongoose');
 
