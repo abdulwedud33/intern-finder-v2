@@ -44,6 +44,11 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
     if (logoUrl.startsWith("http")) {
       return logoUrl
     }
+    // If it already starts with /uploads/, just prepend the API URL
+    if (logoUrl.startsWith("/uploads/")) {
+      const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com';
+      return `${API_URL}${logoUrl}`
+    }
     // Otherwise, construct the full URL
     const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com';
     return `${API_URL}/uploads/${logoUrl}`

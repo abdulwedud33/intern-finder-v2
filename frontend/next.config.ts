@@ -3,7 +3,24 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
     /* config options here */
     images: {
-        remotePatterns: [new URL("http://localhost:5000/**"), new URL("http://intern-finder-api.onrender.com/**")],
+        remotePatterns: [
+            {
+                protocol: 'http',
+                hostname: 'localhost',
+                port: '5000',
+                pathname: '/uploads/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'intern-finder-backend-v2.onrender.com',
+                pathname: '/uploads/**',
+            },
+            {
+                protocol: 'http',
+                hostname: 'intern-finder-api.onrender.com',
+                pathname: '/uploads/**',
+            }
+        ],
     },
     eslint: {
         // Warning: This allows production builds to successfully complete even if
