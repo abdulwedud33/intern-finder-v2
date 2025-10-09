@@ -152,7 +152,7 @@ export default function JobListingsPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/jobs/${job._id}`}>
+                        <Link href={`/dashboard/client/jobListings/${job._id}`}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Job
                         </Link>

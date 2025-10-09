@@ -125,8 +125,8 @@ export default function JobApplicantsPage() {
   }
 
   const handleViewApplication = (applicationId: string) => {
-    // Navigate to the detailed application view
-    window.open(`/dashboard/client/applicants/${applicationId}`, '_blank')
+    // Navigate to the detailed application view within job listings structure
+    window.open(`/dashboard/client/jobListings/${jobId}/applicants/${applicationId}`, '_blank')
   }
 
   if (jobLoading || applicationsLoading) {
