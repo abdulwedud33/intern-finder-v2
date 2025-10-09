@@ -252,7 +252,17 @@ export default function ApplicantDetailsPage() {
 
   // Review mutations and data
   const createReviewMutation = useCreateInternReview()
-  const { data: reviewsData, isLoading: reviewsLoading } = useReviewsForTarget(applicationId, 'intern')
+  
+  // Get the actual user ID from the application data
+  const userId = useMemo(() => {
+    if (!applicationResponse?.data) return null
+    return applicationResponse.data.internId?._id || applicationResponse.data.internId
+  }, [applicationResponse])
+  
+  const { data: reviewsData, isLoading: reviewsLoading } = useReviewsForTarget(
+    userId || 'no-user', 
+    'intern'
+  )
 
   const handleStageUpdate = (newStage: string) => {
     updateStageMutation.mutate(newStage)
