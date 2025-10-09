@@ -103,7 +103,7 @@ export const jobService = {
   getJobById: async (id: string) => {
     try {
       const response = await api.get(`/jobs/detail/${id}`);
-      return response.data;
+      return response.data.data; // Return the actual job data
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         throw error.response?.data || error.message;

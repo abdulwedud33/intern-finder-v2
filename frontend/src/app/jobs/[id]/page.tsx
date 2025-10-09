@@ -2,6 +2,7 @@
 
 import { use } from "react"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -114,19 +115,15 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
               <CardContent className="p-8">
                 <div className="flex items-start gap-6">
                   <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center shadow-sm">
-                    {job.company?.logo ? (
-                      <Image
-                        src={getValidLogoUrl(job.company.logo)}
-                        alt={`${job.company.name} logo`}
-                        width={64}
-                        height={64}
-                        className="object-contain p-2"
-                      />
-                    ) : (
+                   <Avatar>
+                    <AvatarImage src={getValidLogoUrl(job.company?.logo)} alt={`${job.company?.name} logo`} />
+                    <AvatarFallback>
                       <div className="text-xl font-bold text-teal-600">
                         {job.company?.name?.charAt(0) || 'C'}
                       </div>
-                    )}
+                    </AvatarFallback>
+                   </Avatar>
+                    
                   </div>
                   <div className="flex-1">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">{job.title}</h1>

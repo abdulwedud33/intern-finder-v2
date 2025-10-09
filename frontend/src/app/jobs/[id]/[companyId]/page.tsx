@@ -74,7 +74,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
   if (!company) return <ErrorPage error={{ message: 'Company not found' }} />
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen mt-15 bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
