@@ -9,7 +9,7 @@ const ApplicationSchema = new mongoose.Schema({
   },
   companyId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Company',
+    ref: 'User',
     required: [true, 'Please add a company ID'],
     index: true
   },
@@ -56,7 +56,7 @@ ApplicationSchema.virtual('job', {
 });
 
 ApplicationSchema.virtual('company', {
-  ref: 'Company',
+  ref: 'User',
   localField: 'companyId',
   foreignField: '_id',
   justOne: true
