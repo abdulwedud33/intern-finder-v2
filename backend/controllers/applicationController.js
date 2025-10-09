@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Application = require('../models/Application');
 const Job = require('../models/Job');
-const User = require('../models/User');
+const { User } = require('../models/User');
 const asyncHandler = require('../middleware/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 

@@ -1,7 +1,7 @@
 const asyncHandler = require('../middleware/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 const Company = require('../models/Company');
-const User = require('../models/User');
+const { User } = require('../models/User');
 const path = require('path');
 const fs = require('fs');
 

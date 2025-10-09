@@ -1,5 +1,5 @@
 const Review = require('../models/Review');
-const User = require('../models/User');
+const { User } = require('../models/User');
 const Company = require('../models/Company');
 const Intern = require('../models/Intern');
 const Job = require('../models/Job');
