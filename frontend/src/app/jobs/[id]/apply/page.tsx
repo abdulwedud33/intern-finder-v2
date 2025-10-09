@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { use } from "react"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -472,4 +473,11 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
   )
 }
 
-export default JobApplicationContent
+interface ApplyPageProps {
+  params: Promise<{ id: string }>
+}
+
+export default function ApplyPage({ params }: ApplyPageProps) {
+  const resolvedParams = use(params)
+  return <JobApplicationContent listingId={resolvedParams.id} />
+}
