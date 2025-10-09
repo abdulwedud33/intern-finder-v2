@@ -24,16 +24,23 @@ export default function ApplicationsPage() {
   const [activeTab, setActiveTab] = useState("all")
   
   // Handle different possible response structures from the backend
-  const applications = (data as any)?.data || (data as any)?.applications || data || []
-  const interviews = (interviewsData as any)?.data || []
+  const applications = useMemo(() => {
+    const apps = (data as any)?.data || (data as any)?.applications || data || []
+    console.log('Raw applications data:', apps)
+    return apps
+  }, [data])
+  const interviews = useMemo(() => 
+    (interviewsData as any)?.data || [], 
+    [interviewsData]
+  )
   
   // Filter applications based on search term and active tab
   const filteredApplications = useMemo(() => {
-    let filtered = applications.filter((app: any) => {
+    const filtered = applications.filter((app: any) => {
       const job = app.jobId || app.job || {}
-      const company = job.companyId || job.company || {}
-      const jobTitle = job.title || "Position"
-      const companyName = company.name || "Company"
+      const company = job.companyId || job.company || app.companyId || {}
+      const jobTitle = job.title || job.jobTitle || app.jobTitle || "Position"
+      const companyName = company.name || job.companyName || app.companyName || "Company"
       const status = app.status || "applied"
       
       // Search filter
@@ -45,13 +52,10 @@ export default function ApplicationsPage() {
       // Status tab filter
       let matchesTab = true
       switch (activeTab) {
-        case "pending":
-          matchesTab = status.toLowerCase() === "applied" || status.toLowerCase() === "reviewed"
+        case "under_review":
+          matchesTab = status.toLowerCase() === "under_review" || status.toLowerCase() === "applied" || status.toLowerCase() === "reviewed"
           break
-        case "interview":
-          matchesTab = status.toLowerCase().includes("interview") || status.toLowerCase() === "shortlisted"
-          break
-        case "accepted":
+        case "hired":
           matchesTab = status.toLowerCase() === "hired" || status.toLowerCase() === "accepted"
           break
         case "rejected":
@@ -97,42 +101,42 @@ export default function ApplicationsPage() {
           All ({applications.length})
         </button>
         <button 
-          onClick={() => setActiveTab("pending")}
+          onClick={() => setActiveTab("under_review")}
           className={`pb-2 border-b-2 font-medium transition-colors ${
-            activeTab === "pending" 
+            activeTab === "under_review" 
               ? "border-blue-500 text-blue-600" 
               : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
-          Pending ({applications.filter((app: any) => {
+          Under Review ({applications.filter((app: any) => {
             const status = app.status || "applied"
-            return status.toLowerCase() === "applied" || status.toLowerCase() === "reviewed"
+            return status.toLowerCase() === "under_review" || status.toLowerCase() === "applied" || status.toLowerCase() === "reviewed"
           }).length})
         </button>
         <button 
-          onClick={() => setActiveTab("interview")}
+          onClick={() => setActiveTab("hired")}
           className={`pb-2 border-b-2 font-medium transition-colors ${
-            activeTab === "interview" 
+            activeTab === "hired" 
               ? "border-blue-500 text-blue-600" 
               : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
-          Interview ({applications.filter((app: any) => {
-            const status = app.status || "applied"
-            return status.toLowerCase().includes("interview") || status.toLowerCase() === "shortlisted"
-          }).length})
-        </button>
-        <button 
-          onClick={() => setActiveTab("accepted")}
-          className={`pb-2 border-b-2 font-medium transition-colors ${
-            activeTab === "accepted" 
-              ? "border-blue-500 text-blue-600" 
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          Accepted ({applications.filter((app: any) => {
+          Hired ({applications.filter((app: any) => {
             const status = app.status || "applied"
             return status.toLowerCase() === "hired" || status.toLowerCase() === "accepted"
+          }).length})
+        </button>
+        <button 
+          onClick={() => setActiveTab("rejected")}
+          className={`pb-2 border-b-2 font-medium transition-colors ${
+            activeTab === "rejected" 
+              ? "border-blue-500 text-blue-600" 
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Rejected ({applications.filter((app: any) => {
+            const status = app.status || "applied"
+            return status.toLowerCase() === "rejected"
           }).length})
         </button>
       </div>
@@ -230,11 +234,14 @@ export default function ApplicationsPage() {
               {/* Enhanced Application Cards */}
               <div className="space-y-4 mt-4">
                 {filteredApplications.map((app: any, idx: number) => {
+                  // Debug: Log the application data structure
+                  console.log('Application data:', app)
+                  
                   // Handle the new data structure from backend
                   const job = app.jobId || app.job || {}
-                  const company = job.companyId || job.company || {}
-                  const companyName = company.name || "Company"
-                  const jobTitle = job.title || "Position"
+                  const company = job.companyId || job.company || app.companyId || {}
+                  const companyName = company.name || job.companyName || app.companyName || "Company"
+                  const jobTitle = job.title || job.jobTitle || app.jobTitle || "Position"
                   const applicationDate = app.createdAt || app.appliedAt || app.dateApplied
                   const status = app.status || "applied"
                   
@@ -318,7 +325,7 @@ export default function ApplicationsPage() {
                                     className="hover:text-blue-600 transition-colors"
                                   >
                                     <p className="text-gray-600 font-medium hover:text-blue-600 transition-colors">
-                                      {companyName}
+                                      {company?.name || companyName}
                                     </p>
                                   </Link>
                                   <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
@@ -336,22 +343,14 @@ export default function ApplicationsPage() {
                               </div>
 
                               {/* Application Details */}
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-4">
+                              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
                                 <div>
                                   <span className="font-medium">Applied:</span>
                                   <p>{applicationDate ? new Date(applicationDate).toLocaleDateString() : "—"}</p>
                                 </div>
                                 <div>
-                                  <span className="font-medium">Type:</span>
-                                  <p>{job.type || "Full-time"}</p>
-                                </div>
-                                <div>
                                   <span className="font-medium">Salary:</span>
-                                  <p>{job.salary || "Not specified"}</p>
-                                </div>
-                                <div>
-                                  <span className="font-medium">Experience:</span>
-                                  <p>{job.experience || "Not specified"}</p>
+                                  <p>{job.salary || job.salaryRange || job.salaryMin || job.salaryMax || "Competitive"}</p>
                                 </div>
                               </div>
 
@@ -419,7 +418,7 @@ export default function ApplicationsPage() {
                           
                           <div className="flex items-center space-x-2">
                             <Link href={`/jobs/${job._id || job.id}`}>
-                              <Button variant="outline" size="sm" className="text-xs">
+                              <Button variant="outline" size="sm" className="ml-2 text-xs">
                                 <ExternalLink className="h-3 w-3 mr-1" />
                                 View Job
                               </Button>
@@ -440,7 +439,7 @@ export default function ApplicationsPage() {
             <Button variant="outline" size="sm">
               &lt;
             </Button>
-            <Button variant="default" size="sm" className="bg-green-500 hover:bg-green-600">
+            <Button variant="default" size="sm" className="bg-teal-500 hover:bg-teal-600">
               1
             </Button>
             <Button variant="outline" size="sm">

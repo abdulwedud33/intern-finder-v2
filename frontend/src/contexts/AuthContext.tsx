@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { login as authLogin, register as authRegister, logout as authLogout, getCurrentUser } from '@/services/authService';
+import { useToast } from '@/components/ui/use-toast';
 import { AuthUser } from '@/types/auth';
 
 interface AuthContextType {
@@ -21,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const isMounted = useRef(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     return () => {
@@ -179,9 +181,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authLogout();
       setUser(null);
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out.",
+      });
       router.push('/login');
     } catch (error) {
       console.error('Logout failed:', error);
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

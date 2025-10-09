@@ -41,19 +41,8 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const handleDeleteJob = () => {
     deleteJobMutation.mutate(jobId, {
       onSuccess: () => {
-        toast({
-          title: "Job deleted successfully",
-          description: "The job listing has been removed.",
-        })
         // Redirect to job listings
         window.location.href = "/dashboard/client/jobListings"
-      },
-      onError: () => {
-        toast({
-          title: "Failed to delete job",
-          description: "Please try again later.",
-          variant: "destructive",
-        })
       },
     })
   }
@@ -61,18 +50,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const handleCloseJob = () => {
     closeJobMutation.mutate(jobId, {
       onSuccess: () => {
-        toast({
-          title: "Job closed successfully",
-          description: "The job listing is now closed to new applications.",
-        })
         queryClient.invalidateQueries({ queryKey: ['job', jobId] })
-      },
-      onError: () => {
-        toast({
-          title: "Failed to close job",
-          description: "Please try again later.",
-          variant: "destructive",
-        })
       },
     })
   }
