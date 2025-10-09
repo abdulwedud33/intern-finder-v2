@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Calendar, Search, Filter, MoreHorizontal, Clock, MapPin, Video, Phone, User, AlertCircle, CheckCircle, XCircle } from "lucide-react"
+import { useEffect } from "react"
 import { useMyApplications } from "@/hooks/useApplications"
 import { useMyInterviews } from "@/hooks/useInterviews"
 import { LoadingCard } from "@/components/ui/loading-spinner"
@@ -31,6 +32,23 @@ export default function ApplicationsPage() {
   // Debug information from backend
   const debugInfo = (data as any)?.debug
   console.log('Backend Debug Info:', debugInfo)
+  
+  // If debug info is not available (deployed backend), make a direct API call
+  useEffect(() => {
+    if (!debugInfo && data && (data as any).success) {
+      console.log('Making direct API call for debug info...')
+      fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/applications/me`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      .then(res => res.json())
+      .then(debugData => {
+        console.log('Direct API Debug Data:', debugData)
+      })
+      .catch(err => console.error('Debug API Error:', err))
+    }
+  }, [debugInfo, data])
   return (
     <div className="space-y-6">
       {/* Header */}

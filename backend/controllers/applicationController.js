@@ -129,8 +129,8 @@ exports.getMyApplications = asyncHandler(async (req, res, next) => {
     console.log(`  App ID: ${app._id}, Intern ID: ${app.internId}, Job ID: ${app.jobId}`);
   });
   
-  // Find all applications for the intern
-  const applications = await Application.find({ internId: req.user.id })
+  // Find all applications for the intern - try both string and ObjectId formats
+  let applications = await Application.find({ internId: req.user.id })
     .populate({
       path: 'jobId',
       select: 'title companyName description location'
@@ -140,6 +140,20 @@ exports.getMyApplications = asyncHandler(async (req, res, next) => {
       select: 'name logo'
     })
     .sort({ createdAt: -1 });
+  
+  // If no applications found, try with string format
+  if (applications.length === 0) {
+    applications = await Application.find({ internId: req.user.id.toString() })
+      .populate({
+        path: 'jobId',
+        select: 'title companyName description location'
+      })
+      .populate({
+        path: 'companyId',
+        select: 'name logo'
+      })
+      .sort({ createdAt: -1 });
+  }
 
   console.log('getMyApplications - Found applications:', applications.length);
   console.log('getMyApplications - Applications:', applications);
