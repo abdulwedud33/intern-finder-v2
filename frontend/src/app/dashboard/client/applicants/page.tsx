@@ -94,15 +94,7 @@ const STAGES: Omit<Stage, 'count'>[] = [
   { id: 'rejected', title: 'Rejected', className: 'bg-red-100 text-red-800', color: 'red' }
 ]
 
-// Mock data for demonstration
-const mockStats = {
-  totalApplications: 47,
-  newApplications: 12,
-  interviews: 8,
-  hired: 3,
-  averageRating: 4.2,
-  responseRate: 78
-}
+// No mock data - all stats will come from backend
 
 // Application Card Component
 function ApplicationCard({ application, onAction }: { application: Application; onAction: (action: string, application: Application) => void }) {
@@ -423,8 +415,8 @@ export default function ApplicantsPage() {
       coverLetter: app.coverLetter,
       createdAt: app.createdAt,
       updatedAt: app.updatedAt,
-      rating: app.rating || Math.floor(Math.random() * 2) + 3, // Mock rating
-      matchScore: app.matchScore || Math.floor(Math.random() * 30) + 70 // Mock match score
+      rating: app.rating || null, // Only show if available from backend
+      matchScore: app.matchScore || null // Only show if available from backend
     }))
   }, [applicationsData])
 
@@ -454,6 +446,35 @@ export default function ApplicantsPage() {
       count: applications.filter((app: any) => app.status === stage.id).length
     }))
     return counts
+  }, [applications])
+
+  // Calculate real stats from applications data
+  const realStats = useMemo(() => {
+    const totalApplications = applications.length
+    const interviews = applications.filter((app: any) => app.status === 'interview').length
+    const hired = applications.filter((app: any) => app.status === 'accepted').length
+    
+    // Calculate new applications this week (applications created in last 7 days)
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    const newApplications = applications.filter((app: any) => 
+      new Date(app.createdAt) > oneWeekAgo
+    ).length
+
+    // Calculate average rating (only from applications that have ratings)
+    const applicationsWithRatings = applications.filter((app: any) => app.rating)
+    const averageRating = applicationsWithRatings.length > 0 
+      ? applicationsWithRatings.reduce((sum: number, app: any) => sum + app.rating, 0) / applicationsWithRatings.length
+      : 0
+
+    return {
+      totalApplications,
+      newApplications,
+      interviews,
+      hired,
+      averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
+      responseRate: totalApplications > 0 ? Math.round((interviews / totalApplications) * 100) : 0
+    }
   }, [applications])
 
   // Mutations
@@ -613,8 +634,8 @@ export default function ApplicantsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm font-medium">Total Applications</p>
-                  <p className="text-3xl font-bold">{mockStats.totalApplications}</p>
-                  <p className="text-blue-100 text-xs">+{mockStats.newApplications} this week</p>
+                  <p className="text-3xl font-bold">{realStats.totalApplications}</p>
+                  <p className="text-blue-100 text-xs">+{realStats.newApplications} this week</p>
                 </div>
                 <FileText className="h-12 w-12 text-blue-200" />
               </div>
@@ -626,7 +647,7 @@ export default function ApplicantsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-100 text-sm font-medium">Interviews</p>
-                  <p className="text-3xl font-bold">{mockStats.interviews}</p>
+                  <p className="text-3xl font-bold">{realStats.interviews}</p>
                   <p className="text-green-100 text-xs">+2 this week</p>
                 </div>
                 <Users className="h-12 w-12 text-green-200" />
@@ -639,7 +660,7 @@ export default function ApplicantsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-sm font-medium">Hired</p>
-                  <p className="text-3xl font-bold">{mockStats.hired}</p>
+                  <p className="text-3xl font-bold">{realStats.hired}</p>
                   <p className="text-purple-100 text-xs">+1 this week</p>
                 </div>
                 <Award className="h-12 w-12 text-purple-200" />
@@ -652,7 +673,7 @@ export default function ApplicantsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-orange-100 text-sm font-medium">Response Rate</p>
-                  <p className="text-3xl font-bold">{mockStats.responseRate}%</p>
+                  <p className="text-3xl font-bold">{realStats.responseRate}%</p>
                   <p className="text-orange-100 text-xs">+5% this week</p>
                 </div>
                 <TrendingUp className="h-12 w-12 text-orange-200" />

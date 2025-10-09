@@ -210,7 +210,7 @@ export default function ApplicantDetailsPage() {
 
   // Transform the application data to match the expected structure
   const applicantData = useMemo(() => {
-    if (!applicationResponse?.data) return mockApplicantData
+    if (!applicationResponse?.data) return null
     
     const app = applicationResponse.data
     const intern = app.internId || app.user
@@ -221,12 +221,12 @@ export default function ApplicantDetailsPage() {
       name: intern?.name || 'Unknown Applicant',
       role: job?.title || 'Position',
       avatar: intern?.photo || intern?.avatar || '/placeholder-user.jpg',
-      rating: app.rating || 4.0,
+      rating: app.rating || null,
       appliedJob: job?.title || 'Position',
       appliedDate: app.createdAt,
       stage: app.status || 'under_review',
       stageProgress: getStageProgress(app.status),
-      matchScore: app.matchScore || 85,
+      matchScore: app.matchScore || null,
       contact: {
         email: intern?.email || '',
         phone: intern?.phone || '',
@@ -254,9 +254,9 @@ export default function ApplicantDetailsPage() {
       },
       coverLetter: app.coverLetter || '',
       resume: app.resume || '',
-      interviews: [], // TODO: Fetch from interview service
-      notes: [], // TODO: Fetch from notes service
-      assignedTo: [], // TODO: Fetch from assignment service
+      interviews: [] as any[], // TODO: Fetch from interview service
+      notes: [] as any[], // TODO: Fetch from notes service
+      assignedTo: [] as any[], // TODO: Fetch from assignment service
       documents: [
         {
           id: 'resume',
@@ -399,6 +399,22 @@ export default function ApplicantDetailsPage() {
     )
   }
 
+  if (error || !applicantData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Applicant Not Found</h2>
+          <p className="text-gray-600 mb-4">The applicant you're looking for doesn't exist or you don't have permission to view it.</p>
+          <Button onClick={() => window.history.back()} variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Go Back
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto p-6">
@@ -446,11 +462,13 @@ export default function ApplicantDetailsPage() {
                 </Avatar>
                   <h3 className="font-bold text-xl text-gray-900">{applicantData.name}</h3>
                   <p className="text-gray-600">{applicantData.role}</p>
-                <div className="flex items-center justify-center gap-1 mt-2">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                {applicantData.rating && (
+                  <div className="flex items-center justify-center gap-1 mt-2">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                     <span className="text-sm font-medium">{applicantData.rating}</span>
-                    <span className="text-xs text-gray-500">(4.8/5)</span>
-                </div>
+                    <span className="text-xs text-gray-500">({applicantData.rating}/5)</span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4 text-sm">
@@ -471,18 +489,20 @@ export default function ApplicantDetailsPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <p className="text-gray-600 font-medium">Match Score</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-500 h-2 rounded-full" 
-                          style={{ width: `${applicantData.matchScore}%` }}
-                        ></div>
+                  {applicantData.matchScore && (
+                    <div>
+                      <p className="text-gray-600 font-medium">Match Score</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full" 
+                            style={{ width: `${applicantData.matchScore}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium">{applicantData.matchScore}%</span>
                       </div>
-                      <span className="text-sm font-medium">{applicantData.matchScore}%</span>
                     </div>
-                </div>
+                  )}
 
                 <Button 
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
