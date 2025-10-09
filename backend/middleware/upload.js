@@ -57,10 +57,10 @@ const uploadMixed = multer({
   }
 });
 
-// Middleware for single file upload (images only)
+// Middleware for single file upload (images and PDFs)
 const uploadSingle = (fieldName) => {
   return (req, res, next) => {
-    const uploadSingleFile = uploadImages.single(fieldName);
+    const uploadSingleFile = uploadMixed.single(fieldName);
     uploadSingleFile(req, res, (err) => {
       if (err) {
         console.error('Upload error:', err);
