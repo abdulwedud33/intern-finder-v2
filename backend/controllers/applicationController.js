@@ -131,27 +131,15 @@ exports.getMyApplications = asyncHandler(async (req, res, next) => {
   
   // Find all applications for the intern - try both string and ObjectId formats
   let applications = await Application.find({ internId: req.user.id })
-    .populate({
-      path: 'jobId',
-      select: 'title companyName description location'
-    })
-    .populate({
-      path: 'companyId',
-      select: 'name logo'
-    })
+    .populate('jobId', 'title companyName description location status')
+    .populate('companyId', 'name logo')
     .sort({ createdAt: -1 });
   
   // If no applications found, try with string format
   if (applications.length === 0) {
     applications = await Application.find({ internId: req.user.id.toString() })
-      .populate({
-        path: 'jobId',
-        select: 'title companyName description location'
-      })
-      .populate({
-        path: 'companyId',
-        select: 'name logo'
-      })
+      .populate('jobId', 'title companyName description location status')
+      .populate('companyId', 'name logo')
       .sort({ createdAt: -1 });
   }
 

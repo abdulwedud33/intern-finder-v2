@@ -60,6 +60,7 @@ export default function ApplicationsPage() {
           .then(res => res.json())
           .then(precheckData => {
             console.log('Precheck Data:', precheckData)
+            console.log('Precheck Data Details:', JSON.stringify(precheckData, null, 2))
           })
           .catch(err => console.error('Precheck Error:', err))
         }
