@@ -348,27 +348,19 @@ exports.getReviewsForTarget = asyncHandler(async (req, res, next) => {
         new ErrorResponse(`No ${type} reviews found for this user`, 404)
       );
     }
-    query.reviewType = type;
+    query.targetModel = type === 'company' ? 'Company' : 'Intern';
   }
 
   const reviews = await Review.find(query)
     .populate({
       path: 'reviewer',
-      select: 'name avatar role',
-      populate: {
-        path: 'role',
-        select: 'name'
-      }
+      select: 'name avatar role'
     })
     .populate({
       path: 'target',
-      select: 'name avatar role',
-      populate: {
-        path: 'role',
-        select: 'name'
-      }
+      select: 'name avatar role'
     })
-    .populate('job', 'title company');
+    .populate('job', 'title companyName');
 
   // Calculate average rating
   const avgRating = reviews.length > 0 
