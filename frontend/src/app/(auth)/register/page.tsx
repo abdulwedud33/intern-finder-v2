@@ -1708,7 +1708,7 @@ export default function RegisterPage() {
                       </h3>
                   <div className="space-y-4">
                     <div>
-                          <Label htmlFor="name" className="text-sm font-medium text-gray-700">Company Name <span className="text-red-500">*</span></Label>
+                          <Label htmlFor="name" className="text-sm font-medium text-gray-700">Company Name<span className="text-red-500">*</span></Label>
                           <Input 
                             id="name" 
                             placeholder="Acme Inc." 
@@ -1889,13 +1889,6 @@ export default function RegisterPage() {
                       )}
                     </div>
 
-                    <div>
-                      <Label htmlFor="contactName">Contact Person</Label>
-                      <Input id="contactName" placeholder="Jane Smith" {...register("name")} />
-                      {"name" in errors && errors.name && (
-                        <p className="text-sm text-red-500 mt-1">{errors.name.message as string}</p>
-                      )}
-                    </div>
 
                     <div>
                       <Label htmlFor="jobTitle">Job Title</Label>
