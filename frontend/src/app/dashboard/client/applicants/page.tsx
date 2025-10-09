@@ -151,24 +151,16 @@ function ApplicationCard({ application, onAction }: { application: Application; 
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => onAction('view', application)}>
                 <Eye className="h-4 w-4 mr-2" />
-                View Profile
+                View Details
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onAction('schedule', application)}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Schedule Interview
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAction('message', application)}>
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Send Message
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onAction('update_status', application)}>
                 <Settings className="h-4 w-4 mr-2" />
                 Update Status
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAction('decline', application)} className="text-red-600">
-                <XCircle className="h-4 w-4 mr-2" />
-                Decline Application
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -399,8 +391,8 @@ export default function ApplicantsPage() {
         _id: app.jobId?._id || '',
         title: app.jobId?.title || 'Position',
         company: {
-          _id: app.jobId?.company?._id || '',
-          name: app.jobId?.company?.name || 'Company'
+          _id: app.jobId?.companyId?._id || app.companyId || '',
+          name: app.jobId?.companyId?.name || app.jobId?.companyName || 'Company'
         }
       },
       user: {

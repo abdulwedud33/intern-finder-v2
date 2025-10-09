@@ -96,7 +96,11 @@ exports.getCompanyApplications = asyncHandler(async (req, res, next) => {
     })
     .populate({
       path: 'jobId',
-      select: 'title description'
+      select: 'title description companyName companyId',
+      populate: {
+        path: 'companyId',
+        select: 'name'
+      }
     })
     .sort({ createdAt: -1 });
 
@@ -462,12 +466,16 @@ exports.getMyApplications = asyncHandler(async (req, res, next) => {
 exports.getApplicationById = asyncHandler(async (req, res, next) => {
   const application = await Application.findById(req.params.id)
     .populate({
-      path: 'user',
-      select: 'name email'
+      path: 'internId',
+      select: 'name email photo phone location about experience skills education'
     })
     .populate({
-      path: 'listing',
-      select: 'title companyName user'
+      path: 'jobId',
+      select: 'title description companyName companyId',
+      populate: {
+        path: 'companyId',
+        select: 'name'
+      }
     });
 
   if (!application) {
@@ -477,8 +485,8 @@ exports.getApplicationById = asyncHandler(async (req, res, next) => {
   }
 
   // Check permissions
-  const isOwner = application.user._id.toString() === req.user.id;
-  const isCompanyOwner = application.listing?.user?.toString() === req.user.id;
+  const isOwner = application.internId._id.toString() === req.user.id;
+  const isCompanyOwner = application.jobId?.companyId?._id.toString() === req.user.id;
   
   if (!isOwner && !isCompanyOwner) {
     return next(
