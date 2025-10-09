@@ -178,9 +178,9 @@ function ApplicationCard({ application, onAction }: { application: Application; 
         </div>
         {application.user?.skills && application.user.skills.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
-            {application.user.skills.slice(0, 3).map((skill, index) => (
+            {application.user.skills.slice(0, 3).map((skill: any, index) => (
               <Badge key={index} variant="secondary" className="text-xs">
-                {skill}
+                {typeof skill === 'string' ? skill : skill.name || skill}
               </Badge>
             ))}
             {application.user.skills.length > 3 && (

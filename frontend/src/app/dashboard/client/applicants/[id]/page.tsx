@@ -651,9 +651,9 @@ export default function ApplicantDetailsPage() {
                     <div>
                       <p className="text-sm font-medium text-gray-600 mb-2">Technical Skills</p>
                       <div className="flex flex-wrap gap-2">
-                        {applicantData.professionalInfo.skills.map((skill: string, index: number) => (
+                        {applicantData.professionalInfo.skills.map((skill: any, index: number) => (
                           <Badge key={index} variant="secondary" className="px-3 py-1">
-                              {skill}
+                              {typeof skill === 'string' ? skill : skill.name || skill}
                             </Badge>
                           ))}
                         </div>
