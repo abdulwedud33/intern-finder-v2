@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   ArrowLeft,
   MoreVertical,
@@ -62,6 +62,7 @@ import { useParams } from "next/navigation"
 import { format } from "date-fns"
 import { useCreateInternReview, useReviewsForTarget } from "@/hooks/useReviews"
 import { ReviewForm, ReviewCard, StarRatingDisplay } from "@/components/reviews/ReviewForm"
+import { applicationService } from "@/services/applicationService"
 
 // Mock data for demonstration
 const mockApplicantData = {
@@ -198,27 +199,86 @@ export default function ApplicantDetailsPage() {
     notes: ""
   })
 
-  // Mock query - replace with real API call
-  const { data: application, isLoading } = useQuery({
+  // Fetch real application data
+  const { data: applicationResponse, isLoading, error } = useQuery({
     queryKey: ["application", applicationId], 
     queryFn: async () => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      return { data: mockApplicantData }
-    }
+      return await applicationService.getApplication(applicationId)
+    },
+    enabled: !!applicationId
   })
 
-  const applicantData = application?.data || mockApplicantData
+  // Transform the application data to match the expected structure
+  const applicantData = useMemo(() => {
+    if (!applicationResponse?.data) return mockApplicantData
+    
+    const app = applicationResponse.data
+    const intern = app.internId || app.user
+    const job = app.jobId || app.job
+    
+    return {
+      id: app._id,
+      name: intern?.name || 'Unknown Applicant',
+      role: job?.title || 'Position',
+      avatar: intern?.photo || intern?.avatar || '/placeholder-user.jpg',
+      rating: app.rating || 4.0,
+      appliedJob: job?.title || 'Position',
+      appliedDate: app.createdAt,
+      stage: app.status || 'under_review',
+      stageProgress: getStageProgress(app.status),
+      matchScore: app.matchScore || 85,
+      contact: {
+        email: intern?.email || '',
+        phone: intern?.phone || '',
+        location: intern?.location || '',
+        linkedin: intern?.linkedin || '',
+        github: intern?.github || '',
+        website: intern?.website || ''
+      },
+      personalInfo: {
+        fullName: intern?.name || 'Unknown',
+        age: intern?.age || '',
+        gender: intern?.gender || '',
+        dateOfBirth: intern?.dateOfBirth || '',
+        language: intern?.language || '',
+        address: intern?.address || ''
+      },
+      professionalInfo: {
+        aboutMe: intern?.aboutMe || intern?.about || '',
+        experience: intern?.experience || '',
+        currentJob: intern?.currentJob || '',
+        experienceYears: intern?.experienceYears || '',
+        education: intern?.education || '',
+        skills: intern?.skills || [],
+        portfolio: intern?.portfolio || ''
+      },
+      coverLetter: app.coverLetter || '',
+      resume: app.resume || '',
+      interviews: [], // TODO: Fetch from interview service
+      notes: [], // TODO: Fetch from notes service
+      assignedTo: [] // TODO: Fetch from assignment service
+    }
+  }, [applicationResponse])
 
-  // Mock mutations
+  // Helper function to get stage progress
+  const getStageProgress = (status: string) => {
+    switch (status) {
+      case 'under_review': return 25
+      case 'interview': return 50
+      case 'accepted': return 100
+      case 'rejected': return 0
+      default: return 25
+    }
+  }
+
+  // Real mutations
   const updateStageMutation = useMutation({
     mutationFn: async (newStage: string) => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      return { success: true }
+      return await applicationService.updateApplicationStatus(applicationId, newStage)
     },
     onSuccess: () => {
       toast({ title: "Stage updated successfully" })
+      queryClient.invalidateQueries({ queryKey: ["application", applicationId] })
     },
     onError: () => {
       toast({ title: "Failed to update stage", variant: "destructive" })

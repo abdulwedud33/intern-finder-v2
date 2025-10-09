@@ -396,22 +396,22 @@ export default function ApplicantsPage() {
     return data.map((app: any) => ({
       _id: app._id,
       job: {
-        _id: app.job?._id || '',
-        title: app.job?.title || 'Position',
+        _id: app.jobId?._id || '',
+        title: app.jobId?.title || 'Position',
         company: {
-          _id: app.job?.company?._id || '',
-          name: app.job?.company?.name || 'Company'
+          _id: app.jobId?.company?._id || '',
+          name: app.jobId?.company?.name || 'Company'
         }
       },
       user: {
-        _id: app.user?._id || '',
-        name: app.user?.name || 'Unknown',
-        email: app.user?.email || '',
-        phone: app.user?.phone || '',
-        location: app.user?.location || '',
-        avatar: app.user?.avatar || '',
-        skills: app.user?.skills || [],
-        experience: app.user?.experience || ''
+        _id: app.internId?._id || '',
+        name: app.internId?.name || 'Unknown',
+        email: app.internId?.email || '',
+        phone: app.internId?.phone || '',
+        location: app.internId?.location || '',
+        avatar: app.internId?.photo || app.internId?.avatar || '',
+        skills: app.internId?.skills || [],
+        experience: app.internId?.experience || ''
       },
       status: app.status || 'under_review',
       coverLetter: app.coverLetter,
