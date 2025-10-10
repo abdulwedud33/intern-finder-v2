@@ -12,7 +12,7 @@ const ErrorResponse = require('../utils/errorResponse');
  * @access  Private (Intern)
  */
 exports.getInternCompanies = asyncHandler(async (req, res, next) => {
-  const internId = req.user.intern;
+  const internId = req.user.id;
 
   // Validate internId
   if (!internId) {
@@ -40,7 +40,7 @@ exports.getInternCompanies = asyncHandler(async (req, res, next) => {
  * @access  Private (Intern)
  */
 exports.getInternStats = asyncHandler(async (req, res, next) => {
-  const internId = req.user.intern;
+  const internId = req.user.id;
 
   // Validate internId
   if (!internId) {
@@ -100,7 +100,7 @@ exports.getInternStats = asyncHandler(async (req, res, next) => {
  */
 exports.getCompanyRelationship = asyncHandler(async (req, res, next) => {
   const { companyId } = req.params;
-  const internId = req.user.intern;
+  const internId = req.user.id;
 
   const relationship = await CompanyIntern.findOne({
     company: companyId,
@@ -142,7 +142,7 @@ exports.getCompanyRelationship = asyncHandler(async (req, res, next) => {
  * @access  Private (Intern)
  */
 exports.getWorkHistoryTimeline = asyncHandler(async (req, res, next) => {
-  const internId = req.user.intern;
+  const internId = req.user.id;
 
   const companies = await CompanyIntern.find({ intern: internId })
     .populate('company', 'name')
@@ -172,7 +172,7 @@ exports.getWorkHistoryTimeline = asyncHandler(async (req, res, next) => {
  * @access  Private (Intern)
  */
 exports.getAchievements = asyncHandler(async (req, res, next) => {
-  const internId = req.user.intern;
+  const internId = req.user.id;
 
   const companies = await CompanyIntern.find({ intern: internId })
     .populate('company', 'name')
@@ -206,7 +206,7 @@ exports.getAchievements = asyncHandler(async (req, res, next) => {
  * @access  Private (Intern)
  */
 exports.getSkillsGained = asyncHandler(async (req, res, next) => {
-  const internId = req.user.intern;
+  const internId = req.user.id;
 
   const companies = await CompanyIntern.find({ intern: internId })
     .populate('company', 'name')
@@ -249,7 +249,7 @@ exports.getSkillsGained = asyncHandler(async (req, res, next) => {
  * @access  Private (Intern)
  */
 exports.getPerformanceHistory = asyncHandler(async (req, res, next) => {
-  const internId = req.user.intern;
+  const internId = req.user.id;
 
   // Validate internId
   if (!internId) {
@@ -289,7 +289,7 @@ exports.getPerformanceHistory = asyncHandler(async (req, res, next) => {
  * @access  Private (Intern)
  */
 exports.getRecommendations = asyncHandler(async (req, res, next) => {
-  const internId = req.user.intern;
+  const internId = req.user.id;
 
   // For now, return empty array since we don't have a separate recommendations model
   // This could be enhanced to extract recommendations from reviews or create a separate model
