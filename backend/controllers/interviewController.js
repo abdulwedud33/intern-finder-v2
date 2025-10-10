@@ -588,3 +588,81 @@ exports.getCompanyInterviewsById = asyncHandler(async (req, res, next) => {
     data: interviews
   });
 });
+
+/**
+ * @desc    Get all interviews for a company
+ * @route   GET /api/v1/interviews/company
+ * @access  Private (Company)
+ */
+exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
+  // Get all interviews for this company
+  const interviews = await Interview.find({ company: req.user.id })
+    .populate({
+      path: 'intern',
+      select: 'name email avatar',
+      populate: {
+        path: 'user',
+        select: 'name email'
+      }
+    })
+    .populate({
+      path: 'company',
+      select: 'name logo',
+      populate: {
+        path: 'user',
+        select: 'name email'
+      }
+    })
+    .populate('job', 'title companyName')
+    .populate('application', 'status')
+    .sort('-scheduledDate');
+    
+  res.status(200).json({
+    success: true,
+    count: interviews.length,
+    data: interviews
+  });
+});
+
+/**
+ * @desc    Get interviews for a specific company by ID
+ * @route   GET /api/v1/interviews/companies/:companyId/interviews
+ * @access  Private (Company, Admin)
+ */
+exports.getCompanyInterviewsById = asyncHandler(async (req, res, next) => {
+  const { companyId } = req.params;
+  
+  // Check if the company exists
+  const company = await User.findOne({ _id: companyId, role: 'company' });
+  if (!company) {
+    return next(new ErrorResponse('Company not found', 404));
+  }
+  
+  // Get all interviews for this company
+  const interviews = await Interview.find({ company: companyId })
+    .populate({
+      path: 'intern',
+      select: 'name email avatar',
+      populate: {
+        path: 'user',
+        select: 'name email'
+      }
+    })
+    .populate({
+      path: 'company',
+      select: 'name logo',
+      populate: {
+        path: 'user',
+        select: 'name email'
+      }
+    })
+    .populate('job', 'title companyName')
+    .populate('application', 'status')
+    .sort('-scheduledDate');
+    
+  res.status(200).json({
+    success: true,
+    count: interviews.length,
+    data: interviews
+  });
+});
