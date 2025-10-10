@@ -38,34 +38,9 @@ import { useCompanyInterviews, useCreateInterview, useUpdateInterview, useDelete
 import { useCompanyApplications } from "@/hooks/useApplications"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
+import { Interview, CreateInterviewRequest } from "@/services/interviewService"
 
-// Interview types
 type InterviewType = 'phone' | 'video' | 'onsite' | 'other'
-
-interface Interview {
-  _id: string
-  applicationId: string
-  internId: {
-    _id: string
-    name: string
-    email: string
-    avatar?: string
-  }
-  jobId: {
-    _id: string
-    title: string
-    companyName: string
-  }
-  scheduledDate: string
-  duration: number
-  type: InterviewType
-  location?: string
-  link?: string
-  note?: string
-  status: 'scheduled' | 'completed' | 'cancelled'
-  createdAt: string
-  updatedAt: string
-}
 
 interface CreateInterviewData {
   applicationId: string
@@ -101,9 +76,9 @@ export default function ClientInterviewsPage() {
 
   // Transform data
   const interviews = useMemo(() => {
-    const interviews = interviewsResponse?.data || []
-    console.log('Raw interviews data:', interviews)
-    return interviews
+    const interviewsData = interviewsResponse?.data || []
+    console.log('Raw interviews data:', interviewsData)
+    return Array.isArray(interviewsData) ? interviewsData : []
   }, [interviewsResponse])
 
   const applications = useMemo(() => {
@@ -114,7 +89,7 @@ export default function ClientInterviewsPage() {
 
   // Filter interviews
   const filteredInterviews = useMemo(() => {
-    return interviews.filter((interview: Interview) => {
+    return interviews.filter((interview: any) => {
       const matchesSearch = 
         interview.internId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         interview.jobId?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -136,9 +111,9 @@ export default function ClientInterviewsPage() {
   // Calculate statistics
   const stats = useMemo(() => {
     const totalInterviews = interviews.length
-    const scheduledInterviews = interviews.filter((i: Interview) => i.status === 'scheduled').length
-    const completedInterviews = interviews.filter((i: Interview) => i.status === 'completed').length
-    const cancelledInterviews = interviews.filter((i: Interview) => i.status === 'cancelled').length
+    const scheduledInterviews = interviews.filter((i: any) => i.status === 'scheduled').length
+    const completedInterviews = interviews.filter((i: any) => i.status === 'completed').length
+    const cancelledInterviews = interviews.filter((i: any) => i.status === 'cancelled').length
     
     return {
       total: totalInterviews,
@@ -528,10 +503,11 @@ export default function ClientInterviewsPage() {
               <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <p className="text-lg font-medium text-gray-900 mb-2">No interviews found</p>
               <p className="text-sm">Start scheduling interviews to see them here.</p>
+              <Button variant="secondary" className="mt-4 bg-gray-600 hover:bg-gray-700 text-white" onClick={() => setIsCreateDialogOpen(true)}>Schedule Interview</Button>
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredInterviews.map((interview: Interview) => (
+              {filteredInterviews.map((interview: any) => (
                 <Card key={interview._id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">

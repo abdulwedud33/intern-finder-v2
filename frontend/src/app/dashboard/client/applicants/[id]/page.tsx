@@ -866,14 +866,15 @@ export default function ApplicantDetailsPage() {
                       <Calendar className="h-5 w-5 text-purple-600" />
                       Interview Schedule
                     </CardTitle>
-                    <Button 
-                      className="bg-purple-600 hover:bg-purple-700 text-white" 
-                      size="sm"
-                      onClick={() => setIsInterviewDialogOpen(true)}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Schedule Interview
-                    </Button>
+                    <Link href="/dashboard/client/interviews">
+                      <Button 
+                        className="bg-purple-600 hover:bg-purple-700 text-white" 
+                        size="sm"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Manage Interviews
+                      </Button>
+                    </Link>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
