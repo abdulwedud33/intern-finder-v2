@@ -37,7 +37,7 @@ import { format, formatDistanceToNow, isAfter, isBefore, startOfDay } from "date
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { useCompanyApplications } from "@/hooks/useApplications"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -87,7 +87,7 @@ export default function ClientInterviewsPage() {
   
   // Get company ID from user context
   const { user } = useAuth()
-  const companyId = user?._id // Company users are stored directly in Company model
+  const companyId = (user as any)?._id || (user as any)?.company?._id // Company users are stored directly in Company model
   
   const { data, isLoading, error } = useCompanyInterviews(companyId || "")
   const { data: applicationsData } = useCompanyApplications()
@@ -104,7 +104,6 @@ export default function ClientInterviewsPage() {
   const cancelInterviewMutation = useCancelInterview()
   const rescheduleInterviewMutation = useRescheduleInterview()
   const submitFeedbackMutation = useSubmitInterviewFeedback()
-  const { toast } = useToast()
   
   const interviews = useMemo(() => (data as any)?.data || [], [data])
   const applications = useMemo(() => (applicationsData as any)?.data || [], [applicationsData])
@@ -119,7 +118,7 @@ export default function ClientInterviewsPage() {
     applicationId: "",
     scheduledDate: "",
     duration: 60,
-    type: "video" as "phone" | "video" | "in-person",
+    type: "video" as "phone" | "video" | "onsite" | "other",
     location: "",
     meetingLink: "",
     notes: ""
@@ -140,6 +139,7 @@ export default function ClientInterviewsPage() {
   const handleCreateInterview = (data: any) => {
     createInterviewMutation.mutate(data, {
       onSuccess: () => {
+        toast.success(`🎉 Interview Scheduled Successfully! Interview scheduled for ${new Date(data.scheduledDate).toLocaleDateString()} at ${new Date(data.scheduledDate).toLocaleTimeString()}`)
         setIsCreateDialogOpen(false)
         setScheduleData({
           applicationId: "",
@@ -150,6 +150,9 @@ export default function ClientInterviewsPage() {
           meetingLink: "",
           notes: ""
         })
+      },
+      onError: (error: any) => {
+        toast.error(`Failed to Schedule Interview. ${error?.response?.data?.message || "Please try again later."}`)
       }
     })
   }
@@ -158,22 +161,44 @@ export default function ClientInterviewsPage() {
     if (editingInterview) {
       updateInterviewMutation.mutate({
         interviewId: editingInterview._id,
-        updateData: data
+        data: data
       }, {
         onSuccess: () => {
+          toast.success("✅ Interview Updated Successfully! Interview details have been updated.")
           setIsEditDialogOpen(false)
           setEditingInterview(null)
+        },
+        onError: (error: any) => {
+          toast.error(`Failed to Update Interview. ${error?.response?.data?.message || "Please try again later."}`)
         }
       })
     }
   }
 
   const handleDeleteInterview = (interviewId: string) => {
-    deleteInterviewMutation.mutate(interviewId)
+    if (confirm("Are you sure you want to delete this interview? This action cannot be undone.")) {
+      deleteInterviewMutation.mutate(interviewId, {
+        onSuccess: () => {
+          toast.success("🗑️ Interview Deleted Successfully! The interview has been permanently deleted.")
+        },
+        onError: (error: any) => {
+          toast.error(`Failed to Delete Interview. ${error?.response?.data?.message || "Please try again later."}`)
+        }
+      })
+    }
   }
 
   const handleCancelInterview = (interviewId: string) => {
-    cancelInterviewMutation.mutate({ interviewId, reason: "Cancelled by company" })
+    if (confirm("Are you sure you want to cancel this interview?")) {
+      cancelInterviewMutation.mutate({ interviewId, reason: "Cancelled by company" }, {
+        onSuccess: () => {
+          toast.success("❌ Interview Cancelled Successfully! The interview has been cancelled and the candidate will be notified.")
+        },
+        onError: (error: any) => {
+          toast.error(`Failed to Cancel Interview. ${error?.response?.data?.message || "Please try again later."}`)
+        }
+      })
+    }
   }
 
   const handleRescheduleInterview = (interview: any) => {
@@ -266,7 +291,10 @@ export default function ClientInterviewsPage() {
   }
 
   const handleFeedbackSubmit = () => {
-    if (!selectedInterview || feedbackData.rating === 0) return
+    if (!selectedInterview || feedbackData.rating === 0) {
+      toast.error("Missing Required Information. Please provide a rating for the interview.")
+      return
+    }
     
     submitFeedbackMutation.mutate({
       interviewId: selectedInterview._id,
@@ -277,16 +305,22 @@ export default function ClientInterviewsPage() {
         improvements: feedbackData.improvements.split(',').map(s => s.trim()).filter(Boolean),
         outcome: feedbackData.outcome
       }
-    })
-    
-    setIsFeedbackOpen(false)
-    setSelectedInterview(null)
-    setFeedbackData({
-      rating: 0,
-      comments: "",
-      strengths: "",
-      improvements: "",
-      outcome: "pending"
+    }, {
+      onSuccess: () => {
+        toast.success(`⭐ Feedback Submitted Successfully! Your ${feedbackData.rating}-star feedback has been recorded.`)
+        setIsFeedbackOpen(false)
+        setSelectedInterview(null)
+        setFeedbackData({
+          rating: 0,
+          comments: "",
+          strengths: "",
+          improvements: "",
+          outcome: "pending"
+        })
+      },
+      onError: (error: any) => {
+        toast.error(`Failed to Submit Feedback. ${error?.response?.data?.message || "Please try again later."}`)
+      }
     })
   }
 
@@ -312,7 +346,7 @@ export default function ClientInterviewsPage() {
         return <Video className="h-4 w-4" />
       case 'phone':
         return <Phone className="h-4 w-4" />
-      case 'in-person':
+      case 'onsite':
         return <MapPin className="h-4 w-4" />
       default:
         return <Calendar className="h-4 w-4" />
@@ -384,7 +418,7 @@ export default function ClientInterviewsPage() {
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="video">Video</SelectItem>
               <SelectItem value="phone">Phone</SelectItem>
-              <SelectItem value="in-person">In-Person</SelectItem>
+              <SelectItem value="onsite">In-Person</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -690,12 +724,12 @@ export default function ClientInterviewsPage() {
                   <SelectContent>
                     <SelectItem value="video">Video Call</SelectItem>
                     <SelectItem value="phone">Phone Call</SelectItem>
-                    <SelectItem value="in-person">In-Person</SelectItem>
+                    <SelectItem value="onsite">In-Person</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            {scheduleData.type === 'in-person' && (
+            {scheduleData.type === 'onsite' && (
               <div>
                 <Label htmlFor="location">Location</Label>
                 <Input

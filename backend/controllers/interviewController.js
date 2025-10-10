@@ -12,7 +12,7 @@ const { isValidObjectId } = require('mongoose');
  * @access  Private (Company)
  */
 exports.scheduleInterview = asyncHandler(async (req, res, next) => {
-  const { applicationId, date, time, location, notes, interviewType = 'virtual' } = req.body;
+  const { applicationId, scheduledDate, date, time, location, notes, note, interviewType = 'virtual', type = 'video', duration = 60 } = req.body;
   const userId = req.user.id;
 
   // Check if user is a company
@@ -55,8 +55,16 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Not authorized to schedule interview for this application', 403));
   }
 
-  // Validate interview date
-  const interviewDate = new Date(`${date}T${time}`);
+  // Handle both date formats (separate date/time or combined scheduledDate)
+  let interviewDate;
+  if (scheduledDate) {
+    interviewDate = new Date(scheduledDate);
+  } else if (date && time) {
+    interviewDate = new Date(`${date}T${time}`);
+  } else {
+    return next(new ErrorResponse('Interview date is required', 400));
+  }
+  
   if (interviewDate < new Date()) {
     return next(new ErrorResponse('Interview date must be in the future', 400));
   }
@@ -68,7 +76,7 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
       { 
         $and: [
           { 'application.intern': application.intern._id },
-          { date: new Date(date) },
+          { date: interviewDate },
           { status: { $ne: 'cancelled' } }
         ]
       }
@@ -85,13 +93,14 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
     internId: application.intern._id,
     jobId: application.job._id,
     interviewer: userId,
-    date,
-    scheduledDate: date, // Sync with frontend
-    time,
+    date: interviewDate,
+    scheduledDate: interviewDate, // Sync with frontend
+    time: time || interviewDate.toTimeString().split(' ')[0], // Extract time if not provided
     location,
     notes: notes || note, // Handle both field names
     note: notes || note, // Handle both field names
-    type: interviewType,
+    type: type || interviewType,
+    duration: duration,
     status: 'scheduled'
   });
 

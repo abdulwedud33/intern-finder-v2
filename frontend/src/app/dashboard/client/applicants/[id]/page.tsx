@@ -58,12 +58,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { useParams } from "next/navigation"
 import { format } from "date-fns"
 import { useCreateInternReview, useReviewsForTarget } from "@/hooks/useReviews"
 import { ReviewForm, ReviewCard, StarRatingDisplay } from "@/components/reviews/ReviewForm"
 import { applicationService } from "@/services/applicationService"
+import { useCreateInterview } from "@/hooks/useInterviews"
 
 // No mock data - all data comes from backend API
 
@@ -71,7 +72,6 @@ export default function ApplicantDetailsPage() {
   const params = useParams()
   const applicationId = params.id as string
   const queryClient = useQueryClient()
-  const { toast } = useToast()
   
   const [activeTab, setActiveTab] = useState("overview")
   const [rating, setRating] = useState(0)
@@ -88,7 +88,7 @@ export default function ApplicantDetailsPage() {
     interviewer: "",
     date: "",
     time: "",
-    type: "Technical Interview",
+    type: "video",
     location: "Virtual Meeting",
     notes: ""
   })
@@ -203,36 +203,15 @@ export default function ApplicantDetailsPage() {
       return await applicationService.updateApplicationStatus(applicationId, newStage)
     },
     onSuccess: () => {
-      toast({ title: "Stage updated successfully" })
+      toast.success("Stage updated successfully!")
       queryClient.invalidateQueries({ queryKey: ["application", applicationId] })
     },
     onError: () => {
-      toast({ title: "Failed to update stage", variant: "destructive" })
+      toast.error("Failed to update stage.")
     }
   })
 
-  const scheduleInterviewMutation = useMutation({
-    mutationFn: async (data: any) => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      return { success: true }
-    },
-    onSuccess: () => {
-      toast({ title: "Interview scheduled successfully" })
-      setIsInterviewDialogOpen(false)
-      setInterviewData({
-        interviewer: "",
-        date: "",
-        time: "",
-        type: "Technical Interview",
-        location: "Virtual Meeting",
-        notes: ""
-      })
-    },
-    onError: () => {
-      toast({ title: "Failed to schedule interview", variant: "destructive" })
-    }
-  })
+  const scheduleInterviewMutation = useCreateInterview()
 
   const addNoteMutation = useMutation({
     mutationFn: async (note: string) => {
@@ -241,12 +220,12 @@ export default function ApplicantDetailsPage() {
       return { success: true }
     },
     onSuccess: () => {
-      toast({ title: "Note added successfully" })
+      toast.success("📝 Note Added Successfully! Your note has been added to the applicant's profile.")
       setNewNote("")
       setIsNoteDialogOpen(false)
     },
     onError: () => {
-      toast({ title: "Failed to add note", variant: "destructive" })
+      toast.error("Failed to Add Note. Please try again later.")
     }
   })
 
@@ -268,17 +247,55 @@ export default function ApplicantDetailsPage() {
     updateStageMutation.mutate(newStage)
   }
 
+  const handleStatusChange = (newStatus: string) => {
+    updateStageMutation.mutate(newStatus, {
+      onSuccess: () => {
+        toast.success(`Status Updated Successfully! Application status changed to ${newStatus.replace('_', ' ').toUpperCase()}`)
+      },
+      onError: () => {
+        toast.error("Failed to Update Status. Please try again later.")
+      }
+    })
+  }
+
   const handleScheduleInterview = () => {
     if (!interviewData.interviewer || !interviewData.date || !interviewData.time) {
-      toast({ title: "Please fill in all required fields", variant: "destructive" })
+      toast.error("Missing Required Information. Please fill in interviewer name, date, and time.")
       return
     }
-    scheduleInterviewMutation.mutate(interviewData)
+    
+    const interviewPayload = {
+      applicationId: applicationId,
+      scheduledDate: `${interviewData.date}T${interviewData.time}:00`,
+      duration: 60, // Default to 60 minutes
+      type: interviewData.type.toLowerCase() as 'phone' | 'video' | 'onsite' | 'other',
+      location: interviewData.location,
+      notes: interviewData.notes
+    }
+    
+    scheduleInterviewMutation.mutate(interviewPayload, {
+      onSuccess: () => {
+        toast.success(`🎉 Interview Scheduled Successfully! Interview scheduled for ${interviewData.date} at ${interviewData.time} with ${interviewData.interviewer}`)
+        setIsInterviewDialogOpen(false)
+        setInterviewData({
+          interviewer: "",
+          date: "",
+          time: "",
+          type: "video",
+          location: "Virtual Meeting",
+          notes: ""
+        })
+        queryClient.invalidateQueries({ queryKey: ["application", applicationId] })
+      },
+      onError: (error: any) => {
+        toast.error(`Failed to Schedule Interview. ${error?.response?.data?.message || "Please try again later."}`)
+      }
+    })
   }
 
   const handleAddNote = () => {
     if (!newNote.trim()) {
-      toast({ title: "Please enter a note", variant: "destructive" })
+      toast.error("Note Cannot Be Empty. Please enter some text for your note.")
       return
     }
     addNoteMutation.mutate(newNote)
@@ -286,11 +303,21 @@ export default function ApplicantDetailsPage() {
 
   const handleSubmitReview = (data: any) => {
     createReviewMutation.mutate({
-      internId: applicationId,
+      internId: userId || '',
       jobId: applicantData?.appliedJob || '',
       data: {
         rating: data.rating,
         feedback: data.content
+      }
+    }, {
+      onSuccess: () => {
+        toast.success(`⭐ Review Submitted Successfully! Your ${data.rating}-star review for ${applicantData?.name} has been submitted.`)
+        setIsReviewDialogOpen(false)
+        queryClient.invalidateQueries({ queryKey: ["reviews", userId] })
+        queryClient.invalidateQueries({ queryKey: ["application", applicationId] })
+      },
+      onError: (error: any) => {
+        toast.error(`Failed to Submit Review. ${error?.response?.data?.message || "Please try again later."}`)
       }
     })
   }
@@ -424,11 +451,11 @@ export default function ApplicantDetailsPage() {
                   <h3 className="font-bold text-xl text-gray-900">{applicantData.name}</h3>
                   <p className="text-gray-600">{applicantData.role}</p>
                 {applicantData.rating && (
-                  <div className="flex items-center justify-center gap-1 mt-2">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <div className="flex items-center justify-center gap-1 mt-2">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                     <span className="text-sm font-medium">{applicantData.rating}</span>
                     <span className="text-xs text-gray-500">({applicantData.rating}/5)</span>
-                  </div>
+                </div>
                 )}
               </div>
 
@@ -451,29 +478,62 @@ export default function ApplicantDetailsPage() {
                   </div>
 
                   {applicantData.matchScore && (
-                    <div>
-                      <p className="text-gray-600 font-medium">Match Score</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-500 h-2 rounded-full" 
-                            style={{ width: `${applicantData.matchScore}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-sm font-medium">{applicantData.matchScore}%</span>
+                  <div>
+                    <p className="text-gray-600 font-medium">Match Score</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-500 h-2 rounded-full" 
+                          style={{ width: `${applicantData.matchScore}%` }}
+                        ></div>
                       </div>
+                      <span className="text-sm font-medium">{applicantData.matchScore}%</span>
                     </div>
+                </div>
                   )}
 
+                <div className="space-y-2">
+                  {/* Application Status Management */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Application Status</Label>
+                    <Select 
+                      value={applicantData?.stage || 'under_review'} 
+                      onValueChange={handleStatusChange}
+                      disabled={updateStageMutation.isPending}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="under_review">Under Review</SelectItem>
+                        <SelectItem value="interview">Interview</SelectItem>
+                        <SelectItem value="accepted">Accepted</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-2">
                 <Button 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                      className="bg-blue-600 hover:bg-blue-700 text-white" 
                   size="sm"
                     onClick={() => setIsInterviewDialogOpen(true)}
                   disabled={scheduleInterviewMutation.isPending}
                 >
                   <Calendar className="h-4 w-4 mr-2" />
-                  {scheduleInterviewMutation.isPending ? "Scheduling..." : "Schedule Interview"}
+                      Schedule Interview
+                    </Button>
+                    <Button 
+                      className="bg-green-600 hover:bg-green-700 text-white" 
+                      size="sm"
+                      onClick={() => setIsReviewDialogOpen(true)}
+                    >
+                      <Star className="h-4 w-4 mr-2" />
+                      Write Review
                 </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1008,9 +1068,10 @@ export default function ApplicantDetailsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Technical Interview">Technical Interview</SelectItem>
-                      <SelectItem value="HR Interview">HR Interview</SelectItem>
-                      <SelectItem value="Final Interview">Final Interview</SelectItem>
+                      <SelectItem value="phone">Phone Interview</SelectItem>
+                      <SelectItem value="video">Video Interview</SelectItem>
+                      <SelectItem value="onsite">Onsite Interview</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

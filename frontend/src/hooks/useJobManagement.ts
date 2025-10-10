@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { jobManagementService, CreateJobRequest, UpdateJobRequest } from '@/services/jobManagementService';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 // Hook for getting company jobs
 export function useCompanyJobs() {
@@ -14,23 +14,15 @@ export function useCompanyJobs() {
 // Hook for creating a job
 export function useCreateJob() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: (jobData: CreateJobRequest) => jobManagementService.createJob(jobData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companyJobs'] });
-      toast({
-        title: "Job created successfully",
-        description: "Your job listing has been published.",
-      });
+      toast.success("Job created successfully! Your job listing has been published.");
     },
     onError: () => {
-      toast({
-        title: "Failed to create job",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
+      toast.error("Failed to create job. Please try again later.");
     },
   });
 }
@@ -38,7 +30,6 @@ export function useCreateJob() {
 // Hook for updating a job
 export function useUpdateJob() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: ({ jobId, jobData }: { jobId: string; jobData: Partial<CreateJobRequest> }) => 
@@ -46,17 +37,10 @@ export function useUpdateJob() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companyJobs'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      toast({
-        title: "Job updated successfully",
-        description: "Your job listing has been updated.",
-      });
+      toast.success("Job updated successfully! Your job listing has been updated.");
     },
     onError: () => {
-      toast({
-        title: "Failed to update job",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
+      toast.error("Failed to update job. Please try again later.");
     },
   });
 }
@@ -64,24 +48,16 @@ export function useUpdateJob() {
 // Hook for deleting a job
 export function useDeleteJob() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: (jobId: string) => jobManagementService.deleteJob(jobId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companyJobs'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      toast({
-        title: "Job deleted successfully",
-        description: "The job listing has been removed.",
-      });
+      toast.success("Job deleted successfully! The job listing has been removed.");
     },
     onError: () => {
-      toast({
-        title: "Failed to delete job",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete job. Please try again later.");
     },
   });
 }
@@ -89,24 +65,16 @@ export function useDeleteJob() {
 // Hook for closing a job
 export function useCloseJob() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: (jobId: string) => jobManagementService.closeJob(jobId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companyJobs'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      toast({
-        title: "Job closed successfully",
-        description: "The job listing has been closed.",
-      });
+      toast.success("Job closed successfully! The job listing has been closed.");
     },
     onError: () => {
-      toast({
-        title: "Failed to close job",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
+      toast.error("Failed to close job. Please try again later.");
     },
   });
 }

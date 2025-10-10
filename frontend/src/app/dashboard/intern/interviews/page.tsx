@@ -34,7 +34,7 @@ import { format, formatDistanceToNow, isAfter, isBefore, startOfDay } from "date
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 // Calculate real statistics from interview data
 const calculateInterviewStats = (interviews: any[]) => {
@@ -75,10 +75,9 @@ export default function InternInterviewsPage() {
   const { data, isLoading, error } = useMyInterviews()
   const cancelInterviewMutation = useCancelInterview()
   const rescheduleInterviewMutation = useRescheduleInterview()
-  const { toast } = useToast()
   
-  const interviews = (data as any)?.data || []
-  const interviewStats = calculateInterviewStats(interviews)
+  const interviews = useMemo(() => (data as any)?.data || [], [data])
+  const interviewStats = useMemo(() => calculateInterviewStats(interviews), [interviews])
   
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")

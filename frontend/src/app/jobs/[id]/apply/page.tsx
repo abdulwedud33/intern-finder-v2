@@ -16,12 +16,11 @@ import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useJobById } from "@/hooks/useJobs"
 import { useCreateApplication } from "@/hooks/useApplications"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
 
 function JobApplicationContent({ listingId }: { listingId: string }) {
   const { user } = useAuth()
-  const { toast } = useToast()
   const router = useRouter()
   const queryClient = useQueryClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -61,11 +60,7 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
     },
     onSuccess: () => {
       console.log("Application submitted successfully");
-      toast({
-        title: "🎉 Application Submitted Successfully!",
-        description: `Your application for "${job?.title}" at ${job?.company?.name} has been submitted. You'll hear back from the company soon.`,
-        duration: 6000,
-      })
+      toast.success(`🎉 Application Submitted Successfully! Your application for "${job?.title}" at ${job?.company?.name} has been submitted. You'll hear back from the company soon.`)
       queryClient.invalidateQueries({ queryKey: ["myApplications"] })
       // Delay redirect to allow user to see the success message
       setTimeout(() => {
@@ -92,29 +87,19 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
         }
       }
       
-      toast({ 
-        title: errorTitle, 
-        description: errorMessage, 
-        variant: "destructive",
-        duration: 7000,
-      })
+      toast.error(`${errorTitle} ${errorMessage}`)
     },
   })
 
   // Handle redirection for non-intern users
   useEffect(() => {
     if (user && user.role !== "intern") {
-      toast({
-        title: "🚫 Access Denied",
-        description: "Only interns can apply to jobs. Please log in with an intern account.",
-        variant: "destructive",
-        duration: 5000,
-      });
+      toast.error("🚫 Access Denied. Only interns can apply to jobs. Please log in with an intern account.");
       setTimeout(() => {
         router.push(`/jobs/${listingId}`)
       }, 2000);
     }
-  }, [user, router, listingId, toast])
+  }, [user, router, listingId])
 
   // Don't render anything if user is not an intern
   if (user?.role !== "intern") {
@@ -184,53 +169,31 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
     if (file) {
       // Validate file type
       if (file.type !== 'application/pdf' && !file.type.includes('document')) {
-        toast({
-          title: "⚠️ Invalid File Type",
-          description: "Please upload a PDF or Word document for your resume.",
-          variant: "destructive",
-          duration: 5000,
-        })
+        toast.error("⚠️ Invalid File Type. Please upload a PDF or Word document for your resume.")
         return
       }
       
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "⚠️ File Too Large",
-          description: "Please upload a resume file smaller than 5MB.",
-          variant: "destructive",
-          duration: 5000,
-        })
+        toast.error("⚠️ File Too Large. Please upload a resume file smaller than 5MB.")
         return
       }
       
       setFormData((prev) => ({ ...prev, resume: file }))
-      toast({
-        title: "✅ Resume Uploaded",
-        description: `${file.name} has been selected for upload.`,
-        duration: 3000,
-      })
+      toast.success(`✅ Resume Uploaded. ${file.name} has been selected for upload.`)
     }
   }
 
   const removeResume = () => {
     setFormData((prev) => ({ ...prev, resume: null }))
-    toast({
-      title: "🗑️ Resume Removed",
-      description: "Resume has been removed from your application.",
-      duration: 2000,
-    })
+    toast.success("🗑️ Resume Removed. Resume has been removed from your application.")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     // Show loading toast
-    toast({
-      title: "🔄 Submitting Application...",
-      description: "Please wait while we process your application.",
-      duration: 2000,
-    });
+    toast.info("🔄 Submitting Application... Please wait while we process your application.");
     
     setIsSubmitting(true)
     try {
