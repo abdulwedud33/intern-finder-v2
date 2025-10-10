@@ -426,7 +426,7 @@ exports.createOrUpdateInternReview = asyncHandler(async (req, res, next) => {
   }
 
   // Check if job exists and belongs to company
-  const job = await Job.findOne({ _id: jobId, company: companyId });
+  const job = await Job.findOne({ _id: jobId, companyId: companyId });
   if (!job) {
     return next(new ErrorResponse('Job not found or not authorized', 404));
   }
