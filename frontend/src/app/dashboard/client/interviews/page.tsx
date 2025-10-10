@@ -131,17 +131,23 @@ export default function ClientInterviewsPage() {
 
   // Handlers
   const handleCreateInterview = () => {
+    console.log('handleCreateInterview called with data:', newInterviewData)
+    
     if (!newInterviewData.applicationId) {
+      console.log('Validation failed: No applicationId')
       toast.error("Please select an application")
       return
     }
     if (!newInterviewData.scheduledDate) {
+      console.log('Validation failed: No scheduledDate')
       toast.error("Please select a date and time")
       return
     }
 
+    console.log('Calling createInterviewMutation.mutate with:', newInterviewData)
     createInterviewMutation.mutate(newInterviewData, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        console.log('Interview created successfully:', data)
         toast.success("Interview scheduled successfully!")
         setIsCreateDialogOpen(false)
         setNewInterviewData({
@@ -155,6 +161,7 @@ export default function ClientInterviewsPage() {
         })
       },
       onError: (error: any) => {
+        console.log('Interview creation failed:', error)
         toast.error(error?.response?.data?.error || "Failed to schedule interview")
       }
     })
@@ -508,7 +515,7 @@ export default function ClientInterviewsPage() {
               <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <p className="text-lg font-medium text-gray-900 mb-2">No interviews found</p>
               <p className="text-sm">Start scheduling interviews to see them here.</p>
-              <Button variant="secondary" className="mt-4 bg-gray-600 hover:bg-gray-700 text-white" onClick={() => setIsCreateDialogOpen(true)}>Schedule Interview</Button>
+              <Button variant="secondary" className="mt-4 bg-gray-700 hover:bg-gray-600 text-white" onClick={() => setIsCreateDialogOpen(true)}>Schedule Interview</Button>
             </div>
           ) : (
             <div className="space-y-4">
