@@ -14,6 +14,15 @@ const ErrorResponse = require('../utils/errorResponse');
 exports.getInternCompanies = asyncHandler(async (req, res, next) => {
   const internId = req.user.intern;
 
+  // Validate internId
+  if (!internId) {
+    return next(new ErrorResponse('Intern ID not found', 400));
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(internId)) {
+    return next(new ErrorResponse('Invalid intern ID format', 400));
+  }
+
   const companies = await CompanyIntern.find({ intern: internId })
     .populate('company', 'name logo industry')
     .populate('job', 'title');
@@ -33,40 +42,55 @@ exports.getInternCompanies = asyncHandler(async (req, res, next) => {
 exports.getInternStats = asyncHandler(async (req, res, next) => {
   const internId = req.user.intern;
 
-  const [
-    totalCompanies,
-    activeCompanies,
-    terminatedCompanies,
-    averageRating
-  ] = await Promise.all([
-    CompanyIntern.countDocuments({ intern: internId }),
-    CompanyIntern.countDocuments({ intern: internId, status: 'active' }),
-    CompanyIntern.countDocuments({ intern: internId, status: 'terminated' }),
-    Review.aggregate([
-      {
-        $match: {
-          target: new mongoose.Types.ObjectId(internId),
-          targetModel: 'Intern'
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          averageRating: { $avg: '$rating' }
-        }
-      }
-    ])
-  ]);
+  // Validate internId
+  if (!internId) {
+    return next(new ErrorResponse('Intern ID not found', 400));
+  }
 
-  res.status(200).json({
-    success: true,
-    data: {
+  // Validate ObjectId format
+  if (!mongoose.Types.ObjectId.isValid(internId)) {
+    return next(new ErrorResponse('Invalid intern ID format', 400));
+  }
+
+  try {
+    const [
       totalCompanies,
       activeCompanies,
       terminatedCompanies,
-      averageRating: averageRating[0]?.averageRating?.toFixed(1) || 0
-    }
-  });
+      averageRating
+    ] = await Promise.all([
+      CompanyIntern.countDocuments({ intern: internId }),
+      CompanyIntern.countDocuments({ intern: internId, status: 'active' }),
+      CompanyIntern.countDocuments({ intern: internId, status: 'terminated' }),
+      Review.aggregate([
+        {
+          $match: {
+            target: new mongoose.Types.ObjectId(internId),
+            targetModel: 'Intern'
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            averageRating: { $avg: '$rating' }
+          }
+        }
+      ])
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalCompanies,
+        activeCompanies,
+        terminatedCompanies,
+        averageRating: averageRating[0]?.averageRating?.toFixed(1) || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error in getInternStats:', error);
+    return next(new ErrorResponse('Failed to fetch intern statistics', 500));
+  }
 });
 
 /**
@@ -226,6 +250,15 @@ exports.getSkillsGained = asyncHandler(async (req, res, next) => {
  */
 exports.getPerformanceHistory = asyncHandler(async (req, res, next) => {
   const internId = req.user.intern;
+
+  // Validate internId
+  if (!internId) {
+    return next(new ErrorResponse('Intern ID not found', 400));
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(internId)) {
+    return next(new ErrorResponse('Invalid intern ID format', 400));
+  }
 
   const reviews = await Review.find({ 
     target: internId, 
