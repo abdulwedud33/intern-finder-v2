@@ -351,16 +351,50 @@ exports.getReviewsForTarget = asyncHandler(async (req, res, next) => {
     query.targetModel = type === 'company' ? 'Company' : 'Intern';
   }
 
-  const reviews = await Review.find(query)
-    .populate({
-      path: 'reviewer',
-      select: 'name avatar role'
-    })
+  let reviews = await Review.find(query)
     .populate({
       path: 'target',
       select: 'name avatar role'
     })
     .populate('job', 'title companyName');
+
+  // Handle reviewer population for both old and new review formats
+  for (let review of reviews) {
+    if (review.reviewerModel) {
+      // New format: use refPath
+      if (review.reviewerModel === 'Company') {
+        await review.populate({
+          path: 'reviewer',
+          model: 'Company',
+          select: 'name avatar role'
+        });
+      } else {
+        await review.populate({
+          path: 'reviewer',
+          model: 'User',
+          select: 'name avatar role'
+        });
+      }
+    } else {
+      // Old format: try User first, then Company
+      try {
+        await review.populate({
+          path: 'reviewer',
+          model: 'User',
+          select: 'name avatar role'
+        });
+        if (!review.reviewer) {
+          await review.populate({
+            path: 'reviewer',
+            model: 'Company',
+            select: 'name avatar role'
+          });
+        }
+      } catch (error) {
+        console.log('Population error for review:', review._id, error.message);
+      }
+    }
+  }
 
   // Filter out reviews with null reviewers for now
   const validReviews = reviews.filter(review => review.reviewer !== null);
