@@ -4,8 +4,9 @@ const ReviewSchema = new mongoose.Schema({
   // The user who is giving the review
   reviewer: {
     type: mongoose.Schema.ObjectId,
-    ref: 'User',
-    required: true
+    required: true,
+    // Dynamic reference to either User or Company based on reviewerModel
+    refPath: 'reviewerModel'
   },
   // The target of the review (either Company or Intern)
   target: {
@@ -19,6 +20,13 @@ const ReviewSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: ['Company', 'Intern']
+  },
+  // Track whether reviewer is User or Company
+  reviewerModel: {
+    type: String,
+    required: true,
+    enum: ['User', 'Company'],
+    default: 'User'
   },
   // Optional job reference if the review is job-specific
   job: {

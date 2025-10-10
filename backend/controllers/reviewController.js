@@ -362,16 +362,19 @@ exports.getReviewsForTarget = asyncHandler(async (req, res, next) => {
     })
     .populate('job', 'title companyName');
 
+  // Filter out reviews with null reviewers for now
+  const validReviews = reviews.filter(review => review.reviewer !== null);
+
   // Calculate average rating
-  const avgRating = reviews.length > 0 
-    ? reviews.reduce((acc, item) => item.rating + acc, 0) / reviews.length 
+  const avgRating = validReviews.length > 0 
+    ? validReviews.reduce((acc, item) => item.rating + acc, 0) / validReviews.length 
     : 0;
 
   res.status(200).json({
     success: true,
-    count: reviews.length,
+    count: validReviews.length,
     averageRating: parseFloat(avgRating.toFixed(1)),
-    data: reviews
+    data: validReviews
   });
 });
 
@@ -444,6 +447,7 @@ exports.createOrUpdateInternReview = asyncHandler(async (req, res, next) => {
       content: feedback,
       status: 'approved',
       reviewer: companyId,
+      reviewerModel: 'Company',
       $setOnInsert: {
         target: internId,
         job: jobId,
@@ -529,6 +533,7 @@ exports.createOrUpdateCompanyReview = asyncHandler(async (req, res, next) => {
       content: feedback,
       status: 'approved',
       reviewer: internId,
+      reviewerModel: 'User',
       $setOnInsert: {
         target: companyId,
         direction: 'intern_to_company',
