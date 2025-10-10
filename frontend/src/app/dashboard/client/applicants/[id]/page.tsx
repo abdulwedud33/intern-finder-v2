@@ -462,7 +462,7 @@ export default function ApplicantDetailsPage() {
               <div className="space-y-4 text-sm">
                 <div>
                     <p className="text-gray-600 font-medium">Applied for</p>
-                    <p className="font-semibold text-gray-900">{applicantData.appliedJob}</p>
+                    <p className="font-semibold text-gray-900">{applicantData.role}</p>
                   <p className="text-gray-500 text-xs">{applicantData.appliedDate}</p>
                 </div>
 
