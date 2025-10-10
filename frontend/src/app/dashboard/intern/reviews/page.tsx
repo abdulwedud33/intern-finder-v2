@@ -71,13 +71,13 @@ const ReviewCard = ({ review }: { review: any }) => {
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={reviewer.avatar} alt={reviewer.name} />
+              <AvatarImage src={reviewer?.avatar} alt={reviewer?.name || 'Unknown'} />
               <AvatarFallback className="bg-teal-500 text-white">
-                {reviewer.name.charAt(0).toUpperCase()}
+                {reviewer?.name?.charAt(0)?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h4 className="font-semibold text-gray-900">{reviewer.name}</h4>
+              <h4 className="font-semibold text-gray-900">{reviewer?.name || 'Unknown Reviewer'}</h4>
               <p className="text-sm text-gray-500 flex items-center">
                 <Building2 className="h-4 w-4 mr-1" />
                 {isCompanyReview ? 'Company' : 'Intern'}
@@ -334,14 +334,16 @@ export default function ReviewsPage() {
                 </CardContent>
               </Card>
             ) : (
-              sortedReviews.map((review: any) => (
-                <ReviewCardComponent 
-                  key={review._id} 
-                  review={review}
-                  canEdit={false}
-                  canDelete={false}
-                />
-              ))
+              sortedReviews
+                .filter((review: any) => review.reviewer) // Only show reviews with reviewer data
+                .map((review: any) => (
+                  <ReviewCardComponent 
+                    key={review._id} 
+                    review={review}
+                    canEdit={false}
+                    canDelete={false}
+                  />
+                ))
             )}
           </div>
         </TabsContent>
@@ -367,21 +369,23 @@ export default function ReviewsPage() {
                 </CardContent>
               </Card>
             ) : (
-              sortedReviews.map((review: any) => (
-                <ReviewCardComponent 
-                  key={review._id} 
-                  review={review}
-                  canEdit={true}
-                  canDelete={true}
-                  onEdit={setEditingReview}
-                  onDelete={(reviewId: string) => {
-                    if (confirm('Are you sure you want to delete this review?')) {
-                      deleteReviewMutation.mutate(reviewId)
-                    }
-                  }}
-                  isLoading={deleteReviewMutation.isPending}
-                />
-              ))
+              sortedReviews
+                .filter((review: any) => review.reviewer) // Only show reviews with reviewer data
+                .map((review: any) => (
+                  <ReviewCardComponent 
+                    key={review._id} 
+                    review={review}
+                    canEdit={true}
+                    canDelete={true}
+                    onEdit={setEditingReview}
+                    onDelete={(reviewId: string) => {
+                      if (confirm('Are you sure you want to delete this review?')) {
+                        deleteReviewMutation.mutate(reviewId)
+                      }
+                    }}
+                    isLoading={deleteReviewMutation.isPending}
+                  />
+                ))
             )}
           </div>
         </TabsContent>

@@ -588,27 +588,60 @@ exports.createOrUpdateCompanyReview = asyncHandler(async (req, res, next) => {
 });
 
 exports.getReviewsAboutMe = asyncHandler(async (req, res, next) => {
-  const reviews = await Review.find({ target: req.user.id })
-    .populate({
-      path: 'reviewer',
-      select: 'name avatar role',
-      populate: {
-        path: 'role',
-        select: 'name'
-      }
-    })
+  let reviews = await Review.find({ target: req.user.id })
     .populate('job', 'title company');
 
+  // Handle reviewer population for both old and new review formats
+  for (let review of reviews) {
+    if (review.reviewerModel) {
+      // New format: use reviewerModel
+      if (review.reviewerModel === 'Company') {
+        await review.populate({
+          path: 'reviewer',
+          model: 'Company',
+          select: 'name avatar role'
+        });
+      } else {
+        await review.populate({
+          path: 'reviewer',
+          model: 'User',
+          select: 'name avatar role'
+        });
+      }
+    } else {
+      // Old format: try User first, then Company
+      try {
+        await review.populate({
+          path: 'reviewer',
+          model: 'User',
+          select: 'name avatar role'
+        });
+        if (!review.reviewer) {
+          await review.populate({
+            path: 'reviewer',
+            model: 'Company',
+            select: 'name avatar role'
+          });
+        }
+      } catch (error) {
+        console.log('Population error for review:', review._id, error.message);
+      }
+    }
+  }
+
+  // Filter out reviews with null reviewers
+  const validReviews = reviews.filter(review => review.reviewer !== null);
+
   // Calculate average rating
-  const avgRating = reviews.length > 0
-    ? reviews.reduce((acc, item) => item.rating + acc, 0) / reviews.length
+  const avgRating = validReviews.length > 0
+    ? validReviews.reduce((acc, item) => item.rating + acc, 0) / validReviews.length
     : 0;
 
   res.status(200).json({
     success: true,
-    count: reviews.length,
+    count: validReviews.length,
     averageRating: parseFloat(avgRating.toFixed(1)),
-    data: reviews
+    data: validReviews
   });
 });
 
