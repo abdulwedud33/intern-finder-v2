@@ -59,7 +59,7 @@ export default function Homepage() {
   // Fetch data for stats and featured jobs
   const { jobs: allJobs, loading: jobsLoading, error: jobsError, total: totalJobs } = useJobs({ limit: 4 })
   const { companies, loading: companiesLoading, total: totalCompanies } = useCompanies({ limit: 1 })
-  const { data: usersCountData, loading: usersLoading } = useUsersCount()
+  const { data: usersCountData, isLoading: usersLoading } = useUsersCount()
   
   // Mock data for users count (replace with real API call when available)
   const [stats, setStats] = useState({
