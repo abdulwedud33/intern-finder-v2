@@ -65,6 +65,7 @@ import { useCreateInternReview, useReviewsForTarget } from "@/hooks/useReviews"
 import { ReviewForm, ReviewCard, StarRatingDisplay } from "@/components/reviews/ReviewForm"
 import { applicationService } from "@/services/applicationService"
 import { useCreateInterview } from "@/hooks/useInterviews"
+import { useUpdateApplicationStatus } from "@/hooks/useApplications"
 
 // No mock data - all data comes from backend API
 
