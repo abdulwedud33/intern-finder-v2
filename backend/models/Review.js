@@ -11,8 +11,8 @@ const ReviewSchema = new mongoose.Schema({
   target: {
     type: mongoose.Schema.ObjectId,
     required: true,
-    // This will be set to either 'Company' or 'Intern'
-    refPath: 'targetModel'
+    // Reference to User model (for both Company and Intern discriminators)
+    ref: 'User'
   },
   // Dynamic reference to either Company or Intern
   targetModel: {

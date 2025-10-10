@@ -358,7 +358,8 @@ exports.getReviewsForTarget = asyncHandler(async (req, res, next) => {
     })
     .populate({
       path: 'target',
-      select: 'name avatar role'
+      select: 'name avatar role',
+      match: type === 'all' ? {} : { role: type === 'company' ? 'company' : 'intern' }
     })
     .populate('job', 'title companyName');
 
