@@ -548,15 +548,6 @@ exports.updateApplicationStatus = asyncHandler(async (req, res, next) => {
   // Update the status
   application.status = status;
   application.updatedAt = new Date();
-  
-  // Add status update to history if it exists
-  if (application.statusHistory) {
-    application.statusHistory.push({
-      status,
-      changedBy: req.user.id,
-      changedAt: new Date()
-    });
-  }
 
   await application.save();
 
