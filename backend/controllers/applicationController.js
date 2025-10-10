@@ -505,3 +505,74 @@ exports.preCheckJob = asyncHandler(async (req, res, next) => {
     }
   });
 });
+
+/**
+ * @desc    Update application status
+ * @route   PUT /api/v1/applications/:id/status
+ * @access  Private (Company)
+ */
+exports.updateApplicationStatus = asyncHandler(async (req, res, next) => {
+  const { status } = req.body;
+  const { id } = req.params;
+
+  // Validate status
+  const validStatuses = ['under_review', 'interview', 'accepted', 'rejected'];
+  if (!validStatuses.includes(status)) {
+    return next(
+      new ErrorResponse(
+        `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+        400
+      )
+    );
+  }
+
+  // Find the application
+  const application = await Application.findById(id)
+    .populate('jobId', 'companyId')
+    .populate('internId', 'name email');
+
+  if (!application) {
+    return next(new ErrorResponse('Application not found', 404));
+  }
+
+  // Check if the company owns the job
+  if (application.jobId.companyId.toString() !== req.user.id.toString()) {
+    return next(
+      new ErrorResponse(
+        'Not authorized to update this application',
+        403
+      )
+    );
+  }
+
+  // Update the status
+  application.status = status;
+  application.updatedAt = new Date();
+  
+  // Add status update to history if it exists
+  if (application.statusHistory) {
+    application.statusHistory.push({
+      status,
+      changedBy: req.user.id,
+      changedAt: new Date()
+    });
+  }
+
+  await application.save();
+
+  // Populate the response
+  const populatedApplication = await Application.findById(id)
+    .populate({
+      path: 'internId',
+      select: 'name email avatar'
+    })
+    .populate({
+      path: 'jobId',
+      select: 'title companyName'
+    });
+
+  res.status(200).json({
+    success: true,
+    data: populatedApplication
+  });
+});
