@@ -128,9 +128,17 @@ export default function ClientInterviewsPage() {
   const createInterviewMutation = useCreateInterview()
   const updateInterviewMutation = useUpdateInterview()
   const deleteInterviewMutation = useDeleteInterview()
+  
+  console.log('Mutation states:', {
+    isPending: createInterviewMutation.isPending,
+    isError: createInterviewMutation.isError,
+    isSuccess: createInterviewMutation.isSuccess,
+    error: createInterviewMutation.error
+  })
 
   // Handlers
   const handleCreateInterview = () => {
+    console.log('=== BUTTON CLICKED ===')
     console.log('handleCreateInterview called with data:', newInterviewData)
     
     if (!newInterviewData.applicationId) {
@@ -178,7 +186,7 @@ export default function ClientInterviewsPage() {
         onError: (error: any) => {
           toast.error(error?.response?.data?.error || "Failed to update interview")
         }
-      }
+    }
     )
   }
 
@@ -254,8 +262,8 @@ export default function ClientInterviewsPage() {
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Schedule Interview
-            </Button>
+            Schedule Interview
+          </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -286,18 +294,18 @@ export default function ClientInterviewsPage() {
                     )}
                   </SelectContent>
                 </Select>
-              </div>
+      </div>
 
               {/* Date and Time */}
               <div className="space-y-2">
                 <Label htmlFor="scheduledDate">Date & Time</Label>
-                <Input
+            <Input
                   id="scheduledDate"
                   type="datetime-local"
                   value={newInterviewData.scheduledDate}
                   onChange={(e) => setNewInterviewData(prev => ({ ...prev, scheduledDate: e.target.value }))}
-                />
-              </div>
+            />
+          </div>
 
               {/* Duration */}
               <div className="space-y-2">
@@ -308,14 +316,14 @@ export default function ClientInterviewsPage() {
                 >
                   <SelectTrigger>
                     <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
+            </SelectTrigger>
+            <SelectContent>
                     <SelectItem value="30">30 minutes</SelectItem>
                     <SelectItem value="60">1 hour</SelectItem>
                     <SelectItem value="90">1.5 hours</SelectItem>
                     <SelectItem value="120">2 hours</SelectItem>
-                  </SelectContent>
-                </Select>
+            </SelectContent>
+          </Select>
               </div>
 
               {/* Interview Type */}
@@ -327,15 +335,15 @@ export default function ClientInterviewsPage() {
                 >
                   <SelectTrigger>
                     <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="phone">Phone</SelectItem>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="phone">Phone</SelectItem>
                     <SelectItem value="video">Video Call</SelectItem>
                     <SelectItem value="onsite">On-site</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            </SelectContent>
+          </Select>
+        </div>
 
               {/* Location/Link */}
               {newInterviewData.type === 'onsite' && (
@@ -380,7 +388,11 @@ export default function ClientInterviewsPage() {
                   Cancel
                 </Button>
                 <Button 
-                  onClick={handleCreateInterview}
+                  onClick={() => {
+                    console.log('Button onClick triggered')
+                    console.log('createInterviewMutation.isPending:', createInterviewMutation.isPending)
+                    handleCreateInterview()
+                  }}
                   disabled={createInterviewMutation.isPending}
                 >
                   {createInterviewMutation.isPending ? "Scheduling..." : "Schedule Interview"}
@@ -443,8 +455,8 @@ export default function ClientInterviewsPage() {
       </div>
 
       {/* Filters and Search */}
-      <Card>
-        <CardHeader>
+        <Card>
+          <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Interviews</CardTitle>
             <div className="flex items-center space-x-2">
@@ -463,8 +475,8 @@ export default function ClientInterviewsPage() {
               </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
+          </CardHeader>
+          <CardContent>
           {/* Status Tabs */}
           <div className="flex items-center space-x-6 border-b mb-6">
             <button 
@@ -578,18 +590,18 @@ export default function ClientInterviewsPage() {
                       <div className="flex items-center gap-2">
                         {interview.status === 'scheduled' && (
                           <>
-                            <Button
-                              variant="outline"
-                              size="sm"
+                        <Button
+                          variant="outline"
+                          size="sm"
                               onClick={() => setEditingInterview(interview)}
-                            >
+                        >
                               <Edit className="h-4 w-4" />
-                            </Button>
+                        </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="outline" size="sm">
                                   <XCircle className="h-4 w-4" />
-                                </Button>
+                        </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
@@ -601,7 +613,7 @@ export default function ClientInterviewsPage() {
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Keep Scheduled</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => handleCancelInterview(interview._id)}
+                          onClick={() => handleCancelInterview(interview._id)}
                                     className="bg-red-600 hover:bg-red-700"
                                   >
                                     Cancel Interview
@@ -617,18 +629,18 @@ export default function ClientInterviewsPage() {
                 </Card>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
 
       {/* Edit Interview Dialog */}
       {editingInterview && (
         <Dialog open={!!editingInterview} onOpenChange={() => setEditingInterview(null)}>
           <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogHeader>
               <DialogTitle>Edit Interview</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
+          </DialogHeader>
+          <div className="space-y-4">
               {/* Date and Time */}
               <div className="space-y-2">
                 <Label htmlFor="edit-scheduledDate">Date & Time</Label>
@@ -682,45 +694,45 @@ export default function ClientInterviewsPage() {
               {editingInterview.type === 'onsite' && (
                 <div className="space-y-2">
                   <Label htmlFor="edit-location">Location</Label>
-                  <Input
+                <Input
                     id="edit-location"
                     placeholder="Office address or meeting location"
                     value={editingInterview.location || ''}
                     onChange={(e) => setEditingInterview(prev => prev ? { ...prev, location: e.target.value } : null)}
-                  />
-                </div>
-              )}
+                />
+              </div>
+            )}
 
               {editingInterview.type === 'video' && (
                 <div className="space-y-2">
                   <Label htmlFor="edit-link">Meeting Link</Label>
-                  <Input
+                <Input
                     id="edit-link"
                     placeholder="Zoom, Teams, or other video call link"
                     value={editingInterview.link || ''}
                     onChange={(e) => setEditingInterview(prev => prev ? { ...prev, link: e.target.value } : null)}
-                  />
-                </div>
-              )}
+                />
+              </div>
+            )}
 
               {/* Notes */}
               <div className="space-y-2">
                 <Label htmlFor="edit-note">Notes</Label>
-                <Textarea
+              <Textarea
                   id="edit-note"
                   placeholder="Additional notes or instructions for the candidate"
                   value={editingInterview.note || ''}
                   onChange={(e) => setEditingInterview(prev => prev ? { ...prev, note: e.target.value } : null)}
-                  rows={3}
-                />
-              </div>
+                rows={3}
+              />
+            </div>
 
               {/* Actions */}
               <div className="flex justify-end gap-3 pt-4">
                 <Button variant="outline" onClick={() => setEditingInterview(null)}>
-                  Cancel
-                </Button>
-                <Button 
+                Cancel
+              </Button>
+              <Button
                   onClick={() => {
                     if (editingInterview) {
                       const updateData = {
@@ -737,11 +749,11 @@ export default function ClientInterviewsPage() {
                   disabled={updateInterviewMutation.isPending}
                 >
                   {updateInterviewMutation.isPending ? "Updating..." : "Update Interview"}
-                </Button>
-              </div>
+              </Button>
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </DialogContent>
+      </Dialog>
       )}
     </div>
   )
