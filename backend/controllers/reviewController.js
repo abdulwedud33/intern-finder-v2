@@ -444,8 +444,8 @@ exports.createOrUpdateInternReview = asyncHandler(async (req, res, next) => {
       rating,
       content: feedback,
       status: 'approved',
+      reviewer: companyId,
       $setOnInsert: {
-        reviewer: companyId,
         target: internId,
         job: jobId,
         direction: 'company_to_intern',
@@ -529,8 +529,8 @@ exports.createOrUpdateCompanyReview = asyncHandler(async (req, res, next) => {
       rating,
       content: feedback,
       status: 'approved',
+      reviewer: internId,
       $setOnInsert: {
-        reviewer: internId,
         target: companyId,
         direction: 'intern_to_company',
         targetModel: 'Company'
