@@ -84,6 +84,7 @@ export default function ClientInterviewsPage() {
   const applications = useMemo(() => {
     const apps = applicationsResponse?.data || []
     console.log('Raw applications data:', apps)
+    console.log('Applications count:', apps.length)
     return apps
   }, [applicationsResponse])
 
@@ -265,13 +266,17 @@ export default function ClientInterviewsPage() {
                     <SelectValue placeholder="Choose an application" />
                   </SelectTrigger>
                   <SelectContent>
-                    {applications
-                      .filter((app: any) => app.status === 'interview' || app.status === 'under_review')
-                      .map((app: any) => (
+                    {applications.length === 0 ? (
+                      <SelectItem value="" disabled>
+                        No applications found
+                      </SelectItem>
+                    ) : (
+                      applications.map((app: any) => (
                         <SelectItem key={app._id} value={app._id}>
-                          {app.internId?.name} - {app.jobId?.title}
+                          {app.internId?.name} - {app.jobId?.title} ({app.status})
                         </SelectItem>
-                      ))}
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
