@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useJobs } from "@/hooks/useJobs"
 import { useCompanies } from "@/hooks/useCompanies"
+import { useUsersCount } from "@/hooks/useUsers"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { useAuth } from "@/contexts/AuthContext"
 import { getImageUrl, getCompanyLogoUrl } from "@/utils/imageUtils"
@@ -49,22 +50,7 @@ const testimonials = [
   },
 ]
 
-const blogPosts = [
-  {
-    title: "How to win any job you want. Get started with 5 steps.",
-    excerpt: "The best way to prepare for your next job interview is to practice. Here are some tips to help you get started.",
-    image: work1,
-    date: "Jan 15, 2024",
-    author: "John Doe",
-  },
-  {
-    title: "The secrets to finding the perfect job in 2024.",
-    excerpt: "In today's competitive job market, finding the perfect job can be challenging. Here are some strategies to help you succeed.",
-    image: work2,
-    date: "Jan 12, 2024",
-    author: "Jane Smith",
-  },
-]
+
 
 export default function Homepage() {
   const router = useRouter()
@@ -73,6 +59,7 @@ export default function Homepage() {
   // Fetch data for stats and featured jobs
   const { jobs: allJobs, loading: jobsLoading, error: jobsError, total: totalJobs } = useJobs({ limit: 4 })
   const { companies, loading: companiesLoading, total: totalCompanies } = useCompanies({ limit: 1 })
+  const { data: usersCountData, loading: usersLoading } = useUsersCount()
   
   // Mock data for users count (replace with real API call when available)
   const [stats, setStats] = useState({
@@ -87,10 +74,10 @@ export default function Homepage() {
     setStats({
       totalJobs: totalJobs || 0,
       totalCompanies: totalCompanies || 0,
-      totalUsers: 15000, // Mock data - replace with real API call
+      totalUsers: usersCountData?.data?.totalUsers || 0,
       activeJobs: totalJobs || 0
     })
-  }, [totalJobs, totalCompanies])
+  }, [totalJobs, totalCompanies, usersCountData])
 
   // Get the first 4 jobs as featured jobs
   const featuredJobs = allJobs.slice(0, 4)

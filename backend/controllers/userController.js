@@ -35,6 +35,34 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
 });
 
 /**
+ * @desc    Get total users count (interns + companies)
+ * @route   GET /api/users/count
+ * @access  Public
+ */
+exports.getUsersCount = asyncHandler(async (req, res, next) => {
+  try {
+    // Get count of interns
+    const internCount = await Intern.countDocuments();
+    
+    // Get count of companies
+    const companyCount = await Company.countDocuments();
+    
+    const totalUsers = internCount + companyCount;
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        internCount,
+        companyCount
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * @desc    Search companies by name
  * @route   GET /api/companies/search
  * @access  Public
@@ -62,5 +90,33 @@ exports.searchCompanies = asyncHandler(async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+});
+
+/**
+ * @desc    Get total users count (interns + companies)
+ * @route   GET /api/users/count
+ * @access  Public
+ */
+exports.getUsersCount = asyncHandler(async (req, res, next) => {
+  try {
+    // Get count of interns
+    const internCount = await Intern.countDocuments();
+    
+    // Get count of companies
+    const companyCount = await Company.countDocuments();
+    
+    const totalUsers = internCount + companyCount;
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        internCount,
+        companyCount
+      }
+    });
+  } catch (error) {
+    next(error);
   }
 });
