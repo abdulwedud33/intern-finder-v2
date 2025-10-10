@@ -21,7 +21,7 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
   }
 
   // Get company profile for the current user
-  const company = await User.findOne({ _id: req.user.id, role: 'company' });
+  const company = await Company.findOne({ user: req.user.id });
   
   if (!company) {
     return next(new ErrorResponse('Company profile not found', 404));
@@ -270,7 +270,7 @@ exports.getInterview = asyncHandler(async (req, res, next) => {
   
   // Check if user is authorized to view this interview
   if (req.user.role === 'company') {
-    const company = await User.findOne({ _id: req.user.id, role: 'company' });
+    const company = await Company.findOne({ user: req.user.id });
     if (!company || interview.company.toString() !== company._id.toString()) {
       return next(new ErrorResponse('Not authorized to view this interview', 403));
     }
@@ -316,7 +316,7 @@ exports.updateInterview = asyncHandler(async (req, res, next) => {
   let isAuthorized = false;
   
   if (req.user.role === 'company') {
-    const company = await User.findOne({ _id: req.user.id, role: 'company' });
+    const company = await Company.findOne({ user: req.user.id });
     isAuthorized = company && interview.company._id.toString() === company._id.toString();
   } else if (req.user.role === 'intern') {
     const intern = await User.findOne({ _id: req.user.id, role: 'intern' });
@@ -417,7 +417,7 @@ exports.submitFeedback = asyncHandler(async (req, res, next) => {
   }
   
   // Get company profile for the current user
-  const company = await User.findOne({ _id: req.user.id, role: 'company' });
+  const company = await Company.findOne({ user: req.user.id });
   
   if (!company) {
     return next(new ErrorResponse('Company profile not found', 404));
@@ -633,7 +633,7 @@ exports.getCompanyInterviewsById = asyncHandler(async (req, res, next) => {
   const { companyId } = req.params;
   
   // Check if the company exists
-  const company = await User.findOne({ _id: companyId, role: 'company' });
+  const company = await Company.findById(companyId);
   if (!company) {
     return next(new ErrorResponse('Company not found', 404));
   }
