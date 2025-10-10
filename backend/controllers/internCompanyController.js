@@ -1,6 +1,8 @@
 const CompanyIntern = require('../models/CompanyIntern');
 const Company = require('../models/Company');
 const Intern = require('../models/Intern');
+const Review = require('../models/Review');
+const mongoose = require('mongoose');
 const asyncHandler = require('../middleware/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 
@@ -107,6 +109,162 @@ exports.getCompanyRelationship = asyncHandler(async (req, res, next) => {
       relationship,
       reviews
     }
+  });
+});
+
+/**
+ * @desc    Get work history timeline
+ * @route   GET /api/v1/intern-companies/timeline
+ * @access  Private (Intern)
+ */
+exports.getWorkHistoryTimeline = asyncHandler(async (req, res, next) => {
+  const internId = req.user.intern;
+
+  const companies = await CompanyIntern.find({ intern: internId })
+    .populate('company', 'name')
+    .populate('job', 'title')
+    .sort({ startDate: -1 });
+
+  const timeline = companies.map(company => ({
+    date: company.startDate,
+    company: company.company.name,
+    position: company.job.title,
+    status: company.status,
+    duration: company.endDate 
+      ? `${Math.round((new Date(company.endDate) - new Date(company.startDate)) / (1000 * 60 * 60 * 24 * 30))} months`
+      : 'Ongoing',
+    rating: company.performance?.rating || null
+  }));
+
+  res.status(200).json({
+    success: true,
+    data: timeline
+  });
+});
+
+/**
+ * @desc    Get achievements
+ * @route   GET /api/v1/intern-companies/achievements
+ * @access  Private (Intern)
+ */
+exports.getAchievements = asyncHandler(async (req, res, next) => {
+  const internId = req.user.intern;
+
+  const companies = await CompanyIntern.find({ intern: internId })
+    .populate('company', 'name')
+    .select('achievements company');
+
+  const achievements = [];
+  companies.forEach(company => {
+    if (company.achievements && company.achievements.length > 0) {
+      company.achievements.forEach(achievement => {
+        achievements.push({
+          title: achievement.title,
+          description: achievement.description,
+          date: achievement.date,
+          company: company.company.name,
+          category: achievement.category,
+          verified: achievement.verified || false
+        });
+      });
+    }
+  });
+
+  res.status(200).json({
+    success: true,
+    data: achievements
+  });
+});
+
+/**
+ * @desc    Get skills gained
+ * @route   GET /api/v1/intern-companies/skills
+ * @access  Private (Intern)
+ */
+exports.getSkillsGained = asyncHandler(async (req, res, next) => {
+  const internId = req.user.intern;
+
+  const companies = await CompanyIntern.find({ intern: internId })
+    .populate('company', 'name')
+    .select('skills company startDate endDate');
+
+  const skillMap = new Map();
+  
+  companies.forEach(company => {
+    if (company.skills && company.skills.length > 0) {
+      company.skills.forEach(skill => {
+        const skillName = typeof skill === 'string' ? skill : skill.name;
+        if (!skillMap.has(skillName)) {
+          skillMap.set(skillName, {
+            name: skillName,
+            level: typeof skill === 'object' ? skill.level : 'intermediate',
+            verified: typeof skill === 'object' ? skill.verified : false,
+            companies: [],
+            lastUsed: company.startDate
+          });
+        }
+        skillMap.get(skillName).companies.push(company.company.name);
+        if (company.startDate > skillMap.get(skillName).lastUsed) {
+          skillMap.get(skillName).lastUsed = company.startDate;
+        }
+      });
+    }
+  });
+
+  const skills = Array.from(skillMap.values());
+
+  res.status(200).json({
+    success: true,
+    data: skills
+  });
+});
+
+/**
+ * @desc    Get performance history
+ * @route   GET /api/v1/intern-companies/performance
+ * @access  Private (Intern)
+ */
+exports.getPerformanceHistory = asyncHandler(async (req, res, next) => {
+  const internId = req.user.intern;
+
+  const reviews = await Review.find({ 
+    target: internId, 
+    targetModel: 'Intern' 
+  })
+    .populate('reviewer', 'name')
+    .populate('job', 'title company')
+    .sort({ createdAt: -1 });
+
+  const performance = reviews.map(review => ({
+    company: review.job?.company || 'Unknown Company',
+    position: review.job?.title || 'Unknown Position',
+    rating: review.rating,
+    feedback: review.content,
+    date: review.createdAt,
+    reviewer: review.reviewer?.name || 'Anonymous'
+  }));
+
+  res.status(200).json({
+    success: true,
+    data: performance
+  });
+});
+
+/**
+ * @desc    Get recommendations
+ * @route   GET /api/v1/intern-companies/recommendations
+ * @access  Private (Intern)
+ */
+exports.getRecommendations = asyncHandler(async (req, res, next) => {
+  const internId = req.user.intern;
+
+  // For now, return empty array since we don't have a separate recommendations model
+  // This could be enhanced to extract recommendations from reviews or create a separate model
+  const recommendations = [];
+
+  res.status(200).json({
+    success: true,
+    data: recommendations
   });
 });
 
