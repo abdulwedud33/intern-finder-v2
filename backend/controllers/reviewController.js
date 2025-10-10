@@ -411,7 +411,7 @@ exports.getMyReviews = asyncHandler(async (req, res, next) => {
 exports.createOrUpdateInternReview = asyncHandler(async (req, res, next) => {
   const { internId, jobId } = req.params;
   const { rating, feedback } = req.body;
-  const companyId = req.user.company;
+  const companyId = req.user._id; // Company users are stored directly in Company model
 
   // Check if company exists and is verified
   const company = await Company.findById(companyId);
@@ -469,7 +469,7 @@ exports.createOrUpdateInternReview = asyncHandler(async (req, res, next) => {
 // @route   GET /api/v1/reviews/intern-reviews
 // @access  Private (Company)
 exports.getCompanyInternReviews = asyncHandler(async (req, res, next) => {
-  const companyId = req.user.company;
+  const companyId = req.user._id; // Company users are stored directly in Company model
   
   const reviews = await Review.find({
     reviewer: companyId,

@@ -6,7 +6,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 // @route   GET /api/company-interns
 // @access  Private/Company
 const getCompanyInterns = asyncHandler(async (req, res, next) => {
-  const companyInterns = await CompanyIntern.find({ company: req.user.company })
+  const companyInterns = await CompanyIntern.find({ company: req.user._id })
     .populate({
       path: 'intern',
       select: 'user',
@@ -30,7 +30,7 @@ const getCompanyInterns = asyncHandler(async (req, res, next) => {
 const getCompanyInternStats = asyncHandler(async (req, res, next) => {
   const stats = await CompanyIntern.aggregate([
     {
-      $match: { company: req.user.company }
+      $match: { company: req.user._id }
     },
     {
       $group: {
@@ -62,7 +62,7 @@ const searchCompanyInterns = asyncHandler(async (req, res, next) => {
   const { query, status } = req.query;
   
   // Build match object
-  const match = { company: req.user.company };
+  const match = { company: req.user._id };
   
   if (status) {
     match.status = status;
@@ -99,7 +99,7 @@ const searchCompanyInterns = asyncHandler(async (req, res, next) => {
 const getCompanyInternById = asyncHandler(async (req, res, next) => {
   const companyIntern = await CompanyIntern.findOne({
     _id: req.params.internId,
-    company: req.user.company
+    company: req.user._id
   })
     .populate({
       path: 'intern',
@@ -134,7 +134,7 @@ const updateCompanyInternStatus = asyncHandler(async (req, res, next) => {
 
   let companyIntern = await CompanyIntern.findOne({
     _id: req.params.internId,
-    company: req.user.company
+    company: req.user._id
   });
 
   if (!companyIntern) {
@@ -167,7 +167,7 @@ const terminateCompanyIntern = asyncHandler(async (req, res, next) => {
 
   let companyIntern = await CompanyIntern.findOne({
     _id: req.params.internId,
-    company: req.user.company
+    company: req.user._id
   });
 
   if (!companyIntern) {
