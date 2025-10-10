@@ -17,16 +17,19 @@ const router = express.Router();
 // Public routes
 router.get('/', getReviews);
 router.get('/target/:targetId', getReviewsForTarget);
-router.get('/:id', getReview);
+
 // Protected routes (require authentication)
 router.use(protect);
-// Routes for authenticated users
-router.get('/me/reviews', getMyReviews);
-router.get('/me/received', getReviewsAboutMe);
+
+// Routes for authenticated users - specific routes first
+router.get('/about-me', getReviewsAboutMe);
+router.get('/me', getMyReviews);
+
+// General routes
+router.get('/:id', getReview);
 router.post('/', authorize('intern', 'company'), createReview);
 router.put('/:id', authorize('intern', 'company'), updateReview);
 router.delete('/:id', authorize('intern', 'company', 'admin'), deleteReview);
-router.get('/about-me', protect, getReviewsAboutMe);
 // Company to Intern Reviews
 router.post(
   '/intern-reviews/:internId/:jobId',
