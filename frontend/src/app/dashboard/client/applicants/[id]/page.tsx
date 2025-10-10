@@ -150,7 +150,7 @@ export default function ApplicantDetailsPage() {
       role: job?.title || 'Position',
       avatar: intern?.photo || intern?.avatar || '/placeholder.svg',
       rating: app.rating || null,
-      appliedJob: job?.title || 'Position',
+      appliedJob: job?._id || job?.id || '',
       appliedDate: app.createdAt,
       stage: app.status || 'under_review',
       stageProgress: getStageProgress(app.status),
