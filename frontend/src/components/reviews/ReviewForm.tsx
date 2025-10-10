@@ -260,11 +260,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           <div className="flex items-center space-x-3">
             <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
               <span className="text-sm font-medium text-gray-600">
-                {review.reviewer.name.charAt(0).toUpperCase()}
+                {review.reviewer?.name?.charAt(0)?.toUpperCase() || 'U'}
               </span>
             </div>
             <div>
-              <h4 className="font-medium text-gray-900">{review.reviewer.name}</h4>
+              <h4 className="font-medium text-gray-900">{review.reviewer?.name || 'Unknown Reviewer'}</h4>
               <p className="text-sm text-gray-500">
                 {formatDate(review.createdAt)}
               </p>

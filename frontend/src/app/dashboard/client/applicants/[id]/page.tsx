@@ -952,14 +952,16 @@ export default function ApplicantDetailsPage() {
                         </div>
                       ) : reviewsData?.data && reviewsData.data.length > 0 ? (
                         <div className="space-y-4">
-                          {reviewsData.data.map((review: any) => (
-                            <ReviewCard 
-                              key={review._id} 
-                              review={review}
-                              canEdit={false}
-                              canDelete={false}
-                            />
-                          ))}
+                          {reviewsData.data
+                            .filter((review: any) => review.reviewer) // Only show reviews with reviewer data
+                            .map((review: any) => (
+                              <ReviewCard 
+                                key={review._id} 
+                                review={review}
+                                canEdit={false}
+                                canDelete={false}
+                              />
+                            ))}
                         </div>
                       ) : (
                         <div className="text-center py-8 text-gray-500">
