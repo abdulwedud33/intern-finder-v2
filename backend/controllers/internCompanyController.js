@@ -78,13 +78,81 @@ exports.getInternStats = asyncHandler(async (req, res, next) => {
       ])
     ]);
 
+    // Get additional stats
+    const companies = await CompanyIntern.find({ intern: internId })
+      .populate('company', 'name industry')
+      .select('skills startDate endDate achievements');
+
+    // Calculate total experience in months
+    let totalExperience = 0;
+    companies.forEach(company => {
+      const startDate = new Date(company.startDate);
+      const endDate = company.endDate ? new Date(company.endDate) : new Date();
+      const months = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24 * 30));
+      totalExperience += Math.max(0, months);
+    });
+
+    // Extract skills gained
+    const skillsSet = new Set();
+    companies.forEach(company => {
+      if (company.skills && company.skills.length > 0) {
+        company.skills.forEach(skill => {
+          const skillName = typeof skill === 'string' ? skill : skill.name;
+          skillsSet.add(skillName);
+        });
+      }
+    });
+    const skillsGained = Array.from(skillsSet);
+
+    // Extract industries
+    const industryMap = new Map();
+    companies.forEach(company => {
+      const industry = company.company?.industry || 'Other';
+      if (industryMap.has(industry)) {
+        industryMap.set(industry, industryMap.get(industry) + 1);
+      } else {
+        industryMap.set(industry, 1);
+      }
+    });
+    const industries = Array.from(industryMap.entries()).map(([name, count]) => ({
+      name,
+      count,
+      duration: 0 // Could be calculated if needed
+    }));
+
+    // Generate monthly timeline
+    const monthlyTimeline = companies.map(company => ({
+      month: new Date(company.startDate).toISOString().slice(0, 7), // YYYY-MM format
+      company: company.company?.name || 'Unknown Company',
+      position: 'Position', // Could be populated from job if available
+      status: company.status || 'completed'
+    }));
+
+    // Extract achievements
+    const achievements = [];
+    companies.forEach(company => {
+      if (company.achievements && company.achievements.length > 0) {
+        company.achievements.forEach(achievement => {
+          achievements.push({
+            category: achievement.category || 'general',
+            count: 1
+          });
+        });
+      }
+    });
+
     res.status(200).json({
       success: true,
       data: {
         totalCompanies,
-        activeCompanies,
-        terminatedCompanies,
-        averageRating: averageRating[0]?.averageRating?.toFixed(1) || 0
+        totalExperience,
+        averageRating: averageRating[0]?.averageRating?.toFixed(1) || 0,
+        completedInternships: terminatedCompanies,
+        activeInternships: activeCompanies,
+        skillsGained,
+        industries,
+        monthlyTimeline,
+        achievements
       }
     });
   } catch (error) {
