@@ -216,7 +216,7 @@ if (hideRoutes.includes(pathname) || isDashboardPage) {
       {/* Mobile Menu Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          className="fixed inset-0 bg-opacity-50 z-40 md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -295,7 +295,7 @@ if (hideRoutes.includes(pathname) || isDashboardPage) {
               {/* Mobile Avatar Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="w-full p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors border border-gray-600">
+                  <Button variant="ghost" className="w-full p-7 rounded-lg hover:bg-gray-600 transition-colors border border-gray-600">
                     <div className="flex items-center space-x-3 w-full">
                       <Avatar className="h-10 w-10 ring-2 ring-teal-500/20">
                         <AvatarImage 
