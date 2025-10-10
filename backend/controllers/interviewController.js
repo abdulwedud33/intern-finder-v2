@@ -30,20 +30,16 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
   // Check if application exists and belongs to company
   const application = await Application.findById(applicationId)
     .populate({
-      path: 'job',
-      select: 'company',
+      path: 'jobId',
+      select: 'companyId',
       populate: {
-        path: 'company',
+        path: 'companyId',
         select: '_id'
       }
     })
     .populate({
-      path: 'intern',
-      select: '_id',
-      populate: {
-        path: 'user',
-        select: '_id'
-      }
+      path: 'internId',
+      select: '_id'
     });
 
   if (!application) {
@@ -51,7 +47,7 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
   }
 
   // Verify the company owns the job listing
-  if (application.job.company._id.toString() !== company._id.toString()) {
+  if (application.jobId.companyId._id.toString() !== company._id.toString()) {
     return next(new ErrorResponse('Not authorized to schedule interview for this application', 403));
   }
 
@@ -75,7 +71,7 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
       { 'application': applicationId, status: { $ne: 'cancelled' } },
       { 
         $and: [
-          { 'application.intern': application.intern._id },
+          { 'application.intern': application.internId._id },
           { date: interviewDate },
           { status: { $ne: 'cancelled' } }
         ]
@@ -89,9 +85,9 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
 
   const interview = await Interview.create({
     applicationId: applicationId,
-    companyId: application.job.company._id,
-    internId: application.intern._id,
-    jobId: application.job._id,
+    companyId: application.jobId.companyId._id,
+    internId: application.internId._id,
+    jobId: application.jobId._id,
     interviewer: userId,
     date: interviewDate,
     scheduledDate: interviewDate, // Sync with frontend
