@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import { useForm, Controller, type SubmitHandler } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useCloudinaryUpload } from "@/hooks/useCloudinaryUpload"
 
 // Base User schema
 const baseUserSchema = z.object({
@@ -317,8 +318,11 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isNavigating, setIsNavigating] = useState(false)
   const [profilePicture, setProfilePicture] = useState<File | null>(null)
-  const [cv, setCv] = useState<File | null>(null)
   const [logo, setLogo] = useState<File | null>(null)
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string>("")
+  const [logoUrl, setLogoUrl] = useState<string>("")
+  
+  const { uploadAvatar, uploadLogo, uploadProgress } = useCloudinaryUpload()
 
   // Initialize form with react-hook-form
   const {
@@ -351,15 +355,15 @@ export default function RegisterPage() {
   }, [activeTab, reset])
 
   // Handle file upload
-  const handleFileChange = (file: File | null, type: "profilePicture" | "cv" | "logo") => {
+  const handleFileChange = async (file: File | null, type: "profilePicture" | "logo") => {
     if (!file) return
 
-    const validTypes = ["image/jpeg", "image/png", "application/pdf"]
+    const validTypes = ["image/jpeg", "image/png"]
     const maxSize = 5 * 1024 * 1024 // 5MB
 
     if (!validTypes.includes(file.type)) {
       toast.error("Invalid file type", {
-        description: "Please upload a JPEG, PNG, or PDF file",
+        description: "Please upload a JPEG or PNG file",
       })
       return
     }
@@ -371,12 +375,34 @@ export default function RegisterPage() {
       return
     }
 
-    if (type === "profilePicture") {
-      setProfilePicture(file)
-    } else if (type === "cv") {
-      setCv(file)
-    } else if (type === "logo") {
-      setLogo(file)
+    try {
+      if (type === "profilePicture") {
+        setProfilePicture(file)
+        
+        // Upload to Cloudinary
+        const uploadResponse = await uploadAvatar.mutateAsync(file)
+        setProfilePictureUrl(uploadResponse.data.url)
+        
+        toast.success("Profile picture uploaded successfully!")
+      } else if (type === "logo") {
+        setLogo(file)
+        
+        // Upload to Cloudinary
+        const uploadResponse = await uploadLogo.mutateAsync(file)
+        setLogoUrl(uploadResponse.data.url)
+        
+        toast.success("Logo uploaded successfully!")
+      }
+    } catch (error: any) {
+      console.error(`${type} upload error:`, error)
+      if (type === "profilePicture") {
+        setProfilePicture(null)
+      } else {
+        setLogo(null)
+      }
+      toast.error(`Failed to upload ${type}`, {
+        description: error.message || "Please try again"
+      })
     }
   }
 
@@ -545,11 +571,11 @@ export default function RegisterPage() {
       formData.append('password', (data as any).password);
       formData.append('phone', (data as any).phone);
       
-      // Add avatar file
-      if (data.role === 'intern' && profilePicture) {
-        formData.append('avatar', profilePicture);
-      } else if (data.role === 'company' && logo) {
-        formData.append('logo', logo);
+      // Add avatar/logo URLs from Cloudinary
+      if (data.role === 'intern' && profilePictureUrl) {
+        formData.append('avatar', profilePictureUrl);
+      } else if (data.role === 'company' && logoUrl) {
+        formData.append('logo', logoUrl);
       }
       
       // Add role-specific fields
@@ -576,10 +602,6 @@ export default function RegisterPage() {
           formData.append('languages', JSON.stringify((data as any).languages));
         }
         
-        // Add CV file if present
-        if (cv) {
-          formData.append('resume', cv);
-        }
         
         // Add cover letter if present (though not currently collected in form)
         if ((data as any).coverLetter) {
@@ -1537,21 +1559,6 @@ export default function RegisterPage() {
                       )}
                     </div>
 
-                    {/* CV Upload */}
-                    <div>
-                      <Label>Upload Your CV</Label>
-                      <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors mt-2">
-                        <FileText className="w-10 h-10 text-gray-400 mb-2" />
-                        <span className="text-sm text-gray-600">{cv ? cv.name : "Click to upload your CV"}</span>
-                        <span className="text-xs text-gray-500">PDF format recommended</span>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept=".pdf,.doc,.docx"
-                          onChange={(e) => handleFileChange(e.target.files?.[0] || null, "cv")}
-                        />
-                      </label>
-                    </div>
 
                     <div>
                       <div className="space-y-4">

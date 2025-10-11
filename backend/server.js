@@ -28,6 +28,7 @@ const companyInternRoutes = require('./routes/companyInternRoutes');
 const internCompanyRoutes = require('./routes/internCompanyRoutes');
 const userRoutes = require('./routes/userRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const cloudinaryUploadRoutes = require('./routes/cloudinaryUploadRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const apiRoutes = require('./routes/apiRoutes');
 // Import other route files as needed
@@ -166,6 +167,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/interviews', interviewRoutes);
 app.use('/api/company-interns', companyInternRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/uploads/cloudinary', cloudinaryUploadRoutes);
 app.use('/api/intern-companies', internCompanyRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/stats', statsRoutes);

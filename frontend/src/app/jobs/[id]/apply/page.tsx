@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useJobById } from "@/hooks/useJobs"
 import { useCreateApplication } from "@/hooks/useApplications"
+import { useCloudinaryUpload } from "@/hooks/useCloudinaryUpload"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -27,10 +28,12 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
   const [formData, setFormData] = useState({
     coverLetter: "",
     resume: null as File | null,
+    resumeUrl: "" as string,
   })
 
   const { job, loading: jobLoading, error: jobError } = useJobById(listingId)
   const createApplicationMutation = useCreateApplication()
+  const { uploadResume, uploadProgress } = useCloudinaryUpload()
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -43,19 +46,14 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
         throw new Error("Cover letter is required")
       }
 
-      // Create FormData for file upload
-      const formDataToSend = new FormData()
-      formDataToSend.append('jobId', listingId)
-      formDataToSend.append('coverLetter', formData.coverLetter)
-      
-      if (formData.resume) {
-        formDataToSend.append('resume', formData.resume)
+      if (!formData.resumeUrl) {
+        throw new Error("Resume is required")
       }
 
       return await createApplicationMutation.mutateAsync({
         jobId: listingId,
         coverLetter: formData.coverLetter,
-        resume: formData.resume || undefined,
+        resume: formData.resumeUrl,
       })
     },
     onSuccess: () => {
@@ -164,7 +162,7 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleResumeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
       // Validate file type
@@ -173,19 +171,35 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
         return
       }
       
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("⚠️ File Too Large. Please upload a resume file smaller than 5MB.")
+      // Validate file size (10MB limit for Cloudinary)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("⚠️ File Too Large. Please upload a resume file smaller than 10MB.")
         return
       }
       
-      setFormData((prev) => ({ ...prev, resume: file }))
-      toast.success(`✅ Resume Uploaded. ${file.name} has been selected for upload.`)
+      try {
+        setFormData((prev) => ({ ...prev, resume: file }))
+        
+        // Upload to Cloudinary
+        const uploadResponse = await uploadResume.mutateAsync(file)
+        
+        // Store the Cloudinary URL
+        setFormData((prev) => ({ 
+          ...prev, 
+          resumeUrl: uploadResponse.data.url 
+        }))
+        
+        toast.success(`✅ Resume Uploaded. ${file.name} has been uploaded successfully.`)
+      } catch (error: any) {
+        console.error('Resume upload error:', error)
+        setFormData((prev) => ({ ...prev, resume: null }))
+        toast.error("⚠️ Upload Failed. Please try uploading your resume again.")
+      }
     }
   }
 
   const removeResume = () => {
-    setFormData((prev) => ({ ...prev, resume: null }))
+    setFormData((prev) => ({ ...prev, resume: null, resumeUrl: "" }))
     toast.success("🗑️ Resume Removed. Resume has been removed from your application.")
   }
 
@@ -352,7 +366,22 @@ function JobApplicationContent({ listingId }: { listingId: string }) {
                           Resume (Required)
                         </Label>
                         <div className="space-y-3">
-                          {!formData.resume ? (
+                          {uploadProgress.isUploading ? (
+                            <div className="border-2 border-dashed border-teal-300 rounded-lg p-6 text-center">
+                              <div className="flex flex-col items-center space-y-2">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+                                <p className="text-sm text-teal-600 font-medium">
+                                  Uploading resume... {Math.round(uploadProgress.progress)}%
+                                </p>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-teal-600 h-2 rounded-full transition-all duration-300" 
+                                    style={{ width: `${uploadProgress.progress}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : !formData.resume ? (
                             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-teal-500 transition-colors">
                               <input
                                 type="file"

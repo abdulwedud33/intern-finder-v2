@@ -3,7 +3,7 @@ import { api } from './api';
 export interface CreateApplicationRequest {
   jobId: string;
   coverLetter: string;
-  resume?: File;
+  resume?: File | string;
 }
 
 export interface ApplicationResponse {
