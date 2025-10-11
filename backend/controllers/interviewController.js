@@ -136,11 +136,12 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
  * @access  Private (Company)
  */
 exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
-  console.log('=== getCompanyInterviews ENDPOINT CALLED ===');
-  // Check if user is a company
-  if (req.user.role !== 'company') {
-    return next(new ErrorResponse('Only companies can access this resource', 403));
-  }
+  try {
+    console.log('=== getCompanyInterviews ENDPOINT CALLED ===');
+    // Check if user is a company
+    if (req.user.role !== 'company') {
+      return next(new ErrorResponse('Only companies can access this resource', 403));
+    }
   
   console.log('getCompanyInterviews - req.user:', {
     id: req.user._id,
@@ -194,6 +195,10 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
     count: transformedInterviews.length,
     data: transformedInterviews
   });
+  } catch (error) {
+    console.error('Error in getCompanyInterviews:', error);
+    return next(new ErrorResponse('Internal server error', 500));
+  }
 });
 
 /**
