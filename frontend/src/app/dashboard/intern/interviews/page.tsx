@@ -365,7 +365,7 @@ export default function InternInterviewsPage() {
                               <div className="mb-2">
                                 <span className="text-sm text-gray-600">Meeting Link:</span>
                                 <a 
-                                  href={interview.meetingLink} 
+                                  href={interview.meetingLink.startsWith('http') ? interview.meetingLink : `https://${interview.meetingLink}`} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   className="ml-2 text-blue-600 hover:underline break-all"
@@ -376,7 +376,7 @@ export default function InternInterviewsPage() {
                               <Button 
                                 size="sm" 
                                 className="bg-blue-600 hover:bg-blue-700"
-                                onClick={() => window.open(interview.meetingLink, '_blank')}
+                                onClick={() => window.open(interview.meetingLink.startsWith('http') ? interview.meetingLink : `https://${interview.meetingLink}`, '_blank')}
                               >
                                 <ExternalLink className="h-4 w-4 mr-2" />
                                 Join Meeting

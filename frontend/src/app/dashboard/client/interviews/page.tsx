@@ -597,7 +597,7 @@ export default function ClientInterviewsPage() {
                           {interview.link && (
                             <div className="flex items-center gap-1 text-sm text-blue-600 mt-1">
                               <Video className="h-4 w-4" />
-                              <a href={interview.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                              <a href={interview.link.startsWith('http') ? interview.link : `https://${interview.link}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
                                 Join Meeting
                               </a>
                             </div>
