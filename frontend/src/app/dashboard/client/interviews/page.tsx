@@ -577,7 +577,7 @@ export default function ClientInterviewsPage() {
                             </div>
                             <div className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />
-                              {format(new Date(interview.scheduledDate), 'h:mm a')}
+                              {format(new Date(interview.scheduledDate), 'h:mm a')} (Stored: {new Date(interview.scheduledDate).toISOString().substring(11, 16)} UTC)
                             </div>
                             <div className="flex items-center gap-1">
                               {getTypeIcon(interview.type)}

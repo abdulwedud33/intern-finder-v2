@@ -345,7 +345,7 @@ export default function InternInterviewsPage() {
                             </div>
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4" />
-                              <span>{format(new Date(interview.scheduledDate), 'h:mm a')} ({interview.duration} min)</span>
+                              <span>{format(new Date(interview.scheduledDate), 'h:mm a')} (Stored: {new Date(interview.scheduledDate).toISOString().substring(11, 16)} UTC) ({interview.duration} min)</span>
                             </div>
                             <div className="flex items-center gap-2">
                               {getTypeIcon(interview.type)}
@@ -476,7 +476,7 @@ export default function InternInterviewsPage() {
                             </div>
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4" />
-                              <span>{format(new Date(interview.scheduledDate), 'h:mm a')} ({interview.duration} min)</span>
+                              <span>{format(new Date(interview.scheduledDate), 'h:mm a')} (Stored: {new Date(interview.scheduledDate).toISOString().substring(11, 16)} UTC) ({interview.duration} min)</span>
                             </div>
                             <div className="flex items-center gap-2">
                               {getTypeIcon(interview.type)}
