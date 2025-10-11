@@ -81,17 +81,18 @@ export default function ClientInterviewsPage() {
   // Transform data
   const interviews = useMemo(() => {
     const interviewsData = interviewsResponse?.data || []
-    console.log('Raw interviews data:', interviewsData)
-    if (interviewsData.length > 0) {
+    const interviewsArray = Array.isArray(interviewsData) ? interviewsData : [interviewsData].filter(Boolean)
+    console.log('Raw interviews data:', interviewsArray)
+    if (interviewsArray.length > 0) {
       console.log('First interview structure:', {
-        _id: interviewsData[0]._id,
-        job: interviewsData[0].job,
-        jobId: interviewsData[0].jobId,
-        internId: interviewsData[0].internId,
-        status: interviewsData[0].status
+        _id: interviewsArray[0]._id,
+        job: (interviewsArray[0] as any).job,
+        jobId: interviewsArray[0].jobId,
+        internId: interviewsArray[0].internId,
+        status: interviewsArray[0].status
       })
     }
-    return Array.isArray(interviewsData) ? interviewsData : []
+    return interviewsArray
   }, [interviewsResponse])
 
   const applications = useMemo(() => {
