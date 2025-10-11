@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 import { 
   Globe, 
   Users, 
@@ -300,7 +301,7 @@ export default function ClientProfilePage() {
             <div className="flex items-start space-x-6">
               <div className="relative">
                 <Avatar className="w-24 h-24">
-                  <AvatarImage src={profile?.logo} alt={profile?.name} />
+                  <AvatarImage src={getUserAvatarUrl(profile)} alt={profile?.name} />
                   <AvatarFallback className="bg-teal-500 text-white text-2xl">
                     {profile?.name?.charAt(0) || "C"}
                   </AvatarFallback>

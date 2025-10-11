@@ -36,6 +36,7 @@ import { useUpdateProfile, useUploadProfilePicture, useUploadResume as useUpload
 import { useQuery } from "@tanstack/react-query"
 import { EnhancedFileUpload } from "@/components/ui/enhanced-file-upload"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 import { LoadingPage } from "@/components/ui/loading-spinner"
 import { ErrorPage } from "@/components/ui/error-boundary"
 import { toast } from "sonner"
@@ -118,7 +119,7 @@ export default function ProfilePage() {
     title: profile?.role === 'intern' ? 'Intern' : profile?.role === 'company' ? 'Company' : profile?.headline || "User",
     location: profile?.location || "Location not specified",
     bio: profile?.about || "No bio provided yet.",
-    profilePicture: profile?.avatar || user?.avatar || "/placeholder-user.jpg",
+    profilePicture: getUserAvatarUrl(profile || user),
     coverImage: null, // Remove background image
     skills: profile?.skills?.map((skill: any) => skill.name) || ["React", "TypeScript", "Next.js", "Tailwind CSS", "Node.js", "Python", "Figma", "Git"],
     experiences: profile?.experience?.map((exp: any, index: number) => ({

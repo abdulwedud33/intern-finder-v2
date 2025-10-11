@@ -4,6 +4,7 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { getUserAvatarUrl } from '@/utils/imageUtils'
 import { 
   Calendar, 
   MapPin, 
@@ -112,7 +113,7 @@ export function WorkHistoryTimeline({ companies, isLoading }: WorkHistoryTimelin
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={company.company.logo} />
+                      <AvatarImage src={getUserAvatarUrl(company.company)} />
                       <AvatarFallback>
                         {company.company.name.charAt(0)}
                       </AvatarFallback>

@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { useReviewsAboutMe, useMyReviews, useDeleteReview } from "@/hooks/useReviews"
 import { ReviewForm, ReviewCard as ReviewCardComponent, StarRatingDisplay } from "@/components/reviews/ReviewForm"
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Review } from "@/services/reviewService"
@@ -71,7 +72,7 @@ const ReviewCard = ({ review }: { review: any }) => {
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={reviewer?.avatar} alt={reviewer?.name || 'Unknown'} />
+              <AvatarImage src={getUserAvatarUrl(reviewer)} alt={reviewer?.name || 'Unknown'} />
               <AvatarFallback className="bg-teal-500 text-white">
                 {reviewer?.name?.charAt(0)?.toUpperCase() || 'U'}
               </AvatarFallback>

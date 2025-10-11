@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { getUserAvatarUrl } from '@/utils/imageUtils'
 import { 
   Building2, 
   Calendar, 
@@ -67,7 +68,7 @@ export function CompanyRelationshipDetails({
         <CardContent className="p-6">
           <div className="flex items-start space-x-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={company.logo} />
+              <AvatarImage src={getUserAvatarUrl(company)} />
               <AvatarFallback>
                 {company.name.charAt(0)}
               </AvatarFallback>

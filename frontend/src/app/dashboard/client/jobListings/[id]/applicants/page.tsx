@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Search, Filter, MoreHorizontal, Star, Eye } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { jobService } from "@/services/jobService"
@@ -260,7 +261,7 @@ export default function JobApplicantsPage() {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
                             <AvatarImage 
-                              src={application.internId.avatar || "/placeholder.svg"} 
+                              src={getUserAvatarUrl(application.internId)} 
                               alt={application.internId.name} 
                             />
                             <AvatarFallback>
@@ -346,7 +347,7 @@ export default function JobApplicantsPage() {
                       <div className="flex items-center gap-3 mb-2">
                         <Avatar className="h-8 w-8">
                           <AvatarImage 
-                            src={application.internId.avatar || "/placeholder.svg"} 
+                            src={getUserAvatarUrl(application.internId)} 
                             alt={application.internId.name} 
                           />
                           <AvatarFallback className="text-xs">

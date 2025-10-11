@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { 
@@ -518,7 +519,7 @@ export default function SettingsPage() {
                     <Label className="text-sm font-medium text-gray-700">Profile Photo</Label>
                     <div className="mt-3 flex items-center gap-6">
                       <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
-                        <AvatarImage src={userData?.data?.avatar || "/placeholder-user.jpg"} alt="Profile" />
+                        <AvatarImage src={getUserAvatarUrl(userData?.data)} alt="Profile" />
                         <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xl font-bold">
                           {formData.name.split(" ").map((n: string) => n[0]).join("")}
                       </AvatarFallback>

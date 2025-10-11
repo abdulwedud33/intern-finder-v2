@@ -43,6 +43,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useCompanyApplications, useUpdateApplicationStatus } from "@/hooks/useApplications"
 import { useToast } from "@/components/ui/use-toast"
@@ -839,7 +840,7 @@ export default function ApplicantsPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
-                              <AvatarImage src={application.user.avatar || "/placeholder-user.jpg"} alt={application.user.name} />
+                              <AvatarImage src={getUserAvatarUrl(application.user)} alt={application.user.name} />
                               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                                 {application.user.name
                               .split(' ')

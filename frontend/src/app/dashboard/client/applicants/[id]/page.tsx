@@ -49,6 +49,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { getUserAvatarUrl } from "@/utils/imageUtils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -149,7 +150,7 @@ export default function ApplicantDetailsPage() {
       id: app._id,
       name: intern?.name || 'Unknown Applicant',
       role: job?.title || 'Position',
-      avatar: intern?.photo || intern?.avatar || '/placeholder.svg',
+      avatar: getUserAvatarUrl(intern),
       rating: app.rating || null,
       appliedJob: job?._id || job?.id || '',
       appliedDate: app.createdAt,

@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { getUserAvatarUrl } from '@/utils/imageUtils'
 import { 
   Table, 
   TableBody, 
@@ -208,7 +209,7 @@ export const InterviewTable: React.FC<InterviewTableProps> = ({
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={interview.interviewer?.avatar || ''} />
+                        <AvatarImage src={getUserAvatarUrl(interview.interviewer)} />
                         <AvatarFallback>
                           {interview.interviewer?.name?.charAt(0) || 'A'}
                         </AvatarFallback>
