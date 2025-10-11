@@ -39,6 +39,7 @@ import { useCompanyApplications } from "@/hooks/useApplications"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
 import { Interview, CreateInterviewRequest } from "@/services/interviewService"
+import { useAuth } from "@/contexts/AuthContext"
 
 type InterviewType = 'phone' | 'video' | 'onsite' | 'other'
 
@@ -70,8 +71,11 @@ export default function ClientInterviewsPage() {
     note: ""
   })
 
+  // Get current user
+  const { user } = useAuth()
+  
   // Fetch data
-  const { data: interviewsResponse, isLoading: interviewsLoading, error: interviewsError } = useCompanyInterviews('current')
+  const { data: interviewsResponse, isLoading: interviewsLoading, error: interviewsError } = useCompanyInterviews(user?.id || '')
   const { data: applicationsResponse, isLoading: applicationsLoading } = useCompanyApplications()
 
   // Transform data
