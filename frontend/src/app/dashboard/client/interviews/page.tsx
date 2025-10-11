@@ -82,6 +82,15 @@ export default function ClientInterviewsPage() {
   const interviews = useMemo(() => {
     const interviewsData = interviewsResponse?.data || []
     console.log('Raw interviews data:', interviewsData)
+    if (interviewsData.length > 0) {
+      console.log('First interview structure:', {
+        _id: interviewsData[0]._id,
+        job: interviewsData[0].job,
+        jobId: interviewsData[0].jobId,
+        internId: interviewsData[0].internId,
+        status: interviewsData[0].status
+      })
+    }
     return Array.isArray(interviewsData) ? interviewsData : []
   }, [interviewsResponse])
 
@@ -97,7 +106,7 @@ export default function ClientInterviewsPage() {
     return interviews.filter((interview: any) => {
       const matchesSearch = 
         interview.internId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        interview.jobId?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (interview.job?.title || interview.jobId?.title)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         interview.type?.toLowerCase().includes(searchTerm.toLowerCase())
       
       const matchesTab = (() => {
@@ -553,7 +562,7 @@ export default function ClientInterviewsPage() {
                               {interview.status}
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">{interview.jobId?.title}</p>
+                          <p className="text-sm text-gray-600 mb-2">{interview.job?.title || interview.jobId?.title}</p>
                           <div className="flex items-center gap-4 text-sm text-gray-500">
                             <div className="flex items-center gap-1">
                               <Calendar className="h-4 w-4" />
