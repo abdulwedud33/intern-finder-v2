@@ -5,8 +5,8 @@ const {
   updateInternProfile,
   getInternById,
   getInterns,
-  uploadProfilePicture,
-  uploadResume,
+  // uploadProfilePicture, // Removed - using Cloudinary uploads
+  // uploadResume, // Removed - using Cloudinary uploads
   getInternStats
 } = require('../controllers/internController');
 
@@ -22,8 +22,8 @@ router.use(protect);
 // Intern-specific routes (require intern role)
 router.get('/me', authorize('intern'), getInternProfile);
 router.put('/me', authorize('intern'), updateInternProfile);
-router.put('/me/photo', authorize('intern'), uploadProfilePicture);
-router.put('/me/resume', authorize('intern'), uploadResume);
+// router.put('/me/photo', authorize('intern'), uploadProfilePicture); // Removed - using Cloudinary uploads
+// router.put('/me/resume', authorize('intern'), uploadResume); // Removed - using Cloudinary uploads
 
 // Admin routes (only accessible by admins)
 router.use(authorize('admin'));

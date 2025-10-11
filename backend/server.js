@@ -77,11 +77,7 @@ app.use(requestSizeLimit);
 // Input sanitization
 app.use(sanitizeInput);
 
-// Serve static files from uploads directory (must be before CORS and API routes)
-const uploadsPath = path.join(__dirname, 'public/uploads');
-console.log('Static files path:', uploadsPath);
-console.log('Directory exists:', require('fs').existsSync(uploadsPath));
-app.use('/uploads', express.static(uploadsPath));
+// Static file serving removed - using Cloudinary for all file uploads
 
 // CORS configuration
 const corsOptions = {
