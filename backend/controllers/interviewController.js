@@ -160,13 +160,22 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
     })
     .populate('applicationId', 'status')
     .sort('-createdAt');
+    
+  // Transform the data to match frontend expectations
+  const transformedInterviews = interviews.map(interview => ({
+    ...interview.toObject(),
+    job: interview.jobId,
+    company: interview.jobId?.companyId,
+    meetingLink: interview.link,
+    notes: interview.notes || interview.note
+  }));
   
   console.log('getCompanyInterviews - interviews found:', interviews.length);
     
   res.status(200).json({
     success: true,
-    count: interviews.length,
-    data: interviews
+    count: transformedInterviews.length,
+    data: transformedInterviews
   });
 });
 
@@ -203,10 +212,19 @@ exports.getMyInterviews = asyncHandler(async (req, res, next) => {
     .populate('applicationId', 'status')
     .sort('-date');
     
+  // Transform the data to match frontend expectations
+  const transformedInterviews = interviews.map(interview => ({
+    ...interview.toObject(),
+    job: interview.jobId,
+    company: interview.jobId?.companyId,
+    meetingLink: interview.link,
+    notes: interview.notes || interview.note
+  }));
+    
   res.status(200).json({
     success: true,
-    count: interviews.length,
-    data: interviews
+    count: transformedInterviews.length,
+    data: transformedInterviews
   });
 });
 
