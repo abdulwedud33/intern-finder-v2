@@ -11,7 +11,7 @@ const ErrorResponse = require('../utils/errorResponse');
  * @access  Private (Interns only)
  */
 exports.createApplication = asyncHandler(async (req, res, next) => {
-  const { jobId, coverLetter } = req.body;
+  const { jobId, coverLetter, resume } = req.body;
   
   // Verify the job exists
   const job = await Job.findById(jobId);
@@ -36,10 +36,14 @@ exports.createApplication = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Handle resume file upload
+  // Handle resume - can be either File (legacy) or Cloudinary URL (new)
   let resumePath = '';
   if (req.file) {
+    // Legacy file upload
     resumePath = `/uploads/${req.file.filename}`;
+  } else if (resume && typeof resume === 'string') {
+    // Cloudinary URL
+    resumePath = resume;
   }
 
   // Create the application

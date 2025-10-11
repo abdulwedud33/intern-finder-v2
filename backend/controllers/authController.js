@@ -17,50 +17,25 @@ const registerUser = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('User already exists with this email', 400));
   }
 
-  // 2. Handle file upload
-  let avatarPath = '';
-  let resumePath = '';
+  // 2. Handle Cloudinary URLs from frontend
+  let avatarUrl = '';
+  let logoUrl = '';
   
-  console.log('File upload debug:', {
-    hasFile: !!req.file,
-    file: req.file,
-    files: req.files,
-    body: req.body
+  console.log('Registration data:', {
+    avatar: req.body.avatar,
+    logo: req.body.logo,
+    role: role
   });
   
-  // Handle single file upload (for companies)
-  if (req.file) {
-    avatarPath = `/uploads/${req.file.filename}`;
-    console.log('File uploaded:', {
-      filename: req.file.filename,
-      path: req.file.path,
-      avatarPath: avatarPath
-    });
+  // Handle avatar/logo URLs from Cloudinary
+  if (req.body.avatar) {
+    avatarUrl = req.body.avatar;
+    console.log('Avatar URL received:', avatarUrl);
   }
   
-  // Handle multiple file uploads (for interns)
-  if (req.files) {
-    if (req.files.avatar && req.files.avatar[0]) {
-      avatarPath = `/uploads/${req.files.avatar[0].filename}`;
-      console.log('Avatar uploaded:', {
-        filename: req.files.avatar[0].filename,
-        path: req.files.avatar[0].path,
-        avatarPath: avatarPath
-      });
-    }
-    
-    if (req.files.resume && req.files.resume[0]) {
-      resumePath = `/uploads/${req.files.resume[0].filename}`;
-      console.log('Resume uploaded:', {
-        filename: req.files.resume[0].filename,
-        path: req.files.resume[0].path,
-        resumePath: resumePath
-      });
-    }
-  }
-  
-  if (!avatarPath && !resumePath) {
-    console.log('No files uploaded during registration');
+  if (req.body.logo) {
+    logoUrl = req.body.logo;
+    console.log('Logo URL received:', logoUrl);
   }
 
   // 3. Parse JSON fields from FormData
@@ -199,8 +174,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
       password,
       phone,
       role,
-      avatar: avatarPath,
-      resume: resumePath,
+      avatar: avatarUrl, // Use Cloudinary URL
       ...profileData
     });
   } else if (role === 'company') {
@@ -210,7 +184,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
       password,
       phone,
       role,
-      logo: avatarPath, // For companies, store as logo
+      logo: logoUrl, // Use Cloudinary URL
       ...profileData
     });
   } else {

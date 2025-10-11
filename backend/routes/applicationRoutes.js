@@ -11,15 +11,14 @@ const {
   preCheckJob
 } = require('../controllers/applicationController');
 const { protect, authorize } = require('../middleware/authMiddleware');
-const { uploadSingle } = require('../middleware/upload');
-
 const router = express.Router({ mergeParams: true });
 
 // Apply protect middleware to all routes
 router.use(protect);
 
 // Application submission
-router.post('/', authorize('intern'), uploadSingle('resume'), createApplication);
+// Note: Application now uses Cloudinary URLs sent in request body, no file upload middleware needed
+router.post('/', authorize('intern'), createApplication);
 
 // Company routes
 router.get('/company', authorize('company'), getCompanyApplications);
