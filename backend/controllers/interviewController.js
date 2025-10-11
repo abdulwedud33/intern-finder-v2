@@ -150,6 +150,10 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
   // Get all interviews created by this company (where interviewer is the company)
   console.log('Querying interviews with interviewer:', req.user._id, 'Type:', typeof req.user._id);
   
+  // Debug: Check if ANY interviews exist at all
+  const totalInterviews = await Interview.countDocuments()
+  console.log('Total interviews in database:', totalInterviews)
+  
   // Try multiple query approaches
   const interviews = await Interview.find({ 
     $or: [
