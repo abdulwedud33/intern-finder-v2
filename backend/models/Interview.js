@@ -9,7 +9,7 @@ const InterviewSchema = new mongoose.Schema({
   },
   internId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Intern',
+    ref: 'User',
     required: [true, 'Please add an intern ID'],
     index: true
   },
@@ -127,7 +127,7 @@ InterviewSchema.virtual('job', {
 });
 
 InterviewSchema.virtual('intern', {
-  ref: 'Intern',
+  ref: 'User',
   localField: 'internId',
   foreignField: '_id',
   justOne: true
