@@ -24,6 +24,12 @@ export const getImageUrl = (imagePath: string | undefined | null): string | unde
     return imagePath;
   }
   
+  // Check if it's an old local upload path (these files no longer exist)
+  // Pattern: logo-1234567890-123456789.png, photo-1234567890-123456789.jpg, etc.
+  if (imagePath.match(/^(logo|photo|avatar|profile|resume)-.*\.(png|jpg|jpeg|gif)$/)) {
+    return undefined; // Return undefined to use fallback image instead of 404
+  }
+  
   // If it starts with '/', it's a relative path from the backend
   if (imagePath.startsWith('/')) {
     return `${API_URL}${imagePath}`;
