@@ -62,7 +62,16 @@ export const getUserAvatarUrl = (user: { role: string; avatar?: string; logo?: s
  * @returns Full URL to the logo or fallback
  */
 export const getCompanyLogoUrl = (logo: string | undefined | null): string => {
-  return logo ? getImageUrl(logo) || DEFAULT_LOGO : DEFAULT_LOGO;
+  if (!logo) return DEFAULT_LOGO;
+  
+  // Check if it's an old local upload path first
+  if (logo.match(/^(logo|photo|avatar|profile|resume)-.*\.(png|jpg|jpeg|gif)$/)) {
+    console.log(`Old logo path detected: ${logo}, using fallback`);
+    return DEFAULT_LOGO;
+  }
+  
+  const url = getImageUrl(logo);
+  return url || DEFAULT_LOGO;
 };
 
 /**
