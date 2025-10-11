@@ -184,8 +184,11 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
     ...interview.toObject(),
     job: interview.jobId,
     company: interview.jobId?.companyId,
-    meetingLink: interview.link,
-    notes: interview.notes || interview.note
+    link: interview.link || interview.meetingLink || '', // Preserve original link exactly as stored
+    meetingLink: interview.link || interview.meetingLink || '', // Fallback for meetingLink
+    notes: interview.notes || interview.note,
+    scheduledDate: interview.scheduledDate, // Preserve exact scheduledDate as stored
+    date: interview.date // Preserve exact date as stored
   }));
   
   console.log('getCompanyInterviews - interviews found:', interviews.length);
@@ -239,9 +242,11 @@ exports.getMyInterviews = asyncHandler(async (req, res, next) => {
     ...interview.toObject(),
     job: interview.jobId,
     company: interview.jobId?.companyId,
-    meetingLink: interview.link || interview.meetingLink || '',
-    notes: interview.notes || interview.note
-    // Keep scheduledDate exactly as stored (don't override)
+    link: interview.link || interview.meetingLink || '', // Preserve original link exactly as stored
+    meetingLink: interview.link || interview.meetingLink || '', // Fallback for meetingLink
+    notes: interview.notes || interview.note,
+    scheduledDate: interview.scheduledDate, // Preserve exact scheduledDate as stored
+    date: interview.date // Preserve exact date as stored
   }));
     
   res.status(200).json({
