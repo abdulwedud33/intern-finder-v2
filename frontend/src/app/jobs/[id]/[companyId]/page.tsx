@@ -31,7 +31,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
-import { getImageUrl } from "@/utils/imageUtils"
+import { getImageUrl, getCompanyLogoUrl } from "@/utils/imageUtils"
 
 // Helper function to clean URL prefixes for display
 const cleanUrl = (url: string): string => {
@@ -90,7 +90,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
             </Button>
             <div className="flex items-center gap-4">
               <Avatar className="w-16 h-16">
-                <AvatarImage src={getImageUrl(company.logo) || ""} alt={`${company.name} Logo`} />
+                <AvatarImage src={getCompanyLogoUrl(company.logo)} alt={`${company.name} Logo`} />
                 <AvatarFallback className="text-xl">
                   {company.name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -351,7 +351,7 @@ export default function CompanyDetailPage({ params }: CompanyDetailPageProps) {
                         <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                           {job.company?.logo ? (
                             <Image
-                              src={getImageUrl(job.company.logo) || "/placeholder.svg"}
+                              src={getCompanyLogoUrl(job.company.logo)}
                               alt={`${job.company.name} logo`}
                               width={40}
                               height={40}

@@ -7,7 +7,7 @@ import { Search, MapPin, Building, Globe } from "lucide-react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useCompanies, type Company } from "@/hooks/useCompanies"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
-import { getImageUrl } from "@/utils/imageUtils"
+import { getImageUrl, getCompanyLogoUrl } from "@/utils/imageUtils"
 import { useState } from "react"
 import Link from "next/link"
 
@@ -132,7 +132,7 @@ export default function CompanyPage() {
                 <div className="flex items-start justify-between mb-4">
                   <Avatar className="w-12 h-12 flex-shrink-0">
                     <AvatarImage 
-                      src={getImageUrl(company.logo) || ""} 
+                      src={getCompanyLogoUrl(company.logo)} 
                       alt={`${company.name} Logo`} 
                     />
                     <AvatarFallback>
