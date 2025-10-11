@@ -227,7 +227,7 @@ export default function InternDashboard() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3 flex-1">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={getUserAvatarUrl(interview.interviewer)} alt={interview.interviewer?.name} />
+                            <AvatarImage src={getUserAvatarUrl({...interview.interviewer, role: 'company'})} alt={interview.interviewer?.name} />
                             <AvatarFallback className="bg-green-100 text-green-700">
                               {interview.interviewer?.name?.split(' ').map((n: string) => n[0]).join('') || 'I'}
                             </AvatarFallback>
@@ -310,7 +310,7 @@ export default function InternDashboard() {
                     <div key={application._id || application.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-4">
                         <Avatar className="h-12 w-12">
-                          <AvatarImage src={getUserAvatarUrl(application.jobId?.company)} alt={application.jobId?.company?.name} />
+                          <AvatarImage src={getUserAvatarUrl({...application.jobId?.company, role: 'company'})} alt={application.jobId?.company?.name} />
                           <AvatarFallback className="bg-blue-100 text-blue-700">
                             {application.jobId?.company?.name?.charAt(0) || "C"}
                           </AvatarFallback>

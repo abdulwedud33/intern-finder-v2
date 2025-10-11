@@ -209,7 +209,7 @@ export const InterviewTable: React.FC<InterviewTableProps> = ({
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={getUserAvatarUrl(interview.interviewer)} />
+                        <AvatarImage src={getUserAvatarUrl({...interview.interviewer, role: 'company'})} />
                         <AvatarFallback>
                           {interview.interviewer?.name?.charAt(0) || 'A'}
                         </AvatarFallback>

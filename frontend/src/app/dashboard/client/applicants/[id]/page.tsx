@@ -150,7 +150,7 @@ export default function ApplicantDetailsPage() {
       id: app._id,
       name: intern?.name || 'Unknown Applicant',
       role: job?.title || 'Position',
-      avatar: getUserAvatarUrl(intern),
+      avatar: getUserAvatarUrl({...intern, role: 'intern'}),
       rating: app.rating || null,
       appliedJob: job?._id || job?.id || '',
       appliedDate: app.createdAt,

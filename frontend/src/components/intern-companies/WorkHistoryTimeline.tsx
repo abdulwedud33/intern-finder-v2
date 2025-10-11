@@ -113,7 +113,7 @@ export function WorkHistoryTimeline({ companies, isLoading }: WorkHistoryTimelin
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={getUserAvatarUrl(company.company)} />
+                      <AvatarImage src={getUserAvatarUrl({...company.company, role: 'company'})} />
                       <AvatarFallback>
                         {company.company.name.charAt(0)}
                       </AvatarFallback>

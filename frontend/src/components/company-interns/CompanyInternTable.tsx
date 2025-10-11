@@ -142,7 +142,7 @@ export function CompanyInternTable({
                 <TableCell>
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={getUserAvatarUrl(intern.intern)} />
+                      <AvatarImage src={getUserAvatarUrl({...intern.intern, role: 'intern'})} />
                       <AvatarFallback>
                         {intern.intern.name.charAt(0)}
                       </AvatarFallback>

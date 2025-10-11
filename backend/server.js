@@ -27,7 +27,7 @@ const interviewRoutes = require('./routes/interviewRoutes');
 const companyInternRoutes = require('./routes/companyInternRoutes');
 const internCompanyRoutes = require('./routes/internCompanyRoutes');
 const userRoutes = require('./routes/userRoutes');
-const uploadRoutes = require('./routes/uploadRoutes');
+// const uploadRoutes = require('./routes/uploadRoutes'); // Removed - using Cloudinary uploads
 const cloudinaryUploadRoutes = require('./routes/cloudinaryUploadRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const apiRoutes = require('./routes/apiRoutes');
@@ -166,7 +166,7 @@ app.use('/api/interns', internRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/interviews', interviewRoutes);
 app.use('/api/company-interns', companyInternRoutes);
-app.use('/api/uploads', uploadRoutes);
+// app.use('/api/uploads', uploadRoutes); // Removed - using Cloudinary uploads
 app.use('/api/uploads/cloudinary', cloudinaryUploadRoutes);
 app.use('/api/intern-companies', internCompanyRoutes);
 app.use('/api/users', userRoutes);

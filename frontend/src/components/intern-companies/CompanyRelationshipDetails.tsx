@@ -68,7 +68,7 @@ export function CompanyRelationshipDetails({
         <CardContent className="p-6">
           <div className="flex items-start space-x-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={getUserAvatarUrl(company)} />
+              <AvatarImage src={getUserAvatarUrl({...company, role: 'company'})} />
               <AvatarFallback>
                 {company.name.charAt(0)}
               </AvatarFallback>

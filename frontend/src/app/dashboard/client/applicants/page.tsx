@@ -840,7 +840,7 @@ export default function ApplicantsPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
-                              <AvatarImage src={getUserAvatarUrl(application.user)} alt={application.user.name} />
+                              <AvatarImage src={getUserAvatarUrl({...application.user, role: 'intern'})} alt={application.user.name} />
                               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                                 {application.user.name
                               .split(' ')
