@@ -68,10 +68,10 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
   // Check for scheduling conflicts
   const existingInterview = await Interview.findOne({
     $or: [
-      { 'application': applicationId, status: { $ne: 'cancelled' } },
+      { 'applicationId': applicationId, status: { $ne: 'cancelled' } },
       { 
         $and: [
-          { 'application.intern': application.internId._id },
+          { 'internId': application.internId._id },
           { date: interviewDate },
           { status: { $ne: 'cancelled' } }
         ]
