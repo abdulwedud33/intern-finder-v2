@@ -148,7 +148,7 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
   });
   
   // Get all interviews created by this company (where interviewer is the company)
-  console.log('getCompanyInterviews - Looking for interviews with interviewer:', req.user._id);
+  console.log('Querying interviews with interviewer:', req.user._id, 'Type:', typeof req.user._id);
   const interviews = await Interview.find({ interviewer: req.user._id })
     .populate({
       path: 'jobId',
@@ -175,14 +175,6 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
   }));
   
   console.log('getCompanyInterviews - interviews found:', interviews.length);
-  if (interviews.length > 0) {
-    console.log('First interview:', {
-      _id: interviews[0]._id,
-      interviewer: interviews[0].interviewer,
-      status: interviews[0].status,
-      link: interviews[0].link
-    });
-  }
     
   res.status(200).json({
     success: true,
