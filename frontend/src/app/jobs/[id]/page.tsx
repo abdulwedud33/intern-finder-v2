@@ -55,6 +55,13 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
     if (!logoUrl || logoUrl === "no-logo.jpg") {
       return "/placeholder.svg?height=80&width=80&text=CO"
     }
+    
+    // Check if it's an old local upload path (these files no longer exist)
+    if (logoUrl.match(/^(logo|photo|avatar|profile|resume)-.*\.(png|jpg|jpeg|gif)$/)) {
+      console.log(`Old logo path detected in getValidLogoUrl: ${logoUrl}, using fallback`);
+      return "/placeholder.svg?height=80&width=80&text=CO"
+    }
+    
     // If it's already a full URL, return as is
     if (logoUrl.startsWith("http")) {
       return logoUrl
