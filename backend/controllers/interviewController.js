@@ -144,30 +144,19 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
     name: req.user.name
   });
   
-  // First, get all jobs for this company
-  const Job = require('../models/Job');
-  const companyJobs = await Job.find({ company: req.user._id }).select('_id');
-  const jobIds = companyJobs.map(job => job._id);
-  
-  console.log('getCompanyInterviews - companyJobs:', companyJobs.length, 'jobIds:', jobIds);
-  
-  // Then get all interviews for these jobs
-  const interviews = await Interview.find({ jobId: { $in: jobIds } })
+  // Get all interviews created by this company (where interviewer is the company)
+  const interviews = await Interview.find({ interviewer: req.user._id })
     .populate({
       path: 'jobId',
-      select: 'title company',
+      select: 'title description',
       populate: {
-        path: 'jobId',
-        select: 'name logo contactEmail'
+        path: 'companyId',
+        select: 'name logo'
       }
     })
     .populate({
       path: 'internId',
-      select: 'firstName lastName avatar',
-      populate: {
-        path: 'companyId',
-        select: 'name email'
-      }
+      select: 'name email avatar'
     })
     .populate('applicationId', 'status')
     .sort('-createdAt');
@@ -192,34 +181,27 @@ exports.getMyInterviews = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Only interns can access this resource', 403));
   }
   
-  // Get intern profile for the current user
-  const intern = await User.findOne({ _id: req.user.id, role: 'intern' });
+  // Get all interviews for applications submitted by this intern
+  const Application = require('../models/Application');
+  const internApplications = await Application.find({ internId: req.user._id }).select('_id');
+  const applicationIds = internApplications.map(app => app._id);
   
-  if (!intern) {
-    return next(new ErrorResponse('Intern profile not found', 404));
-  }
-  
-  // Get all interviews for this intern
-  const interviews = await Interview.find({ intern: intern._id })
+  // Get all interviews for these applications
+  const interviews = await Interview.find({ applicationId: { $in: applicationIds } })
     .populate({
       path: 'jobId',
-      select: 'name logo',
+      select: 'title description',
       populate: {
         path: 'companyId',
-        select: 'name email'
+        select: 'name logo'
       }
     })
     .populate({
       path: 'internId',
-      select: 'firstName lastName avatar',
-      populate: {
-        path: 'companyId',
-        select: 'name email'
-      }
+      select: 'name email avatar'
     })
-    .populate('job', 'title')
-    .populate('application', 'status')
-    .sort('-date -time');
+    .populate('applicationId', 'status')
+    .sort('-date');
     
   res.status(200).json({
     success: true,
@@ -237,22 +219,17 @@ exports.getInterview = asyncHandler(async (req, res, next) => {
   const interview = await Interview.findById(req.params.id)
     .populate({
       path: 'jobId',
-      select: 'name logo',
+      select: 'title description',
       populate: {
         path: 'companyId',
-        select: 'name email'
+        select: 'name logo'
       }
     })
     .populate({
       path: 'internId',
-      select: 'firstName lastName avatar',
-      populate: {
-        path: 'companyId',
-        select: 'name email'
-      }
+      select: 'name email avatar'
     })
-    .populate('job', 'title')
-    .populate('application', 'status');
+    .populate('applicationId', 'status');
     
   if (!interview) {
     return next(new ErrorResponse('Interview not found', 404));
@@ -260,13 +237,14 @@ exports.getInterview = asyncHandler(async (req, res, next) => {
   
   // Check if user is authorized to view this interview
   if (req.user.role === 'company') {
-    const company = await Company.findById(req.user.id);
-    if (!company || interview.company.toString() !== company._id.toString()) {
+    // Check if this interview belongs to one of the company's applications
+    const Application = require('../models/Application');
+    const application = await Application.findById(interview.applicationId);
+    if (!application || application.companyId.toString() !== req.user._id.toString()) {
       return next(new ErrorResponse('Not authorized to view this interview', 403));
     }
   } else if (req.user.role === 'intern') {
-    const intern = await User.findOne({ _id: req.user.id, role: 'intern' });
-    if (!intern || interview.intern.toString() !== intern._id.toString()) {
+    if (interview.internId.toString() !== req.user._id.toString()) {
       return next(new ErrorResponse('Not authorized to view this interview', 403));
     }
   } else if (req.user.role !== 'admin') {
