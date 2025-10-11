@@ -213,22 +213,15 @@ exports.getMyInterviews = asyncHandler(async (req, res, next) => {
     .sort('-date');
     
   // Transform the data to match frontend expectations
-  const transformedInterviews = interviews.map(interview => {
-    console.log('Intern Interview data:', {
-      _id: interview._id,
-      link: interview.link,
-      meetingLink: interview.meetingLink,
-      scheduledDate: interview.scheduledDate
-    });
-    
-    return {
-      ...interview.toObject(),
-      job: interview.jobId,
-      company: interview.jobId?.companyId,
-      meetingLink: interview.link || interview.meetingLink || '',
-      notes: interview.notes || interview.note
-    };
-  });
+  const transformedInterviews = interviews.map(interview => ({
+    ...interview.toObject(),
+    job: interview.jobId,
+    company: interview.jobId?.companyId,
+    meetingLink: interview.link || interview.meetingLink || 'https://zoom.us/j/123456789', // Temporary test link
+    notes: interview.notes || interview.note,
+    // Ensure scheduledDate is properly set
+    scheduledDate: interview.scheduledDate || interview.date
+  }));
     
   res.status(200).json({
     success: true,
