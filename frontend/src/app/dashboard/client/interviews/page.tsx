@@ -73,6 +73,8 @@ export default function ClientInterviewsPage() {
 
   // Get current user
   const { user } = useAuth()
+  console.log('Client interviews page - user:', user)
+  console.log('Client interviews page - user?.id:', user?.id)
   
   // Fetch data
   const { data: interviewsResponse, isLoading: interviewsLoading, error: interviewsError } = useCompanyInterviews(user?.id || '')
