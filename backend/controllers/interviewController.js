@@ -55,8 +55,10 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
   let interviewDate;
   if (scheduledDate) {
     interviewDate = new Date(scheduledDate);
+    console.log('Using scheduledDate:', scheduledDate, 'Parsed date:', interviewDate.toISOString());
   } else if (date && time) {
     interviewDate = new Date(`${date}T${time}`);
+    console.log('Using date+time:', date, time, 'Parsed date:', interviewDate.toISOString());
   } else {
     return next(new ErrorResponse('Interview date is required', 400));
   }
@@ -92,7 +94,7 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
     scheduledDate: interviewDate, // Sync with frontend
     time: time || interviewDate.toTimeString().split(' ')[0], // Extract time if not provided
     location,
-    link: link || meetingLink, // Handle both field names
+    link: link || meetingLink, // Store exactly as user inputted
     notes: notes || note, // Handle both field names
     note: notes || note, // Handle both field names
     type: type || interviewType,
@@ -219,9 +221,8 @@ exports.getMyInterviews = asyncHandler(async (req, res, next) => {
     job: interview.jobId,
     company: interview.jobId?.companyId,
     meetingLink: interview.link || interview.meetingLink || '',
-    notes: interview.notes || interview.note,
-    // Ensure scheduledDate is properly set
-    scheduledDate: interview.scheduledDate || interview.date
+    notes: interview.notes || interview.note
+    // Keep scheduledDate exactly as stored (don't override)
   }));
     
   res.status(200).json({
