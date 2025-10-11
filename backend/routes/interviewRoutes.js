@@ -16,12 +16,8 @@ const router = express.Router({ mergeParams: true });
 // Apply authentication to all routes
 router.use(protect);
 
-// Debug middleware for company route
-router.get('/company', (req, res, next) => {
-  console.log('=== /company route hit ===');
-  console.log('User:', req.user);
-  next();
-}, authorize('company'), getCompanyInterviews);
+// Company routes
+router.get('/company', authorize('company'), getCompanyInterviews);
 router.get('/companies/:companyId/interviews', authorize('company', 'admin'), getCompanyInterviewsById);
 
 // Intern routes

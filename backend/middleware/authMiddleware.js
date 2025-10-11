@@ -88,17 +88,11 @@ exports.protect = asyncHandler(async (req, res, next) => {
 // Grant access to specific roles (Authorization)
 exports.authorize = (...roles) => {
   return (req, res, next) => {
-    console.log('=== authorize middleware called ===');
-    console.log('Required roles:', roles);
-    console.log('User role:', req.user?.role);
-    
     if (!req.user) {
-      console.log('No user found in request');
       return next(new ErrorResponse('User not authenticated', 401));
     }
     
     if (!roles.includes(req.user.role)) {
-      console.log('User role not authorized');
       return next(
         new ErrorResponse(
           `User role '${req.user.role}' is not authorized to access this route`,
@@ -107,7 +101,6 @@ exports.authorize = (...roles) => {
       );
     }
     
-    console.log('Authorization passed, calling next()');
     next();
   };
 };

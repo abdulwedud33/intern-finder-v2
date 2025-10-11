@@ -137,24 +137,10 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
  */
 exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
   try {
-    console.log('=== getCompanyInterviews ENDPOINT CALLED ===');
     // Check if user is a company
     if (req.user.role !== 'company') {
       return next(new ErrorResponse('Only companies can access this resource', 403));
     }
-  
-  console.log('getCompanyInterviews - req.user:', {
-    id: req.user._id,
-    role: req.user.role,
-    name: req.user.name
-  });
-  
-  // Get all interviews created by this company (where interviewer is the company)
-  console.log('Querying interviews with interviewer:', req.user._id, 'Type:', typeof req.user._id);
-  
-  // Debug: Check if ANY interviews exist at all
-  const totalInterviews = await Interview.countDocuments()
-  console.log('Total interviews in database:', totalInterviews)
   
   // Try multiple query approaches
   const interviews = await Interview.find({ 
@@ -191,7 +177,6 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
     date: interview.date // Preserve exact date as stored
   }));
   
-  console.log('getCompanyInterviews - interviews found:', interviews.length);
     
   res.status(200).json({
     success: true,
