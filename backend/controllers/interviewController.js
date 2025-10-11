@@ -4,7 +4,7 @@ const Interview = require('../models/Interview');
 const Application = require('../models/Application');
 const { User } = require('../models/User');
 const Company = require('../models/Company');
-const { isValidObjectId } = require('mongoose');
+const { isValidObjectId, Types } = require('mongoose');
 
 /**
  * @desc    Schedule an interview
@@ -149,7 +149,15 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
   
   // Get all interviews created by this company (where interviewer is the company)
   console.log('Querying interviews with interviewer:', req.user._id, 'Type:', typeof req.user._id);
-  const interviews = await Interview.find({ interviewer: req.user._id })
+  
+  // Try multiple query approaches
+  const interviews = await Interview.find({ 
+    $or: [
+      { interviewer: req.user._id },
+      { interviewer: req.user._id.toString() },
+      { interviewer: new Types.ObjectId(req.user._id) }
+    ]
+  })
     .populate({
       path: 'jobId',
       select: 'title description',
