@@ -136,6 +136,7 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
  * @access  Private (Company)
  */
 exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
+  console.log('=== getCompanyInterviews ENDPOINT CALLED ===');
   // Check if user is a company
   if (req.user.role !== 'company') {
     return next(new ErrorResponse('Only companies can access this resource', 403));
