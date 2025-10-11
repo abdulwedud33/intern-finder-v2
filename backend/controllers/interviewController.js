@@ -117,7 +117,7 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
     .populate('applicationId', 'status');
 
   // Update application status
-  application.status = 'interview_scheduled';
+  application.status = 'interview';
   await application.save();
 
   // TODO: Send email notification to intern about the scheduled interview
