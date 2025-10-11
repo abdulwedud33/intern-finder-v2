@@ -12,7 +12,7 @@ const { isValidObjectId } = require('mongoose');
  * @access  Private (Company)
  */
 exports.scheduleInterview = asyncHandler(async (req, res, next) => {
-  const { applicationId, scheduledDate, date, time, location, notes, note, interviewType = 'virtual', type = 'video', duration = 60 } = req.body;
+  const { applicationId, scheduledDate, date, time, location, notes, note, link, meetingLink, interviewType = 'virtual', type = 'video', duration = 60 } = req.body;
   const userId = req.user.id;
 
   // Check if user is a company
@@ -92,6 +92,7 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
     scheduledDate: interviewDate, // Sync with frontend
     time: time || interviewDate.toTimeString().split(' ')[0], // Extract time if not provided
     location,
+    link: link || meetingLink, // Handle both field names
     notes: notes || note, // Handle both field names
     note: notes || note, // Handle both field names
     type: type || interviewType,
@@ -217,7 +218,7 @@ exports.getMyInterviews = asyncHandler(async (req, res, next) => {
     ...interview.toObject(),
     job: interview.jobId,
     company: interview.jobId?.companyId,
-    meetingLink: interview.link || interview.meetingLink || 'https://zoom.us/j/123456789', // Temporary test link
+    meetingLink: interview.link || interview.meetingLink || '',
     notes: interview.notes || interview.note,
     // Ensure scheduledDate is properly set
     scheduledDate: interview.scheduledDate || interview.date
