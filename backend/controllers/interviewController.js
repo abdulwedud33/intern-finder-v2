@@ -85,7 +85,6 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
 
   const interview = await Interview.create({
     applicationId: applicationId,
-    companyId: application.jobId.companyId._id,
     internId: application.internId._id,
     jobId: application.jobId._id,
     interviewer: userId,
@@ -103,23 +102,18 @@ exports.scheduleInterview = asyncHandler(async (req, res, next) => {
   // Populate the response
   const populatedInterview = await Interview.findById(interview._id)
     .populate({
-      path: 'company',
-      select: 'name logo',
+      path: 'jobId',
+      select: 'title description companyId',
       populate: {
-        path: 'user',
-        select: 'name email'
+        path: 'companyId',
+        select: 'name logo'
       }
     })
     .populate({
-      path: 'intern',
-      select: 'firstName lastName avatar',
-      populate: {
-        path: 'user',
-        select: 'name email'
-      }
+      path: 'internId',
+      select: 'firstName lastName avatar'
     })
-    .populate('job', 'title')
-    .populate('application', 'status');
+    .populate('applicationId', 'status');
 
   // Update application status
   application.status = 'interview_scheduled';
@@ -163,7 +157,7 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
       path: 'jobId',
       select: 'title company',
       populate: {
-        path: 'company',
+        path: 'jobId',
         select: 'name logo contactEmail'
       }
     })
@@ -171,7 +165,7 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
       path: 'internId',
       select: 'firstName lastName avatar',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
@@ -208,18 +202,18 @@ exports.getMyInterviews = asyncHandler(async (req, res, next) => {
   // Get all interviews for this intern
   const interviews = await Interview.find({ intern: intern._id })
     .populate({
-      path: 'company',
+      path: 'jobId',
       select: 'name logo',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
     .populate({
-      path: 'intern',
+      path: 'internId',
       select: 'firstName lastName avatar',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
@@ -242,18 +236,18 @@ exports.getMyInterviews = asyncHandler(async (req, res, next) => {
 exports.getInterview = asyncHandler(async (req, res, next) => {
   const interview = await Interview.findById(req.params.id)
     .populate({
-      path: 'company',
+      path: 'jobId',
       select: 'name logo',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
     .populate({
-      path: 'intern',
+      path: 'internId',
       select: 'firstName lastName avatar',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
@@ -296,11 +290,11 @@ exports.updateInterview = asyncHandler(async (req, res, next) => {
   
   let interview = await Interview.findById(id)
     .populate({
-      path: 'company',
+      path: 'jobId',
       select: 'user'
     })
     .populate({
-      path: 'intern',
+      path: 'internId',
       select: 'user'
     });
     
@@ -365,18 +359,18 @@ exports.updateInterview = asyncHandler(async (req, res, next) => {
   // Populate the response
   const populatedInterview = await Interview.findById(interview._id)
     .populate({
-      path: 'company',
+      path: 'jobId',
       select: 'name logo',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
     .populate({
-      path: 'intern',
+      path: 'internId',
       select: 'firstName lastName avatar',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
@@ -423,10 +417,10 @@ exports.submitFeedback = asyncHandler(async (req, res, next) => {
   const interview = await Interview.findById(id)
     .populate('job', 'title')
     .populate({
-      path: 'intern',
+      path: 'internId',
       select: 'user',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: '_id'
       }
     });
@@ -493,18 +487,18 @@ exports.submitFeedback = asyncHandler(async (req, res, next) => {
   // Populate the response
   const populatedInterview = await Interview.findById(interview._id)
     .populate({
-      path: 'company',
+      path: 'jobId',
       select: 'name logo',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
     .populate({
-      path: 'intern',
+      path: 'internId',
       select: 'firstName lastName avatar',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
@@ -530,7 +524,7 @@ exports.deleteInterview = asyncHandler(async (req, res, next) => {
 
   const interview = await Interview.findById(id)
     .populate({
-      path: 'application',
+      path: 'applicationId',
       populate: {
         path: 'listing',
         select: 'user'
@@ -568,10 +562,10 @@ exports.getCompanyInterviewsById = asyncHandler(async (req, res, next) => {
 
   const interviews = await Interview.find({ company: req.params.companyId })
     .populate({
-      path: 'intern',
+      path: 'internId',
       select: 'user',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
@@ -594,18 +588,18 @@ exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
   // Get all interviews for this company
   const interviews = await Interview.find({ company: req.user.id })
     .populate({
-      path: 'intern',
+      path: 'internId',
       select: 'name email avatar',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
     .populate({
-      path: 'company',
+      path: 'jobId',
       select: 'name logo',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
@@ -637,18 +631,18 @@ exports.getCompanyInterviewsById = asyncHandler(async (req, res, next) => {
   // Get all interviews for this company
   const interviews = await Interview.find({ company: companyId })
     .populate({
-      path: 'intern',
+      path: 'internId',
       select: 'name email avatar',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
     .populate({
-      path: 'company',
+      path: 'jobId',
       select: 'name logo',
       populate: {
-        path: 'user',
+        path: 'companyId',
         select: 'name email'
       }
     })
