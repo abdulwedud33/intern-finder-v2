@@ -76,7 +76,20 @@ export default function InternInterviewsPage() {
   const cancelInterviewMutation = useCancelInterview()
   const rescheduleInterviewMutation = useRescheduleInterview()
   
-  const interviews = useMemo(() => (data as any)?.data || [], [data])
+  const interviews = useMemo(() => {
+    const interviewsData = (data as any)?.data || []
+    console.log('Intern dashboard - Raw interviews data:', interviewsData)
+    if (interviewsData.length > 0) {
+      console.log('Intern dashboard - First interview details:', {
+        _id: interviewsData[0]._id,
+        link: interviewsData[0].link,
+        meetingLink: interviewsData[0].meetingLink,
+        scheduledDate: interviewsData[0].scheduledDate,
+        date: interviewsData[0].date
+      })
+    }
+    return interviewsData
+  }, [data])
   const interviewStats = useMemo(() => calculateInterviewStats(interviews), [interviews])
   
   const [searchQuery, setSearchQuery] = useState("")

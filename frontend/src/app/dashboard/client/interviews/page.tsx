@@ -91,7 +91,11 @@ export default function ClientInterviewsPage() {
         job: (interviewsArray[0] as any).job,
         jobId: interviewsArray[0].jobId,
         internId: interviewsArray[0].internId,
-        status: interviewsArray[0].status
+        status: interviewsArray[0].status,
+        link: interviewsArray[0].link,
+        meetingLink: interviewsArray[0].meetingLink,
+        scheduledDate: interviewsArray[0].scheduledDate,
+        date: interviewsArray[0].date
       })
     }
     return interviewsArray
