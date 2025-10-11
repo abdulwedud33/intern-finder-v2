@@ -599,41 +599,6 @@ exports.getCompanyInterviewsById = asyncHandler(async (req, res, next) => {
 });
 
 /**
- * @desc    Get all interviews for a company
- * @route   GET /api/v1/interviews/company
- * @access  Private (Company)
- */
-exports.getCompanyInterviews = asyncHandler(async (req, res, next) => {
-  // Get all interviews for this company
-  const interviews = await Interview.find({ company: req.user.id })
-    .populate({
-      path: 'internId',
-      select: 'name email avatar',
-      populate: {
-        path: 'companyId',
-        select: 'name email'
-      }
-    })
-    .populate({
-      path: 'jobId',
-      select: 'name logo',
-      populate: {
-        path: 'companyId',
-        select: 'name email'
-      }
-    })
-    .populate('job', 'title companyName')
-    .populate('application', 'status')
-    .sort('-scheduledDate');
-    
-  res.status(200).json({
-    success: true,
-    count: interviews.length,
-    data: interviews
-  });
-});
-
-/**
  * @desc    Get interviews for a specific company by ID
  * @route   GET /api/v1/interviews/companies/:companyId/interviews
  * @access  Private (Company, Admin)
