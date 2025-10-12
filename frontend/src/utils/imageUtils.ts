@@ -10,7 +10,7 @@ const DEFAULT_LOGO = '/placeholder.svg?height=100&width=100&text=C';
 
 /**
  * Converts a relative image path to a full URL
- * @param imagePath - The relative path from the backend (e.g., "/uploads/filename.jpg")
+ * @param imagePath - The relative path from the backend or Cloudinary URL
  * @returns Full URL to the image
  */
 export const getImageUrl = (imagePath: string | undefined | null): string | undefined => {
@@ -19,7 +19,7 @@ export const getImageUrl = (imagePath: string | undefined | null): string | unde
     return undefined;
   }
   
-  // If it's already a full URL, return as is
+  // If it's already a full URL (including Cloudinary URLs), return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }

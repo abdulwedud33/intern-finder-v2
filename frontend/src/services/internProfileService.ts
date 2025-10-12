@@ -145,9 +145,9 @@ export const internProfileService = {
   // Upload profile picture
   async uploadProfilePicture(file: File): Promise<ProfileResponse> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('avatar', file);
     
-    const response = await api.put('/interns/me/photo', formData, {
+    const response = await api.post('/uploads/cloudinary/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -158,9 +158,9 @@ export const internProfileService = {
   // Upload resume
   async uploadResume(file: File): Promise<ProfileResponse> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('resume', file);
     
-    const response = await api.put('/interns/me/resume', formData, {
+    const response = await api.post('/uploads/cloudinary/resume', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

@@ -74,3 +74,30 @@ export const getCompanyById = async (id: string): Promise<{ success: boolean; da
   const response = await api.get(`/companies/${id}`);
   return response.data;
 };
+
+export const companyService = {
+  // Get current company's profile
+  async getMyCompany(): Promise<{ success: boolean; data: Company }> {
+    const response = await api.get('/companies/me');
+    return response.data;
+  },
+
+  // Update company profile
+  async updateCompany(companyData: Partial<Company>): Promise<{ success: boolean; data: Company }> {
+    const response = await api.put('/companies/me', companyData);
+    return response.data;
+  },
+
+  // Upload company logo
+  async uploadLogo(file: File): Promise<{ success: boolean; data: { url: string; user: Company } }> {
+    const formData = new FormData();
+    formData.append('logo', file);
+    
+    const response = await api.post('/uploads/cloudinary/logo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+};

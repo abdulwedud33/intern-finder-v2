@@ -10,9 +10,9 @@ export const imageUploadService = {
   // Upload profile picture for intern
   async uploadProfilePicture(file: File): Promise<ImageUploadResponse> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('avatar', file);
     
-    const response = await api.put('/interns/me/photo', formData, {
+    const response = await api.post('/uploads/cloudinary/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -23,9 +23,9 @@ export const imageUploadService = {
   // Upload company logo
   async uploadCompanyLogo(file: File): Promise<ImageUploadResponse> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('logo', file);
     
-    const response = await api.put('/companies/me/logo', formData, {
+    const response = await api.post('/uploads/cloudinary/logo', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -36,9 +36,9 @@ export const imageUploadService = {
   // Upload resume for intern
   async uploadResume(file: File): Promise<ImageUploadResponse> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('resume', file);
     
-    const response = await api.put('/interns/me/resume', formData, {
+    const response = await api.post('/uploads/cloudinary/resume', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

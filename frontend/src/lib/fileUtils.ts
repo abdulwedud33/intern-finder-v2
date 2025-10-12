@@ -6,18 +6,18 @@
 export function getFileUrl(filePath: string | null | undefined): string | null {
   if (!filePath) return null
   
-  // If it's already a full URL, return as is
+  // If it's already a full URL (including Cloudinary URLs), return as is
   if (filePath.startsWith('http')) {
     return filePath
   }
   
   // If it starts with /uploads, it's a backend path
   if (filePath.startsWith('/uploads/')) {
-    return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}${filePath}`
+    return `${process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com'}${filePath}`
   }
   
   // If it's just a filename, construct the full path
-  return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/uploads/${filePath}`
+  return `${process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com'}/uploads/${filePath}`
 }
 
 // Get file preview URL for images

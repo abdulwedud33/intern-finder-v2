@@ -62,6 +62,7 @@ export function useUploadCompanyLogo() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
       toast({
         title: "Company logo uploaded successfully",
         description: "Your company logo has been updated.",
