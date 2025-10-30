@@ -16,18 +16,8 @@ import { useAuth } from "@/contexts/AuthContext"
 import { getImageUrl, getCompanyLogoUrl } from "@/utils/imageUtils"
 import { decodeHtmlEntities } from "@/utils/htmlUtils"
 
-// Import images
-import briefCase from "../../public/images/briefcase(2) 2.png"
-import building from "../../public/images/building 1.png"
-import g2081 from "../../public/images/g2081.png"
-import logo1 from "../../public/images/logo(1).png"
-import logo2 from "../../public/images/logo(2).png"
-import logo from "../../public/images/logo.png"
-import logos from "../../public/images/logos.png"
-import goodLife from "../../public/images/good life.avif"
-import work1 from "../../public/images/work1.jpg"
-import work2 from "../../public/images/work2.jpg"
-import betterFuture from "../../public/images/better future.jpg"
+// Images are served from the public folder using absolute paths
+// Use public path instead of importing files with spaces to avoid TS resolution issues
 
 const FEATURED_JOBS_COUNT = 4
 
@@ -61,6 +51,10 @@ export default function Homepage() {
   const { companies, loading: companiesLoading, total: totalCompanies } = useCompanies({ limit: 1 })
   const { data: usersCountData, isLoading: usersLoading } = useUsersCount()
   
+// Dashboard link
+const dashboardLink = user?.role === "intern" ? "/dashboard/intern" : "/dashboard/client"
+
+
   // Mock data for users count (replace with real API call when available)
   const [stats, setStats] = useState({
     totalJobs: 0,
@@ -123,23 +117,38 @@ export default function Homepage() {
               Explore Jobs
             </Button>
             </Link>
-             <Link href="/register">
+            {user ? (
+              <Link href={dashboardLink}>
+                <Button 
+                  size="lg"
+                  className="h-12 sm:h-14 px-8 bg-teal-500 hover:bg-teal-600 text-white font-semibold flex-1"
+                  onClick={() => router.push('/dashboard')}
+                >
+                  <Briefcase className="h-5 w-5 mr-2" />
+                  Dashboard
+                </Button>
+            </Link>
+            ):
+            (
+            <Link href="/register">
               <Button 
                 size="lg"
-                variant="outline"
-                className="h-12 sm:h-14 px-8 border-teal-500 text-teal-500 hover:bg-teal-500 hover:text-white font-semibold w-full"
+                className="h-12 sm:h-14 px-8 bg-teal-500 hover:bg-teal-600 text-white font-semibold flex-1"
+                onClick={() => router.push('/register')}
               >
                 <Users className="h-5 w-5 mr-2" />
                 Get Started Now
               </Button>
-             </Link>
+            </Link>
+          )}
+             
           </div>
 
           {/* Stats */}
           <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-10 text-center mb-8 sm:mb-10">
             <div className="flex flex-row items-center gap-2">
               <div className="flex items-center justify-center bg-teal-400 rounded-full p-1">
-                <Image src={briefCase} alt="Briefcase Icon" width={24} height={24} className="m-1 rounded-xl" />
+                <Image src="/images/briefcase(2) 2.png" alt="Briefcase Icon" width={24} height={24} className="m-1 rounded-xl" />
               </div>
               <div className="text-white flex flex-col">
                 <span className="text-md sm:text-xl font-bold">
@@ -150,7 +159,7 @@ export default function Homepage() {
             </div>
             <div className="flex flex-row items-center gap-2">
               <div className="flex items-center justify-center bg-teal-400 rounded-full p-1">
-                <Image src={building} alt="Building Icon" width={24} height={24} className="m-1 rounded-xl" />
+                <Image src="/images/building 1.png" alt="Building Icon" width={24} height={24} className="m-1 rounded-xl" />
               </div>
               <div className="text-white flex flex-col">
                 <span className="text-md sm:text-xl font-bold">
@@ -161,7 +170,7 @@ export default function Homepage() {
             </div>
             <div className="flex flex-row items-center gap-2">
               <div className="flex items-center justify-center bg-teal-400 rounded-full p-1">
-                <Image src={g2081} alt="Users Icon" width={24} height={24} className="m-1 rounded-xl" />
+                <Image src="/images/g2081.png" alt="Users Icon" width={24} height={24} className="m-1 rounded-xl" />
               </div>
               <div className="text-white flex flex-col">
                 <span className="text-md sm:text-xl font-bold">
@@ -176,10 +185,10 @@ export default function Homepage() {
         {/* Logos */}
         <div className="absolute bottom-0 w-full bg-black py-4 px-4 sm:px-6">
           <div className="flex flex-wrap justify-center sm:justify-evenly gap-4 sm:gap-6 md:gap-8 items-center">
-            <Image src={logo1} alt="Slack" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
-            <Image src={logo2} alt="Adobe" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
-            <Image src={logo} alt="Asana" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
-            <Image src={logos} alt="Linear" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
+            <Image src="/images/logo(1).png" alt="Slack" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
+            <Image src="/images/logo(2).png" alt="Adobe" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
+            <Image src="/images/logo.png" alt="Asana" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
+            <Image src="/images/logos.png" alt="Linear" width={80} height={32} className="w-16 sm:w-20 md:w-24" />
           </div>
         </div>
       </section>
@@ -277,7 +286,7 @@ export default function Homepage() {
             <div className="hidden lg:block flex-1">
               <div className="relative h-96 w-full rounded-lg overflow-hidden">
                 <Image 
-                  src={goodLife} 
+                  src="/images/good life.avif" 
                   alt="Happy employees at work"
                   fill
                   className="object-cover"
@@ -358,7 +367,7 @@ export default function Homepage() {
           </div>
           <div className="relative w-full lg:w-1/2 h-96 rounded-lg overflow-hidden">
             <Image 
-              src={betterFuture} 
+              src="/images/better future.jpg" 
               alt="Better Future"
               fill
               className="object-cover"

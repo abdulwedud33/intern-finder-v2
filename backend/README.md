@@ -14,12 +14,15 @@
    ```
 
 3. **Environment Configuration**
-   Create a `.env` file in the backend root directory:
+   Create a `.env` file in the backend root directory (you can use `ENV.EXAMPLE` as a template):
    ```bash
-   cp .env.example .env
+   # Windows (PowerShell)
+   Copy-Item ENV.EXAMPLE .env
+   # macOS/Linux
+   cp ENV.EXAMPLE .env
    ```
    
-   Update the `.env` file with your configuration:
+   Update the `.env` file with your configuration (including Cloudinary):
    ```env
    # Database Configuration
    MONGO_URI=mongodb://localhost:27017/intern-finder
@@ -33,7 +36,12 @@
    PORT=5000
    NODE_ENV=development
    
-   # File Upload Configuration
+   # Cloudinary Configuration
+   CLOUDINARY_CLOUD_NAME=your_cloud_name
+   CLOUDINARY_API_KEY=your_api_key
+   CLOUDINARY_API_SECRET=your_api_secret
+   
+   # (Optional) Local upload fallback
    MAX_FILE_UPLOAD=5000000
    FILE_UPLOAD_PATH=./public/uploads
    
@@ -63,6 +71,9 @@
 | `FILE_UPLOAD_PATH` | File upload directory | ./public/uploads | ❌ |
 | `CORS_ORIGIN` | CORS allowed origin | http://localhost:3000 | ❌ |
 | `FRONTEND_URL` | Frontend application URL | http://localhost:3000 | ❌ |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | - | ✅ |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | - | ✅ |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | - | ✅ |
 
 ## 🔗 API Endpoints
 
@@ -96,12 +107,12 @@
 - `PUT /api/interviews/:id` — Update interview
 - `DELETE /api/interviews/:id` — Cancel interview
 
-### **File Uploads**
-- `POST /api/uploads/resume` — Upload resume (intern only)
-- `POST /api/uploads/profile-photo` — Upload profile photo (intern only)
-- `POST /api/uploads/company-logo` — Upload company logo (company only)
-- `POST /api/uploads/job-photo` — Upload job photo (company only)
-- `DELETE /api/uploads/delete` — Delete file
+### **File Uploads (Cloudinary)**
+- `POST /api/uploads/cloudinary/avatar` — Upload avatar (intern only)
+- `POST /api/uploads/cloudinary/resume` — Upload resume (intern only)
+- `POST /api/uploads/cloudinary/logo` — Upload company logo (company only)
+- `DELETE /api/uploads/cloudinary/delete` — Delete file
+- `POST /api/uploads/cloudinary/signature` — Get upload signature for direct uploads
 
 ### **Reviews**
 - `GET /api/reviews` — Get all reviews
