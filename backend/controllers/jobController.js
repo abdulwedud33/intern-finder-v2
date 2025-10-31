@@ -4,10 +4,7 @@ const { User } = require('../models/User');
 const Application = require('../models/Application');
 const asyncHandler = require('../middleware/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
-const path = require('path');
-const fs = require('fs');
-const { promisify } = require('util');
-const unlinkAsync = promisify(fs.unlink);
+// Local filesystem utilities removed; using Cloudinary-only for media
 
 /**
  * @desc    Get all jobs
@@ -336,18 +333,15 @@ exports.createJob = asyncHandler(async (req, res, next) => {
       req.body.status = 'draft';
     }
 
-    // Handle file uploads (already validated in middleware)
-    if (req.files) {
-      if (req.files.image) {
-        req.body.image = req.files.image[0].filename;
+    // Set job image to company's current logo
+    try {
+      const Company = require('../models/Company');
+      const companyDoc = await Company.findById(req.user._id).select('logo');
+      if (companyDoc && companyDoc.logo) {
+        req.body.image = companyDoc.logo;
       }
-      if (req.files.additionalFiles) {
-        req.body.additionalFiles = req.files.additionalFiles.map(file => ({
-          filename: file.filename,
-          originalname: file.originalname,
-          path: file.path
-        }));
-      }
+    } catch (e) {
+      console.warn('Unable to set job image from company logo:', e?.message || e);
     }
 
     const job = await Job.create(req.body);
@@ -363,22 +357,7 @@ exports.createJob = asyncHandler(async (req, res, next) => {
       data: job
     });
   } catch (error) {
-    // Clean up uploaded files if there was an error
-    if (req.files) {
-      const cleanUpPromises = [];
-      
-      if (req.files.image) {
-        cleanUpPromises.push(unlinkAsync(req.files.image[0].path));
-      }
-      
-      if (req.files.additionalFiles) {
-        req.files.additionalFiles.forEach(file => {
-          cleanUpPromises.push(unlinkAsync(file.path));
-        });
-      }
-      
-      await Promise.all(cleanUpPromises);
-    }
+    // No local files to clean up when using Cloudinary-only flow
     
     next(error);
   }
@@ -392,29 +371,6 @@ exports.createJob = asyncHandler(async (req, res, next) => {
 exports.updateJob = asyncHandler(async (req, res, next) => {
   try {
     const job = req.job; // From checkJobOwnership middleware
-    const oldImage = job.image;
-    const oldAdditionalFiles = job.additionalFiles || [];
-    let newImage = null;
-    let newAdditionalFiles = [];
-
-    // Handle file uploads
-    if (req.files) {
-      if (req.files.image) {
-        newImage = req.files.image[0].filename;
-        req.body.image = newImage;
-      }
-      
-      if (req.files.additionalFiles) {
-        newAdditionalFiles = req.files.additionalFiles.map(file => ({
-          filename: file.filename,
-          originalname: file.originalname,
-          path: file.path
-        }));
-        
-        // Merge with existing files if any
-        req.body.additionalFiles = [...oldAdditionalFiles, ...newAdditionalFiles];
-      }
-    }
 
   // Make sure user is job owner
   if (job.companyId.toString() !== req.user._id.toString()) {
@@ -443,36 +399,14 @@ exports.updateJob = asyncHandler(async (req, res, next) => {
       select: 'name logo industry companySize'
     });
 
-    // Clean up old files if they were replaced
-    if (newImage && oldImage) {
-      try {
-        await unlinkAsync(path.join(__dirname, `../public/uploads/${oldImage}`));
-      } catch (err) {
-        console.error('Error deleting old image:', err);
-      }
-    }
+    // No local files to clean up when using Cloudinary-only flow
 
     res.status(200).json({
       success: true,
       data: updatedJob
     });
   } catch (error) {
-    // Clean up newly uploaded files if there was an error
-    if (req.files) {
-      const cleanUpPromises = [];
-      
-      if (req.files.image) {
-        cleanUpPromises.push(unlinkAsync(req.files.image[0].path));
-      }
-      
-      if (req.files.additionalFiles) {
-        req.files.additionalFiles.forEach(file => {
-          cleanUpPromises.push(unlinkAsync(file.path));
-        });
-      }
-      
-      await Promise.all(cleanUpPromises);
-    }
+    // No local files to clean up when using Cloudinary-only flow
     
     next(error);
   }
@@ -614,52 +548,28 @@ exports.jobPhotoUpload = asyncHandler(async (req, res, next) => {
     );
   }
 
-  if (!req.files) {
-    return next(new ErrorResponse(`Please upload a file`, 400));
-  }
+  // The job photo is defined as the company's logo that created the job
+  const Company = require('../models/Company');
+  const company = await Company.findById(job.companyId).select('logo name');
+  const logoUrl = company?.logo || '';
 
-  const file = req.files.file;
-
-  // Make sure the image is a photo
-  if (!file.mimetype.startsWith('image')) {
-    return next(new ErrorResponse(`Please upload an image file`, 400));
-  }
-
-  // Check filesize
-  const maxSize = parseInt(process.env.MAX_FILE_UPLOAD) || 1000000; // Default 1MB
-  if (file.size > maxSize) {
-    return next(
-      new ErrorResponse(
-        `Please upload an image less than ${maxSize} bytes`,
-        400
-      )
-    );
-  }
-
-  // Create custom filename
-  file.name = `photo_${job._id}${path.parse(file.name).ext}`;
-  
-  // Create uploads directory if it doesn't exist
-  const uploadPath = process.env.FILE_UPLOAD_PATH || './public/uploads';
-  if (!fs.existsSync(uploadPath)) {
-    fs.mkdirSync(uploadPath, { recursive: true });
-  }
-
-  file.mv(`${uploadPath}/${file.name}`, async err => {
-    if (err) {
-      console.error(err);
-      return next(new ErrorResponse(`Problem with file upload`, 500));
-    }
-
-    await Job.findByIdAndUpdate(req.params.id, { 
-      photo: file.name,
-      updatedAt: Date.now()
-    });
-
-    res.status(200).json({
+  if (!logoUrl) {
+    return res.status(200).json({
       success: true,
-      data: file.name
+      message: 'Company has no logo set; job will use a placeholder.',
+      data: { imageUrl: null }
     });
+  }
+
+  // Persist the logo as the job image
+  job.image = logoUrl;
+  job.updatedAt = Date.now();
+  await job.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Job photo set to the company logo and saved.',
+    data: { imageUrl: logoUrl }
   });
 });
 

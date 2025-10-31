@@ -5,6 +5,7 @@ export interface Job {
   _id: string;
   title: string;
   description: string;
+  image?: string;
   companyId?: string;
   companyName?: string;
   company: {

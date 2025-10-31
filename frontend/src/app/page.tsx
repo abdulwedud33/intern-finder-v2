@@ -13,7 +13,7 @@ import { useCompanies } from "@/hooks/useCompanies"
 import { useUsersCount } from "@/hooks/useUsers"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { useAuth } from "@/contexts/AuthContext"
-import { getImageUrl, getCompanyLogoUrl } from "@/utils/imageUtils"
+import { getImageUrl } from "@/utils/imageUtils"
 import { decodeHtmlEntities } from "@/utils/htmlUtils"
 
 // Images are served from the public folder using absolute paths
@@ -222,22 +222,18 @@ const dashboardLink = user?.role === "intern" ? "/dashboard/intern" : "/dashboar
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-4">
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-                          {job.company?.logo ? (
-                            <Image
-                              src={getCompanyLogoUrl(job.company.logo)}
-                              alt={`${job.company.name} logo`}
-                              width={48}
-                              height={48}
-                              className="object-contain p-2"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                              }}
-                            />
-                          ) : null}
-                          <div className={`text-lg font-bold text-gray-400 ${job.company?.logo ? 'hidden' : ''}`}>
-                            {job.company?.name?.charAt(0) || 'C'}
-                          </div>
+                          {(() => {
+                            const url = getImageUrl(job.image || job.company?.logo) || "/placeholder.svg?height=48&width=48&text=CO";
+                            return (
+                              <Image
+                                src={url}
+                                alt={`${job.company?.name || 'Company'} logo`}
+                                width={48}
+                                height={48}
+                                className="object-contain p-2"
+                              />
+                            );
+                          })()}
                         </div>
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>

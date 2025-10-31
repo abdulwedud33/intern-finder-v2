@@ -42,6 +42,7 @@ import { reviewService } from "@/services/reviewService"
 import { useToast } from "@/components/ui/use-toast"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
+import { getUserProfileUrl } from "@/utils/imageUtils"
 
 export default function JobApplicantDetailPage() {
   const params = useParams()
@@ -262,7 +263,7 @@ export default function JobApplicantDetailPage() {
               <CardContent className="space-y-4">
                 <div className="flex items-start gap-4">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src={applicantData.avatar} alt={applicantData.name} />
+                    <AvatarImage src={getUserProfileUrl(applicantData.avatar)} alt={applicantData.name} />
                     <AvatarFallback>
                       {applicantData.name.split(" ").map((n: string) => n[0]).join("").toUpperCase()}
                     </AvatarFallback>
@@ -413,6 +414,27 @@ export default function JobApplicantDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Resume Preview */}
+            {applicantData.resume && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Resume
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="w-full border rounded-md overflow-hidden">
+                    <iframe
+                      src={`${applicantData.resume}`}
+                      className="w-full h-[600px]"
+                      title="Resume Preview"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Right Column - Actions & Timeline */}
@@ -455,10 +477,14 @@ export default function JobApplicantDetailPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {applicantData.resume && (
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Resume
-                  </Button>
+                  <a href={applicantData.resume} target="_blank" rel="noopener noreferrer" className="w-full inline-flex">
+                    <Button asChild variant="outline" size="sm" className="w-full justify-start">
+                      <span>
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Resume
+                      </span>
+                    </Button>
+                  </a>
                 )}
                 <Button variant="outline" size="sm" className="w-full justify-start">
                   <Mail className="h-4 w-4 mr-2" />

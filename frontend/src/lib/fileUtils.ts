@@ -11,13 +11,17 @@ export function getFileUrl(filePath: string | null | undefined): string | null {
     return filePath
   }
   
-  // If it starts with /uploads, it's a backend path
-  if (filePath.startsWith('/uploads/')) {
-    return `${process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com'}${filePath}`
+  // Legacy backend uploads are no longer served; treat as missing
+  if (
+    filePath.startsWith('/uploads/') ||
+    filePath.startsWith('uploads/') ||
+    filePath.includes('/uploads/')
+  ) {
+    return null
   }
   
-  // If it's just a filename, construct the full path
-  return `${process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com'}/uploads/${filePath}`
+  // Non-URL, non-uploads paths are unsupported now; return null
+  return null
 }
 
 // Get file preview URL for images

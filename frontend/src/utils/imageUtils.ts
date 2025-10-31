@@ -29,14 +29,24 @@ export const getImageUrl = (imagePath: string | undefined | null): string | unde
   if (imagePath.match(/^(logo|photo|avatar|profile|resume)-.*\.(png|jpg|jpeg|gif)$/)) {
     return undefined; // Return undefined to use fallback image instead of 404
   }
+
+  // If it references legacy local uploads directory, treat as missing
+  // Examples: "/uploads/logo-...png", "uploads/avatar-...jpg", "public/uploads/..."
+  if (
+    imagePath.startsWith('/uploads') ||
+    imagePath.startsWith('uploads/') ||
+    imagePath.includes('/uploads/')
+  ) {
+    return undefined;
+  }
   
   // If it starts with '/', it's a relative path from the backend
   if (imagePath.startsWith('/')) {
     return `${API_URL}${imagePath}`;
   }
   
-  // Otherwise, assume it's a relative path and prepend the uploads path
-  return `${API_URL}/uploads/${imagePath}`;
+  // Otherwise, treat unknown non-URL paths as missing to avoid backend /uploads
+  return undefined;
 };
 
 /**

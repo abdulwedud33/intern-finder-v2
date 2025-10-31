@@ -56,6 +56,11 @@ const JobSchema = new mongoose.Schema({
   benefits: {
     type: String
   },
+  // Image representing the job; defaults to the company's logo at creation time
+  image: {
+    type: String,
+    default: ''
+  },
   status: {
     type: String,
     enum: ['draft', 'published', 'closed', 'filled'],

@@ -36,14 +36,14 @@ exports.createApplication = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Handle resume - can be either File (legacy) or Cloudinary URL (new)
+  // Handle resume - require Cloudinary URL going forward
   let resumePath = '';
-  if (req.file) {
-    // Legacy file upload
-    resumePath = `/uploads/${req.file.filename}`;
-  } else if (resume && typeof resume === 'string') {
+  if (resume && typeof resume === 'string') {
     // Cloudinary URL
     resumePath = resume;
+  } else if (req.file) {
+    // Reject legacy local file uploads to avoid creating /uploads paths
+    return next(new ErrorResponse('Please upload resume via Cloudinary and provide its URL.', 400));
   }
 
   // Create the application

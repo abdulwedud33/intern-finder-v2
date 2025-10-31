@@ -5,22 +5,6 @@ const nextConfig: NextConfig = {
     images: {
         remotePatterns: [
             {
-                protocol: 'http',
-                hostname: 'localhost',
-                port: '5000',
-                pathname: '/uploads/**',
-            },
-            {
-                protocol: 'https',
-                hostname: 'intern-finder-backend-v2.onrender.com',
-                pathname: '/uploads/**',
-            },
-            {
-                protocol: 'http',
-                hostname: 'intern-finder-api.onrender.com',
-                pathname: '/uploads/**',
-            },
-            {
                 protocol: 'https',
                 hostname: 'res.cloudinary.com',
                 pathname: '/**',

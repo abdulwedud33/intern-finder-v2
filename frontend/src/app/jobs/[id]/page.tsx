@@ -50,30 +50,24 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
     return job.company?._id || 'no-company'
   }
 
-  // Helper function to validate and format logo URL
-  const getValidLogoUrl = (logoUrl: string | undefined) => {
-    if (!logoUrl || logoUrl === "no-logo.jpg") {
+  // Helper function to validate and format job image URL (prefer job.image, fallback to company.logo)
+  const getValidImageUrl = (url: string | undefined) => {
+    if (!url || url === "no-logo.jpg") {
       return "/placeholder.svg?height=80&width=80&text=CO"
     }
     
     // Check if it's an old local upload path (these files no longer exist)
-    if (logoUrl.match(/^(logo|photo|avatar|profile|resume)-.*\.(png|jpg|jpeg|gif)$/)) {
-      console.log(`Old logo path detected in getValidLogoUrl: ${logoUrl}, using fallback`);
+    if (url.match(/^(logo|photo|avatar|profile|resume)-.*\.(png|jpg|jpeg|gif)$/)) {
+      console.log(`Old image path detected: ${url}, using fallback`);
       return "/placeholder.svg?height=80&width=80&text=CO"
     }
     
     // If it's already a full URL, return as is
-    if (logoUrl.startsWith("http")) {
-      return logoUrl
+    if (url.startsWith("http")) {
+      return url
     }
-    // If it already starts with /uploads/, just prepend the API URL
-    if (logoUrl.startsWith("/uploads/")) {
-      const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com';
-      return `${API_URL}${logoUrl}`
-    }
-    // Otherwise, construct the full URL
-    const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'https://intern-finder-backend-v2.onrender.com';
-    return `${API_URL}/uploads/${logoUrl}`
+    // Any non-URL (including legacy /uploads) should fallback now
+    return "/placeholder.svg?height=80&width=80&text=CO"
   }
 
   // Type guard to check if job has the expected properties
@@ -123,7 +117,7 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
                 <div className="flex items-start gap-6">
                   <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center shadow-sm">
                    <Avatar>
-                    <AvatarImage src={getValidLogoUrl(job.company?.logo)} alt={`${job.company?.name} logo`} />
+                    <AvatarImage src={getValidImageUrl(job.image || job.company?.logo)} alt={`${job.company?.name} logo`} />
                     <AvatarFallback>
                       <div className="text-xl font-bold text-teal-600">
                         {job.company?.name?.charAt(0) || 'C'}

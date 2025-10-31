@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, MapPin, Briefcase, Bookmark, DollarSign, Clock } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
+import { getImageUrl } from "@/utils/imageUtils"
 import { LoadingCard } from "@/components/ui/loading-spinner"
 import { ErrorDisplay } from "@/components/ui/error-boundary"
 
@@ -50,7 +52,7 @@ export default function JobsPage() {
       ? job.salary 
       : `$${job.salary?.min?.toLocaleString()} - $${job.salary?.max?.toLocaleString()} ${job.salary?.currency || ''}/${job.salary?.period || ''}`) : "Salary not specified",
     posted: new Date(job.createdAt).toLocaleDateString(),
-    logo: job.company?.logo || "/placeholder.svg",
+    logo: getImageUrl((job as any).image || job.company?.logo) || "/placeholder.svg?height=40&width=40&text=CO",
     description: job.description,
     isRemote: job.isRemote
   });
@@ -146,7 +148,12 @@ export default function JobsPage() {
               <Card key={job.id} className="bg-white border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-0">
                   <div className="flex justify-between items-start">
-                    <p className="text-sm text-gray-500">{job.company}</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
+                        <Image src={job.logo} alt={`${job.company} logo`} width={40} height={40} className="object-contain p-1" />
+                      </div>
+                      <p className="text-sm text-gray-500">{job.company}</p>
+                    </div>
                     <Button variant="ghost" size="icon" className="w-8 h-8 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
                       <Bookmark className="w-5 h-5" />
                     </Button>
